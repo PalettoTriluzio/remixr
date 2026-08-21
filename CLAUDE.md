@@ -15,7 +15,7 @@ Local-only AI music remixer. Load audio → tweak via local LLM prompt or manual
 | Backend | Python 3.11+ + FastAPI + uvicorn | HTTP layer per React, async, tipizzato |
 | Frontend | React 18 + Vite + TypeScript + Tailwind + shadcn/ui | UI interattiva DAW-style |
 | Waveform UI | wavesurfer.js v7 | Standard de-facto, gratis |
-| LLM | `llama-cpp-python` + Qwen2.5-Instruct GGUF (quantizzato Q4_K_M) | 100% locale, no server esterno |
+| LLM | `llama-cpp-python` **buildato da sorgente con CUDA** + Qwen2.5-Instruct GGUF Q4_K_M | 100% locale, no server esterno, full GPU offload |
 | DSP | `pedalboard` (Apache 2.0) + `soundfile` + `librosa` | Effetti VST-quality gratis, analisi |
 | Stems | `demucs` (MIT) | Separazione voce/drums/bass/other |
 | Pitch/tempo | pedalboard time-stretch + `pyrubberband` fallback | Qualità |
@@ -23,6 +23,22 @@ Local-only AI music remixer. Load audio → tweak via local LLM prompt or manual
 
 ## Piattaforma target
 Windows 10/11 (dev machine dell'utente). Deve girare offline dopo setup iniziale.
+
+**Hardware di riferimento**: RTX 4090 Laptop — Ada Lovelace, compute capability **8.9**, 16 GB VRAM.
+
+### Build LLM (vincolo fisso)
+`llama-cpp-python` va **compilato da sorgente con CUDA**, mai installato come wheel CPU:
+```powershell
+$env:CMAKE_ARGS = "-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=89"
+$env:FORCE_CMAKE = "1"
+pip install llama-cpp-python==0.3.2 --no-cache-dir
+```
+- `GGML_CUDA` (non `LLAMA_CUBLAS`, morto in 0.3.x)
+- `CUDA_ARCHITECTURES=89` = solo Ada → build 3-4x più veloce
+- Verifica: `llama_cpp.llama_supports_gpu_offload()` deve dare `True`
+- Prerequisiti in ordine: VS Build Tools 2022 (C++) **prima**, poi CUDA Toolkit 12.4
+- **Non** in `requirements.txt` (pip installerebbe la versione CPU)
+- A runtime: `n_gpu_layers=-1` (offload totale, il modello ci sta in 16 GB)
 
 ## Formati audio
 - **Input**: MP3, WAV, FLAC, AAC/M4A, OGG (via `soundfile` + `librosa`/`audioread` fallback)

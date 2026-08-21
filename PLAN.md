@@ -41,7 +41,7 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 - ☐ Sync stato params ↔ backend (debounce 300ms, chiamata `/preview`)
 
 ## F4 — LLM integration
-- ☐ `backend/app/llm/engine.py`: wrapper `Llama` da `llama-cpp-python` (path modello configurabile in env)
+- ☐ `backend/app/llm/engine.py`: wrapper `Llama` da `llama-cpp-python` (path modello configurabile in env, `n_gpu_layers=-1`)
 - ☐ System prompt che forza output JSON conforme allo schema params
 - ☐ `POST /api/llm/interpret` — prende prompt utente + params correnti + genere opzionale → delta params + spiegazione testuale
 - ☐ Validation con Pydantic prima di applicare
@@ -69,11 +69,15 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 
 ## Decisioni tecniche pendenti
 - Nome definitivo del progetto (placeholder: `remixr`)
-- Modello LLM specifico (Qwen2.5-3B vs 7B vs 14B — dipende da RAM/VRAM utente)
 - Ordine di default degli effetti nella chain (proposta: HP → EQ → Comp → Distortion → LP → Delay → Reverb → Stereo → Limiter)
+
+## Decisioni prese
+- **LLM**: Qwen2.5-**7B**-Instruct Q4_K_M di default (~4.4 GB, full GPU offload su 16 GB VRAM). 14B Q4_K_M (~9 GB) come opzione se serve più affidabilità sul JSON.
+- **llama-cpp-python**: build da sorgente con `-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=89`. Vedi CLAUDE.md e README §8.
 
 ## Log modifiche
 - 2026-08-21: doc iniziali creati (CLAUDE.md, PLAN.md). Stack e scope definiti via Q&A.
 - 2026-08-21: F0 completato. Backend FastAPI + Pydantic schema + 8 stub endpoints. Frontend Vite/React/TS/Tailwind con layout DAW (TopBar, WaveformView, EffectRack con 11 EffectCard placeholder, PromptPanel, TransportBar). Types + API client tipizzati. README con setup Windows. Nome progetto tuttora placeholder `remixr`.
 - 2026-08-21: README esteso con guida completa Windows (VS Build Tools, CMake, ffmpeg via winget, wheel pre-buildate llama-cpp-python, rubberband opzionale, troubleshooting).
 - 2026-08-21: F1 completato. Upload reale con validazione formato/dimensione (max 200 MB), audio loader universale (soundfile→librosa), analyze endpoint (BPM/key/peaks/spectrum), dropzone drag-drop, wavesurfer.js v7 con play/pause funzionante + volume + time counter. Store zustand centralizzato.
+- 2026-08-21: setup LLM cambiato da wheel CPU a **build CUDA da sorgente** (target RTX 4090 Laptop, arch 89). README riscritto: nuova §5 CUDA Toolkit 12.4, §8 dedicata alla compilazione, troubleshooting CUDA esteso (No CUDA toolset found, gpu_offload=False, arch non supportata, build lenta, OOM VRAM). `llama-cpp-python` rimosso da `requirements.txt` per evitare l'installazione CPU. Modello di default fissato a Qwen2.5-7B Q4_K_M.
