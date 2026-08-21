@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Remixr data (large / user-generated)
+backend/data/uploads/*
+backend/data/renders/*
+backend/data/stems/*
+!backend/data/uploads/.gitkeep
+!backend/data/renders/.gitkeep
+!backend/data/stems/.gitkeep
+
+# LLM model files
+backend/models/*
+!backend/models/.gitkeep
+
+# Env
+.env
+.env.local
