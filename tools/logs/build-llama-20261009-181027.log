@@ -1,0 +1,37 @@
+﻿**********************
+Inizio trascrizione Windows PowerShell
+Ora di inizio: 20261009181028
+Nome utente: PALETTOSBEAST\ido96
+Esegui come utente: PALETTOSBEAST\ido96
+Nome configurazione: 
+Computer PALETTOSBEAST (Microsoft Windows NT 10.0.26200.0)
+Applicazione host: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File .\tools\build-llama-cuda.ps1
+ID processo: 73712
+PSVersion: 5.1.26100.9444
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9444
+BuildVersion: 10.0.26100.9444
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+==============================================================================
+== 0. Contesto
+==============================================================================
+data        : 2026-10-09 18:10:28
+repo        : C:\Users\ido96\Desktop\remixr
+versione    : llama-cpp-python==0.3.2
+cuda arch   : 89
+strategia   : auto
+cmake pin   : cmake<4
+log         : C:\Users\ido96\Desktop\remixr\tools\logs\build-llama-20261009-181027.log
+PowerShell  : 5.1.26100.9444
+CPU threads : 32
+
+==============================================================================
+== 1. Ambiente MSVC x64
+==============================================================================
+VS trovato  : C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools
+Importo l'ambiente da vcvars64.bat ...

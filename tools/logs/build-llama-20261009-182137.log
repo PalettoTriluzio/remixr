@@ -1,0 +1,1968 @@
+﻿**********************
+Inizio trascrizione Windows PowerShell
+Ora di inizio: 20261009182137
+Nome utente: PALETTOSBEAST\ido96
+Esegui come utente: PALETTOSBEAST\ido96
+Nome configurazione: 
+Computer PALETTOSBEAST (Microsoft Windows NT 10.0.26200.0)
+Applicazione host: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File .\tools\build-llama-cuda.ps1
+ID processo: 19484
+PSVersion: 5.1.26100.9444
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9444
+BuildVersion: 10.0.26100.9444
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+==============================================================================
+== 0. Contesto
+==============================================================================
+data        : 2026-10-09 18:21:37
+repo        : C:\Users\ido96\Desktop\remixr
+versione    : llama-cpp-python==0.3.2
+cuda arch   : 89
+strategia   : auto
+cmake pin   : cmake<4
+log         : C:\Users\ido96\Desktop\remixr\tools\logs\build-llama-20261009-182137.log
+PowerShell  : 5.1.26100.9444
+CPU threads : 32
+
+==============================================================================
+== 1. Ambiente MSVC x64
+==============================================================================
+VS trovato  : C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools
+Importo l'ambiente da vcvars64.bat ...
+variabili importate: 103
+cl.exe      : C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\cl.exe
+cl.exe : Microsoft (R) C/C++ Optimizing Compiler versione 19.44.35217 per x64
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:114 car:14
++ $clBanner = (& cl 2>&1 | Select-Object -First 2 | Out-String).Trim()
++              ~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Microsoft (R) C...4.35217 per x64:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Copyright (C) Microsoft Corporation. Tutti i diritti  sono riservati.
+
+==============================================================================
+== 2. CUDA (toolkit + variabili d'ambiente)
+==============================================================================
+nvcc        : C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin\nvcc.exe
+nvcc: NVIDIA (R) Cuda compiler driver
+Copyright (c) 2005-2024 NVIDIA Corporation
+Built on Fri_Jun_14_16:44:19_Pacific_Daylight_Time_2024
+Cuda compilation tools, release 12.6, V12.6.20
+Build cuda_12.6.r12.6/compiler.34431801_0
+cuda root   : C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+versione    : 12.6
+
+--- variabili CUDA
+CUDA_PATH       = C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+CUDA_PATH_V12_6 =
+CudaToolkitDir  =
+MANCA CUDA_PATH_V12_6 -> la imposto per questa build: C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+
+name, driver_version, memory.total [MiB], compute_cap
+NVIDIA GeForce RTX 4090 Laptop GPU, 580.88, 16376 MiB, 8.9
+
+==============================================================================
+== 3. Python / venv
+==============================================================================
+python      : C:\Users\ido96\Desktop\remixr\backend\.venv\Scripts\python.exe
+3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]
+bits 64
+
+--- pip / setuptools / wheel
+Requirement already satisfied: pip in .\backend\.venv\Lib\site-packages (26.2.1)
+Requirement already satisfied: setuptools in .\backend\.venv\Lib\site-packages (84.0.0)
+Requirement already satisfied: wheel in .\backend\.venv\Lib\site-packages (0.48.0)
+Requirement already satisfied: packaging>=24.0 in .\backend\.venv\Lib\site-packages (from wheel) (26.3)
+
+--- cmake<4 + ninja nel venv
+    (se cmake e ninja sono gia' nel PATH, scikit-build-core non si scarica cmake 4.x da solo)
+Requirement already satisfied: cmake<4 in .\backend\.venv\Lib\site-packages (3.31.10)
+Requirement already satisfied: ninja in .\backend\.venv\Lib\site-packages (1.13.2)
+cmake usato : C:\Users\ido96\Desktop\remixr\backend\.venv\Scripts\cmake.exe  -> cmake version 3.31.10
+ninja usato : C:\Users\ido96\Desktop\remixr\backend\.venv\Scripts\ninja.exe  -> 1.13.2.git.kitware.jobserver-pipe-1
+
+==============================================================================
+== 4. Build
+==============================================================================
+
+==============================================================================
+== Strategia: ninja
+==============================================================================
+Ninja puro (nvcc chiamato diretto, niente CUDA.targets di MSBuild)
+
+--- rimuovo installazioni precedenti (evita il riuso di una build CPU)
+python.exe : WARNING: Skipping llama-cpp-python as it is not installed.
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:301 car:5
++     & $py -m pip uninstall -y llama-cpp-python 2>&1 | Out-String | Wr ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: Skippi... not installed.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+CMAKE_ARGS      = -DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=89 -DLLAVA_BUILD=OFF -DGGML_CCACHE=OFF -DCUDAToolkit_ROOT=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6 -DCMAKE_CUDA_COMPILER=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6/bin/nvcc.exe
+CMAKE_GENERATOR = Ninja
+CudaToolkitDir  = C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+PARALLEL_LEVEL  = 32
+
+--- pip install (10-20 min, output verboso)
+Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+Collecting llama-cpp-python==0.3.2
+  Downloading llama_cpp_python-0.3.2.tar.gz (65.0 MB)
+     ---------------------------------------- 65.0/65.0 MB 19.7 MB/s  0:00:03
+  Installing build dependencies: started
+python.exe :   Running command installing build dependencies for llama-cpp-python
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:321 car:9
++         & $py -m pip install "llama-cpp-python==$Version" `
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (  Running comma...lama-cpp-python:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+  Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+  Collecting scikit-build-core>=0.9.2 (from scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for scikit-build-core>=0.9.2 from https://files.pythonhosted.org/packages/01/1b/83913d6d5c6a7f
+8ad5bf5d67b2d57ab09475f1bb9dd0c7a3f44067d59b90/scikit_build_core-1.1.1-py3-none-any.whl.metadata
+    Using cached scikit_build_core-1.1.1-py3-none-any.whl.metadata (19 kB)
+  Collecting packaging>=23.2 (from scikit-build-core>=0.9.2->scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for packaging>=23.2 from https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951
+fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl.metadata
+    Using cached packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+  Collecting pathspec>=0.12.0 (from scikit-build-core>=0.9.2->scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for pathspec>=0.12.0 from https://files.pythonhosted.org/packages/f1/d9/7fb5aa316bc299258e68c7
+3ba3bddbc499654a07f151cba08f6153988714/pathspec-1.1.1-py3-none-any.whl.metadata
+    Using cached pathspec-1.1.1-py3-none-any.whl.metadata (14 kB)
+  WARNING: scikit-build-core 1.1.1 does not provide the extra 'pyproject'
+  Using cached scikit_build_core-1.1.1-py3-none-any.whl (293 kB)
+  Using cached packaging-26.3-py3-none-any.whl (129 kB)
+  Using cached pathspec-1.1.1-py3-none-any.whl (57 kB)
+  Installing collected packages: pathspec, packaging, scikit-build-core
+    Creating C:\Users\ido96\AppData\Local\Temp\pip-build-env-y55_ymdm\overlay\Scripts
+
+  Successfully installed packaging-26.3 pathspec-1.1.1 scikit-build-core-1.1.1
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Running command Getting requirements to build wheel
+  Could not determine CMake version via --version, got '' 'Traceback (most recent call last):\n  File "<frozen runpy>", line 198,
+in _run_module_as_main\n  File "<frozen runpy>", line 88, in _run_code\n  File
+"C:\\Users\\ido96\\Desktop\\remixr\\backend\\.venv\\Scripts\\cmake.EXE\\__main__.py", line 2, in <module>\nModuleNotFoundError: No
+module named \'cmake\'\n'
+  Getting requirements to build wheel: finished with status 'done'
+  Installing backend dependencies: started
+  Running command installing backend dependencies for llama-cpp-python
+  Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+  Collecting cmake>=3.21
+    Obtaining dependency information for cmake>=3.21 from https://files.pythonhosted.org/packages/87/9c/a7918eeeed09b34aa5dc1b76736
+7fb1a2dcbb56171be00be0fd1280fe752/cmake-4.4.4-py3-none-win_amd64.whl.metadata
+    Using cached cmake-4.4.4-py3-none-win_amd64.whl.metadata (7.0 kB)
+  Using cached cmake-4.4.4-py3-none-win_amd64.whl (42.3 MB)
+  Installing collected packages: cmake
+    Creating C:\Users\ido96\AppData\Local\Temp\pip-build-env-y55_ymdm\normal\Scripts
+  Successfully installed cmake-4.4.4
+  Installing backend dependencies: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Running command Preparing metadata (pyproject.toml)
+  *** scikit-build-core 1.1.1 using CMake 4.4.4 (metadata_wheel)
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting typing-extensions>=4.5.0 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for typing-extensions>=4.5.0 from https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl.metadata
+  Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/3a/be/650f9c091ef71cb01d735775d554e068752d3ff63d7943b26316dc401749/numpy-1.21.2.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/5f/d6/ad58ded26556eaeaa8c971e08b6466f17c4ac4d786cd3d800e26ce59cc01/numpy-1.21.3.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/fb/48/b0708ebd7718a8933f0d3937513ef8ef2f4f04529f1f66ca86d873043921/numpy-1.21.4.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/c2/a8/a924a09492bdfee8c2ec3094d0a13f2799800b4fdc9c890738aeeb12c72e/numpy-1.21.5.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/45/b7/de7b8e67f2232c26af57c205aaad29fe17754f793404f59c8a730c7a191a/numpy-1.21.6.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/d3/e1/f2fe8f6113a657a1da83b358b16755e528a602c6976a43724a88f42b482a/numpy-2.5.0rc1.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/e7/05/3d27272d30698dc0ecb7fdfaa41ad70303b444f81722bb99bce1d818638a/numpy-2.5.0.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/22/fd/89965aa4ac08c74998539fcbf24fa3540f3e15237fbeb6bcf9c908f4aade/numpy-2.5.1.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/9a/80/db0b4559e57ec36362bedbb05530a87fafbcb6067708c946967a41d449e7/numpy-2.5.2.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/13/01/11703282db468b85f6f7b8c7f22d058de5970d5c7e60a3a8aaa313c3de36/numpy-2.5.3.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+Collecting numpy>=1.20.0 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for numpy>=1.20.0 from https://files.pythonhosted.org/packages/c5/31/7fc6239c12bce7e931463251cca4426c465e1876ba3cc785402ef4dd8f4e/numpy-2.4.6-cp311-cp311-win_amd64.whl.metadata
+  Downloading numpy-2.4.6-cp311-cp311-win_amd64.whl.metadata (6.6 kB)
+Collecting diskcache>=5.6.1 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for diskcache>=5.6.1 from https://files.pythonhosted.org/packages/3f/27/4570e78fc0bf5ea0ca45eb1de3818a23787af9b390c0b0a0033a1b8236f9/diskcache-5.6.3-py3-none-any.whl.metadata
+  Downloading diskcache-5.6.3-py3-none-any.whl.metadata (20 kB)
+Collecting jinja2>=2.11.3 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for jinja2>=2.11.3 from https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl.metadata
+  Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+Collecting MarkupSafe>=2.0 (from jinja2>=2.11.3->llama-cpp-python==0.3.2)
+  Obtaining dependency information for MarkupSafe>=2.0 from https://files.pythonhosted.org/packages/91/89/f2b509f7bf79352e40117824c1070dbeafd4df67031d3fa98165a3134228/markupsafe-3.0.4-cp311-cp311-win_amd64.whl.metadata
+  Downloading markupsafe-3.0.4-cp311-cp311-win_amd64.whl.metadata (2.8 kB)
+Downloading diskcache-5.6.3-py3-none-any.whl (45 kB)
+Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+Downloading markupsafe-3.0.4-cp311-cp311-win_amd64.whl (14 kB)
+Downloading numpy-2.4.6-cp311-cp311-win_amd64.whl (12.6 MB)
+   ---------------------------------------- 12.6/12.6 MB 19.3 MB/s  0:00:00
+Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Building wheels for collected packages: llama-cpp-python
+  Building wheel for llama-cpp-python (pyproject.toml): started
+  Running command Building wheel for llama-cpp-python (pyproject.toml)
+  *** scikit-build-core 1.1.1 using CMake 4.4.4 (wheel)
+  *** Configuring CMake...
+  CMake Warning:
+    Ignoring extra path from command line:
+
+     "Toolkit/CUDA/v12.6/bin/nvcc.exe"
+
+
+  loading initial cache file C:\Users\ido96\AppData\Local\Temp\tmpuekap2ha\build\CMakeInit.txt
+  -- Building for: Ninja
+  -- The C compiler identification is MSVC 19.44.35217.0
+  -- The CXX compiler identification is MSVC 19.44.35217.0
+  -- Detecting C compiler ABI info
+  -- Detecting C compiler ABI info - done
+  -- Check for working C compiler: C:/Program Files (x86)/Microsoft Visual
+Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+  -- Detecting C compile features
+  -- Detecting C compile features - done
+  -- Detecting CXX compiler ABI info
+  -- Detecting CXX compiler ABI info - done
+  -- Check for working CXX compiler: C:/Program Files (x86)/Microsoft Visual
+Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+  -- Detecting CXX compile features
+  -- Detecting CXX compile features - done
+  -- Found Git: C:/Program Files/Git/cmd/git.exe (found version "2.49.0.windows.1")
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+  -- Looking for pthread_create in pthreads
+  -- Looking for pthread_create in pthreads - not found
+  -- Looking for pthread_create in pthread
+  -- Looking for pthread_create in pthread - not found
+  -- Found Threads: TRUE
+  -- CMAKE_SYSTEM_PROCESSOR: AMD64
+  -- CMAKE_GENERATOR_PLATFORM:
+  -- Found OpenMP_C: -openmp (found version "2.0")
+  -- Found OpenMP_CXX: -openmp (found version "2.0")
+  -- Found OpenMP: TRUE (found version "2.0")
+  -- OpenMP found
+  -- Using llamafile
+  -- x86 detected
+  -- Performing Test HAS_AVX_1
+  -- Performing Test HAS_AVX_1 - Success
+  -- Performing Test HAS_AVX2_1
+  -- Performing Test HAS_AVX2_1 - Success
+  -- Performing Test HAS_FMA_1
+  -- Performing Test HAS_FMA_1 - Success
+  -- Performing Test HAS_AVX512_1
+  -- Performing Test HAS_AVX512_1 - Failed
+  -- Performing Test HAS_AVX512_2
+  -- Performing Test HAS_AVX512_2 - Failed
+  -- Using runtime weight conversion of Q4_0 to Q4_0_x_x to enable optimized GEMM/GEMV kernels
+  -- Including CPU backend
+  CMake Warning at vendor/llama.cpp/ggml/src/ggml-amx/CMakeLists.txt:106 (message):
+    AMX requires x86 and gcc version > 11.0.  Turning off GGML_AMX.
+
+
+  -- Could not find `nvcc` executable in path specified by variable CUDAToolkit_ROOT=C:/Program
+  CMake Error at vendor/llama.cpp/ggml/src/ggml-cuda/CMakeLists.txt:164 (message):
+    CUDA Toolkit not found
+
+
+  -- Configuring incomplete, errors occurred!
+
+  *** CMake configuration failed
+  error: subprocess-exited-with-error
+
+  Building wheel for llama-cpp-python (pyproject.toml) did not run successfully.
+  exit code: 1
+
+  No available output.
+
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+  full command: 'C:\Users\ido96\Desktop\remixr\backend\.venv\Scripts\python.exe'
+'C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip\_vendor\pyproject_hooks\_in_process\_in_process.py' build_wheel
+'C:\Users\ido96\AppData\Local\Temp\tmplcg70j2c'
+  cwd: C:\Users\ido96\AppData\Local\Temp\pip-install-hem7i1zs\llama-cpp-python_f2a1939cf471487aa4d7fef720591c40
+  Building wheel for llama-cpp-python (pyproject.toml): finished with status 'error'
+  ERROR: Failed building wheel for llama-cpp-python
+Failed to build llama-cpp-python
+error: failed-wheel-build-for-install
+
+Failed to build installable wheels for some pyproject.toml based projects
+
+llama-cpp-python
+
+pip exit code: 1  (durata: 0.4 min)
+
+--- verifica supporto GPU
+pip ha fallito, salto la verifica.
+
+Strategia 'ninja' non riuscita. Proseguo con la successiva (se presente).
+
+==============================================================================
+== Strategia: ninja-allow-unsupported
+==============================================================================
+Ninja + -allow-unsupported-compiler (bypassa il check versione MSVC di nvcc)
+
+--- rimuovo installazioni precedenti (evita il riuso di una build CPU)
+python.exe : WARNING: Skipping llama-cpp-python as it is not installed.
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:301 car:5
++     & $py -m pip uninstall -y llama-cpp-python 2>&1 | Out-String | Wr ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: Skippi... not installed.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+CMAKE_ARGS      = -DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=89 -DLLAVA_BUILD=OFF -DGGML_CCACHE=OFF -DCUDAToolkit_ROOT=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6 -DCMAKE_CUDA_COMPILER=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6/bin/nvcc.exe -DCMAKE_CUDA_FLAGS=-allow-unsupported-compiler
+CMAKE_GENERATOR = Ninja
+CudaToolkitDir  = C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+PARALLEL_LEVEL  = 32
+
+--- pip install (10-20 min, output verboso)
+Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+Collecting llama-cpp-python==0.3.2
+  Downloading llama_cpp_python-0.3.2.tar.gz (65.0 MB)
+     ---------------------------------------- 65.0/65.0 MB 19.7 MB/s  0:00:03
+  Installing build dependencies: started
+python.exe :   Running command installing build dependencies for llama-cpp-python
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:321 car:9
++         & $py -m pip install "llama-cpp-python==$Version" `
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (  Running comma...lama-cpp-python:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+  Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+  Collecting scikit-build-core>=0.9.2 (from scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for scikit-build-core>=0.9.2 from https://files.pythonhosted.org/packages/01/1b/83913d6d5c6a7f
+8ad5bf5d67b2d57ab09475f1bb9dd0c7a3f44067d59b90/scikit_build_core-1.1.1-py3-none-any.whl.metadata
+    Using cached scikit_build_core-1.1.1-py3-none-any.whl.metadata (19 kB)
+  Collecting packaging>=23.2 (from scikit-build-core>=0.9.2->scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for packaging>=23.2 from https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951
+fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl.metadata
+    Using cached packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+  Collecting pathspec>=0.12.0 (from scikit-build-core>=0.9.2->scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for pathspec>=0.12.0 from https://files.pythonhosted.org/packages/f1/d9/7fb5aa316bc299258e68c7
+3ba3bddbc499654a07f151cba08f6153988714/pathspec-1.1.1-py3-none-any.whl.metadata
+    Using cached pathspec-1.1.1-py3-none-any.whl.metadata (14 kB)
+  WARNING: scikit-build-core 1.1.1 does not provide the extra 'pyproject'
+  Using cached scikit_build_core-1.1.1-py3-none-any.whl (293 kB)
+  Using cached packaging-26.3-py3-none-any.whl (129 kB)
+  Using cached pathspec-1.1.1-py3-none-any.whl (57 kB)
+  Installing collected packages: pathspec, packaging, scikit-build-core
+    Creating C:\Users\ido96\AppData\Local\Temp\pip-build-env-qrh8_g5p\overlay\Scripts
+
+  Successfully installed packaging-26.3 pathspec-1.1.1 scikit-build-core-1.1.1
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Running command Getting requirements to build wheel
+  Could not determine CMake version via --version, got '' 'Traceback (most recent call last):\n  File "<frozen runpy>", line 198,
+in _run_module_as_main\n  File "<frozen runpy>", line 88, in _run_code\n  File
+"C:\\Users\\ido96\\Desktop\\remixr\\backend\\.venv\\Scripts\\cmake.EXE\\__main__.py", line 2, in <module>\nModuleNotFoundError: No
+module named \'cmake\'\n'
+  Getting requirements to build wheel: finished with status 'done'
+  Installing backend dependencies: started
+  Running command installing backend dependencies for llama-cpp-python
+  Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+  Collecting cmake>=3.21
+    Obtaining dependency information for cmake>=3.21 from https://files.pythonhosted.org/packages/87/9c/a7918eeeed09b34aa5dc1b76736
+7fb1a2dcbb56171be00be0fd1280fe752/cmake-4.4.4-py3-none-win_amd64.whl.metadata
+    Using cached cmake-4.4.4-py3-none-win_amd64.whl.metadata (7.0 kB)
+  Using cached cmake-4.4.4-py3-none-win_amd64.whl (42.3 MB)
+  Installing collected packages: cmake
+    Creating C:\Users\ido96\AppData\Local\Temp\pip-build-env-qrh8_g5p\normal\Scripts
+  Successfully installed cmake-4.4.4
+  Installing backend dependencies: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Running command Preparing metadata (pyproject.toml)
+  *** scikit-build-core 1.1.1 using CMake 4.4.4 (metadata_wheel)
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting typing-extensions>=4.5.0 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for typing-extensions>=4.5.0 from https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl.metadata
+  Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/3a/be/650f9c091ef71cb01d735775d554e068752d3ff63d7943b26316dc401749/numpy-1.21.2.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/5f/d6/ad58ded26556eaeaa8c971e08b6466f17c4ac4d786cd3d800e26ce59cc01/numpy-1.21.3.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/fb/48/b0708ebd7718a8933f0d3937513ef8ef2f4f04529f1f66ca86d873043921/numpy-1.21.4.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/c2/a8/a924a09492bdfee8c2ec3094d0a13f2799800b4fdc9c890738aeeb12c72e/numpy-1.21.5.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/45/b7/de7b8e67f2232c26af57c205aaad29fe17754f793404f59c8a730c7a191a/numpy-1.21.6.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/d3/e1/f2fe8f6113a657a1da83b358b16755e528a602c6976a43724a88f42b482a/numpy-2.5.0rc1.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/e7/05/3d27272d30698dc0ecb7fdfaa41ad70303b444f81722bb99bce1d818638a/numpy-2.5.0.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/22/fd/89965aa4ac08c74998539fcbf24fa3540f3e15237fbeb6bcf9c908f4aade/numpy-2.5.1.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/9a/80/db0b4559e57ec36362bedbb05530a87fafbcb6067708c946967a41d449e7/numpy-2.5.2.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/13/01/11703282db468b85f6f7b8c7f22d058de5970d5c7e60a3a8aaa313c3de36/numpy-2.5.3.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+Collecting numpy>=1.20.0 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for numpy>=1.20.0 from https://files.pythonhosted.org/packages/c5/31/7fc6239c12bce7e931463251cca4426c465e1876ba3cc785402ef4dd8f4e/numpy-2.4.6-cp311-cp311-win_amd64.whl.metadata
+  Downloading numpy-2.4.6-cp311-cp311-win_amd64.whl.metadata (6.6 kB)
+Collecting diskcache>=5.6.1 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for diskcache>=5.6.1 from https://files.pythonhosted.org/packages/3f/27/4570e78fc0bf5ea0ca45eb1de3818a23787af9b390c0b0a0033a1b8236f9/diskcache-5.6.3-py3-none-any.whl.metadata
+  Downloading diskcache-5.6.3-py3-none-any.whl.metadata (20 kB)
+Collecting jinja2>=2.11.3 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for jinja2>=2.11.3 from https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl.metadata
+  Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+Collecting MarkupSafe>=2.0 (from jinja2>=2.11.3->llama-cpp-python==0.3.2)
+  Obtaining dependency information for MarkupSafe>=2.0 from https://files.pythonhosted.org/packages/91/89/f2b509f7bf79352e40117824c1070dbeafd4df67031d3fa98165a3134228/markupsafe-3.0.4-cp311-cp311-win_amd64.whl.metadata
+  Downloading markupsafe-3.0.4-cp311-cp311-win_amd64.whl.metadata (2.8 kB)
+Downloading diskcache-5.6.3-py3-none-any.whl (45 kB)
+Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+Downloading markupsafe-3.0.4-cp311-cp311-win_amd64.whl (14 kB)
+Downloading numpy-2.4.6-cp311-cp311-win_amd64.whl (12.6 MB)
+   ---------------------------------------- 12.6/12.6 MB 19.3 MB/s  0:00:00
+Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Building wheels for collected packages: llama-cpp-python
+  Building wheel for llama-cpp-python (pyproject.toml): started
+  Running command Building wheel for llama-cpp-python (pyproject.toml)
+  *** scikit-build-core 1.1.1 using CMake 4.4.4 (wheel)
+  *** Configuring CMake...
+  CMake Warning:
+    Ignoring extra path from command line:
+
+     "Toolkit/CUDA/v12.6/bin/nvcc.exe"
+
+
+  loading initial cache file C:\Users\ido96\AppData\Local\Temp\tmphwy0fvzy\build\CMakeInit.txt
+  -- Building for: Ninja
+  -- The C compiler identification is MSVC 19.44.35217.0
+  -- The CXX compiler identification is MSVC 19.44.35217.0
+  -- Detecting C compiler ABI info
+  -- Detecting C compiler ABI info - done
+  -- Check for working C compiler: C:/Program Files (x86)/Microsoft Visual
+Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+  -- Detecting C compile features
+  -- Detecting C compile features - done
+  -- Detecting CXX compiler ABI info
+  -- Detecting CXX compiler ABI info - done
+  -- Check for working CXX compiler: C:/Program Files (x86)/Microsoft Visual
+Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+  -- Detecting CXX compile features
+  -- Detecting CXX compile features - done
+  -- Found Git: C:/Program Files/Git/cmd/git.exe (found version "2.49.0.windows.1")
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+  -- Looking for pthread_create in pthreads
+  -- Looking for pthread_create in pthreads - not found
+  -- Looking for pthread_create in pthread
+  -- Looking for pthread_create in pthread - not found
+  -- Found Threads: TRUE
+  -- CMAKE_SYSTEM_PROCESSOR: AMD64
+  -- CMAKE_GENERATOR_PLATFORM:
+  -- Found OpenMP_C: -openmp (found version "2.0")
+  -- Found OpenMP_CXX: -openmp (found version "2.0")
+  -- Found OpenMP: TRUE (found version "2.0")
+  -- OpenMP found
+  -- Using llamafile
+  -- x86 detected
+  -- Performing Test HAS_AVX_1
+  -- Performing Test HAS_AVX_1 - Success
+  -- Performing Test HAS_AVX2_1
+  -- Performing Test HAS_AVX2_1 - Success
+  -- Performing Test HAS_FMA_1
+  -- Performing Test HAS_FMA_1 - Success
+  -- Performing Test HAS_AVX512_1
+  -- Performing Test HAS_AVX512_1 - Failed
+  -- Performing Test HAS_AVX512_2
+  -- Performing Test HAS_AVX512_2 - Failed
+  -- Using runtime weight conversion of Q4_0 to Q4_0_x_x to enable optimized GEMM/GEMV kernels
+  -- Including CPU backend
+  CMake Warning at vendor/llama.cpp/ggml/src/ggml-amx/CMakeLists.txt:106 (message):
+    AMX requires x86 and gcc version > 11.0.  Turning off GGML_AMX.
+
+
+  -- Could not find `nvcc` executable in path specified by variable CUDAToolkit_ROOT=C:/Program
+  CMake Error at vendor/llama.cpp/ggml/src/ggml-cuda/CMakeLists.txt:164 (message):
+    CUDA Toolkit not found
+
+
+  -- Configuring incomplete, errors occurred!
+
+  *** CMake configuration failed
+  error: subprocess-exited-with-error
+
+  Building wheel for llama-cpp-python (pyproject.toml) did not run successfully.
+  exit code: 1
+
+  No available output.
+
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+  full command: 'C:\Users\ido96\Desktop\remixr\backend\.venv\Scripts\python.exe'
+'C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip\_vendor\pyproject_hooks\_in_process\_in_process.py' build_wheel
+'C:\Users\ido96\AppData\Local\Temp\tmpv7rf8k9t'
+  cwd: C:\Users\ido96\AppData\Local\Temp\pip-install-nn3xrewn\llama-cpp-python_54171636760a4d77b7369be899134f63
+  Building wheel for llama-cpp-python (pyproject.toml): finished with status 'error'
+  ERROR: Failed building wheel for llama-cpp-python
+Failed to build llama-cpp-python
+error: failed-wheel-build-for-install
+
+Failed to build installable wheels for some pyproject.toml based projects
+
+llama-cpp-python
+
+pip exit code: 1  (durata: 0.3 min)
+
+--- verifica supporto GPU
+pip ha fallito, salto la verifica.
+
+Strategia 'ninja-allow-unsupported' non riuscita. Proseguo con la successiva (se presente).
+
+==============================================================================
+== Strategia: msbuild
+==============================================================================
+generatore Visual Studio, con CUDA_PATH_V* e CudaToolkitDir riparati
+
+--- rimuovo installazioni precedenti (evita il riuso di una build CPU)
+python.exe : WARNING: Skipping llama-cpp-python as it is not installed.
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:301 car:5
++     & $py -m pip uninstall -y llama-cpp-python 2>&1 | Out-String | Wr ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: Skippi... not installed.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+CMAKE_ARGS      = -DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=89 -DLLAVA_BUILD=OFF -DGGML_CCACHE=OFF -DCUDAToolkit_ROOT=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6 -DCMAKE_CUDA_COMPILER=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6/bin/nvcc.exe
+CMAKE_GENERATOR =
+CudaToolkitDir  = C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+PARALLEL_LEVEL  = 32
+
+--- pip install (10-20 min, output verboso)
+Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+Collecting llama-cpp-python==0.3.2
+  Downloading llama_cpp_python-0.3.2.tar.gz (65.0 MB)
+     ---------------------------------------- 65.0/65.0 MB 19.6 MB/s  0:00:03
+  Installing build dependencies: started
+python.exe :   Running command installing build dependencies for llama-cpp-python
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:321 car:9
++         & $py -m pip install "llama-cpp-python==$Version" `
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (  Running comma...lama-cpp-python:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+  Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+  Collecting scikit-build-core>=0.9.2 (from scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for scikit-build-core>=0.9.2 from https://files.pythonhosted.org/packages/01/1b/83913d6d5c6a7f
+8ad5bf5d67b2d57ab09475f1bb9dd0c7a3f44067d59b90/scikit_build_core-1.1.1-py3-none-any.whl.metadata
+    Using cached scikit_build_core-1.1.1-py3-none-any.whl.metadata (19 kB)
+  Collecting packaging>=23.2 (from scikit-build-core>=0.9.2->scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for packaging>=23.2 from https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951
+fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl.metadata
+    Using cached packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+  Collecting pathspec>=0.12.0 (from scikit-build-core>=0.9.2->scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for pathspec>=0.12.0 from https://files.pythonhosted.org/packages/f1/d9/7fb5aa316bc299258e68c7
+3ba3bddbc499654a07f151cba08f6153988714/pathspec-1.1.1-py3-none-any.whl.metadata
+    Using cached pathspec-1.1.1-py3-none-any.whl.metadata (14 kB)
+  WARNING: scikit-build-core 1.1.1 does not provide the extra 'pyproject'
+  Using cached scikit_build_core-1.1.1-py3-none-any.whl (293 kB)
+  Using cached packaging-26.3-py3-none-any.whl (129 kB)
+  Using cached pathspec-1.1.1-py3-none-any.whl (57 kB)
+  Installing collected packages: pathspec, packaging, scikit-build-core
+    Creating C:\Users\ido96\AppData\Local\Temp\pip-build-env-1q55f4ki\overlay\Scripts
+
+  Successfully installed packaging-26.3 pathspec-1.1.1 scikit-build-core-1.1.1
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Running command Getting requirements to build wheel
+  Could not determine CMake version via --version, got '' 'Traceback (most recent call last):\n  File "<frozen runpy>", line 198,
+in _run_module_as_main\n  File "<frozen runpy>", line 88, in _run_code\n  File
+"C:\\Users\\ido96\\Desktop\\remixr\\backend\\.venv\\Scripts\\cmake.EXE\\__main__.py", line 2, in <module>\nModuleNotFoundError: No
+module named \'cmake\'\n'
+  Getting requirements to build wheel: finished with status 'done'
+  Installing backend dependencies: started
+  Running command installing backend dependencies for llama-cpp-python
+  Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+  Collecting cmake>=3.21
+    Obtaining dependency information for cmake>=3.21 from https://files.pythonhosted.org/packages/87/9c/a7918eeeed09b34aa5dc1b76736
+7fb1a2dcbb56171be00be0fd1280fe752/cmake-4.4.4-py3-none-win_amd64.whl.metadata
+    Using cached cmake-4.4.4-py3-none-win_amd64.whl.metadata (7.0 kB)
+  Using cached cmake-4.4.4-py3-none-win_amd64.whl (42.3 MB)
+  Installing collected packages: cmake
+    Creating C:\Users\ido96\AppData\Local\Temp\pip-build-env-1q55f4ki\normal\Scripts
+  Successfully installed cmake-4.4.4
+  Installing backend dependencies: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Running command Preparing metadata (pyproject.toml)
+  *** scikit-build-core 1.1.1 using CMake 4.4.4 (metadata_wheel)
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting typing-extensions>=4.5.0 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for typing-extensions>=4.5.0 from https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl.metadata
+  Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/3a/be/650f9c091ef71cb01d735775d554e068752d3ff63d7943b26316dc401749/numpy-1.21.2.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/5f/d6/ad58ded26556eaeaa8c971e08b6466f17c4ac4d786cd3d800e26ce59cc01/numpy-1.21.3.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/fb/48/b0708ebd7718a8933f0d3937513ef8ef2f4f04529f1f66ca86d873043921/numpy-1.21.4.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/c2/a8/a924a09492bdfee8c2ec3094d0a13f2799800b4fdc9c890738aeeb12c72e/numpy-1.21.5.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/45/b7/de7b8e67f2232c26af57c205aaad29fe17754f793404f59c8a730c7a191a/numpy-1.21.6.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/d3/e1/f2fe8f6113a657a1da83b358b16755e528a602c6976a43724a88f42b482a/numpy-2.5.0rc1.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/e7/05/3d27272d30698dc0ecb7fdfaa41ad70303b444f81722bb99bce1d818638a/numpy-2.5.0.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/22/fd/89965aa4ac08c74998539fcbf24fa3540f3e15237fbeb6bcf9c908f4aade/numpy-2.5.1.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/9a/80/db0b4559e57ec36362bedbb05530a87fafbcb6067708c946967a41d449e7/numpy-2.5.2.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/13/01/11703282db468b85f6f7b8c7f22d058de5970d5c7e60a3a8aaa313c3de36/numpy-2.5.3.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+Collecting numpy>=1.20.0 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for numpy>=1.20.0 from https://files.pythonhosted.org/packages/c5/31/7fc6239c12bce7e931463251cca4426c465e1876ba3cc785402ef4dd8f4e/numpy-2.4.6-cp311-cp311-win_amd64.whl.metadata
+  Downloading numpy-2.4.6-cp311-cp311-win_amd64.whl.metadata (6.6 kB)
+Collecting diskcache>=5.6.1 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for diskcache>=5.6.1 from https://files.pythonhosted.org/packages/3f/27/4570e78fc0bf5ea0ca45eb1de3818a23787af9b390c0b0a0033a1b8236f9/diskcache-5.6.3-py3-none-any.whl.metadata
+  Downloading diskcache-5.6.3-py3-none-any.whl.metadata (20 kB)
+Collecting jinja2>=2.11.3 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for jinja2>=2.11.3 from https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl.metadata
+  Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+Collecting MarkupSafe>=2.0 (from jinja2>=2.11.3->llama-cpp-python==0.3.2)
+  Obtaining dependency information for MarkupSafe>=2.0 from https://files.pythonhosted.org/packages/91/89/f2b509f7bf79352e40117824c1070dbeafd4df67031d3fa98165a3134228/markupsafe-3.0.4-cp311-cp311-win_amd64.whl.metadata
+  Downloading markupsafe-3.0.4-cp311-cp311-win_amd64.whl.metadata (2.8 kB)
+Downloading diskcache-5.6.3-py3-none-any.whl (45 kB)
+Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+Downloading markupsafe-3.0.4-cp311-cp311-win_amd64.whl (14 kB)
+Downloading numpy-2.4.6-cp311-cp311-win_amd64.whl (12.6 MB)
+   ---------------------------------------- 12.6/12.6 MB 18.8 MB/s  0:00:00
+Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Building wheels for collected packages: llama-cpp-python
+  Building wheel for llama-cpp-python (pyproject.toml): started
+  Running command Building wheel for llama-cpp-python (pyproject.toml)
+  *** scikit-build-core 1.1.1 using CMake 4.4.4 (wheel)
+  *** Configuring CMake...
+  CMake Warning:
+    Ignoring extra path from command line:
+
+     "Toolkit/CUDA/v12.6/bin/nvcc.exe"
+
+
+  loading initial cache file C:\Users\ido96\AppData\Local\Temp\tmp_yslxq5d\build\CMakeInit.txt
+  -- Building for: Visual Studio 17 2022
+  -- Selecting Windows SDK version 10.0.22621.0 to target Windows 10.0.26200.
+  -- The C compiler identification is MSVC 19.44.35217.0
+  -- The CXX compiler identification is MSVC 19.44.35217.0
+  -- Detecting C compiler ABI info
+  -- Detecting C compiler ABI info - done
+  -- Check for working C compiler: C:/Program Files (x86)/Microsoft Visual
+Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+  -- Detecting C compile features
+  -- Detecting C compile features - done
+  -- Detecting CXX compiler ABI info
+  -- Detecting CXX compiler ABI info - done
+  -- Check for working CXX compiler: C:/Program Files (x86)/Microsoft Visual
+Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+  -- Detecting CXX compile features
+  -- Detecting CXX compile features - done
+  -- Found Git: C:/Program Files/Git/cmd/git.exe (found version "2.49.0.windows.1")
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+  -- Looking for pthread_create in pthreads
+  -- Looking for pthread_create in pthreads - not found
+  -- Looking for pthread_create in pthread
+  -- Looking for pthread_create in pthread - not found
+  -- Found Threads: TRUE
+  -- CMAKE_SYSTEM_PROCESSOR: AMD64
+  -- CMAKE_GENERATOR_PLATFORM: x64
+  -- Found OpenMP_C: -openmp (found version "2.0")
+  -- Found OpenMP_CXX: -openmp (found version "2.0")
+  -- Found OpenMP: TRUE (found version "2.0")
+  -- OpenMP found
+  -- Using llamafile
+  -- x86 detected
+  -- Performing Test HAS_AVX_1
+  -- Performing Test HAS_AVX_1 - Success
+  -- Performing Test HAS_AVX2_1
+  -- Performing Test HAS_AVX2_1 - Success
+  -- Performing Test HAS_FMA_1
+  -- Performing Test HAS_FMA_1 - Success
+  -- Performing Test HAS_AVX512_1
+  -- Performing Test HAS_AVX512_1 - Failed
+  -- Performing Test HAS_AVX512_2
+  -- Performing Test HAS_AVX512_2 - Failed
+  -- Using runtime weight conversion of Q4_0 to Q4_0_x_x to enable optimized GEMM/GEMV kernels
+  -- Including CPU backend
+  -- Using AMX
+  -- Including AMX backend
+  -- Could not find `nvcc` executable in path specified by variable CUDAToolkit_ROOT=C:/Program
+  CMake Error at vendor/llama.cpp/ggml/src/ggml-cuda/CMakeLists.txt:164 (message):
+    CUDA Toolkit not found
+
+
+  -- Configuring incomplete, errors occurred!
+
+  *** CMake configuration failed
+  error: subprocess-exited-with-error
+
+  Building wheel for llama-cpp-python (pyproject.toml) did not run successfully.
+  exit code: 1
+
+  No available output.
+
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+  full command: 'C:\Users\ido96\Desktop\remixr\backend\.venv\Scripts\python.exe'
+'C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip\_vendor\pyproject_hooks\_in_process\_in_process.py' build_wheel
+'C:\Users\ido96\AppData\Local\Temp\tmpvm6q74l6'
+  cwd: C:\Users\ido96\AppData\Local\Temp\pip-install-34w9dn8y\llama-cpp-python_90784e2db7bb466390dabc996eda7386
+  Building wheel for llama-cpp-python (pyproject.toml): finished with status 'error'
+  ERROR: Failed building wheel for llama-cpp-python
+Failed to build llama-cpp-python
+error: failed-wheel-build-for-install
+
+Failed to build installable wheels for some pyproject.toml based projects
+
+llama-cpp-python
+
+pip exit code: 1  (durata: 0.4 min)
+
+--- verifica supporto GPU
+pip ha fallito, salto la verifica.
+
+Strategia 'msbuild' non riuscita. Proseguo con la successiva (se presente).
+
+==============================================================================
+== Strategia: wheel
+==============================================================================
+wheel CUDA precompilata (nessuna compilazione locale)
+
+--- rimuovo installazioni precedenti (evita il riuso di una build CPU)
+python.exe : WARNING: Skipping llama-cpp-python as it is not installed.
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:301 car:5
++     & $py -m pip uninstall -y llama-cpp-python 2>&1 | Out-String | Wr ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: Skippi... not installed.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+--- pip install da indice wheel precompilate: https://abetlen.github.io/llama-cpp-python/whl/cu124
+Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+Looking in indexes: https://pypi.org/simple, https://abetlen.github.io/llama-cpp-python/whl/cu124
+Collecting llama-cpp-python==0.3.2
+  Downloading llama_cpp_python-0.3.2.tar.gz (65.0 MB)
+     ---------------------------------------- 65.0/65.0 MB 20.0 MB/s  0:00:03
+  Installing build dependencies: started
+python.exe :   Running command installing build dependencies for llama-cpp-python
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:331 car:9
++         & $py -m pip install "llama-cpp-python==$Version" `
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (  Running comma...lama-cpp-python:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+  Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+  Looking in indexes: https://pypi.org/simple, https://abetlen.github.io/llama-cpp-python/whl/cu124
+  Collecting scikit-build-core>=0.9.2 (from scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for scikit-build-core>=0.9.2 from https://files.pythonhosted.org/packages/01/1b/83913d6d5c6a7f
+8ad5bf5d67b2d57ab09475f1bb9dd0c7a3f44067d59b90/scikit_build_core-1.1.1-py3-none-any.whl.metadata
+    Using cached scikit_build_core-1.1.1-py3-none-any.whl.metadata (19 kB)
+  Collecting packaging>=23.2 (from scikit-build-core>=0.9.2->scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for packaging>=23.2 from https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951
+fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl.metadata
+    Using cached packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+  Collecting pathspec>=0.12.0 (from scikit-build-core>=0.9.2->scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for pathspec>=0.12.0 from https://files.pythonhosted.org/packages/f1/d9/7fb5aa316bc299258e68c7
+3ba3bddbc499654a07f151cba08f6153988714/pathspec-1.1.1-py3-none-any.whl.metadata
+    Using cached pathspec-1.1.1-py3-none-any.whl.metadata (14 kB)
+  WARNING: scikit-build-core 1.1.1 does not provide the extra 'pyproject'
+  Using cached scikit_build_core-1.1.1-py3-none-any.whl (293 kB)
+  Using cached packaging-26.3-py3-none-any.whl (129 kB)
+  Using cached pathspec-1.1.1-py3-none-any.whl (57 kB)
+  Installing collected packages: pathspec, packaging, scikit-build-core
+    Creating C:\Users\ido96\AppData\Local\Temp\pip-build-env-x6p3tilq\overlay\Scripts
+
+  Successfully installed packaging-26.3 pathspec-1.1.1 scikit-build-core-1.1.1
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Running command Getting requirements to build wheel
+  Could not determine CMake version via --version, got '' 'Traceback (most recent call last):\n  File "<frozen runpy>", line 198,
+in _run_module_as_main\n  File "<frozen runpy>", line 88, in _run_code\n  File
+"C:\\Users\\ido96\\Desktop\\remixr\\backend\\.venv\\Scripts\\cmake.EXE\\__main__.py", line 2, in <module>\nModuleNotFoundError: No
+module named \'cmake\'\n'
+  Getting requirements to build wheel: finished with status 'done'
+  Installing backend dependencies: started
+  Running command installing backend dependencies for llama-cpp-python
+  Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+  Looking in indexes: https://pypi.org/simple, https://abetlen.github.io/llama-cpp-python/whl/cu124
+  Collecting cmake>=3.21
+    Obtaining dependency information for cmake>=3.21 from https://files.pythonhosted.org/packages/87/9c/a7918eeeed09b34aa5dc1b76736
+7fb1a2dcbb56171be00be0fd1280fe752/cmake-4.4.4-py3-none-win_amd64.whl.metadata
+    Using cached cmake-4.4.4-py3-none-win_amd64.whl.metadata (7.0 kB)
+  Using cached cmake-4.4.4-py3-none-win_amd64.whl (42.3 MB)
+  Installing collected packages: cmake
+    Creating C:\Users\ido96\AppData\Local\Temp\pip-build-env-x6p3tilq\normal\Scripts
+  Successfully installed cmake-4.4.4
+  Installing backend dependencies: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Running command Preparing metadata (pyproject.toml)
+  *** scikit-build-core 1.1.1 using CMake 4.4.4 (metadata_wheel)
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting typing-extensions>=4.5.0 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for typing-extensions>=4.5.0 from https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl.metadata
+  Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/3a/be/650f9c091ef71cb01d735775d554e068752d3ff63d7943b26316dc401749/numpy-1.21.2.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/5f/d6/ad58ded26556eaeaa8c971e08b6466f17c4ac4d786cd3d800e26ce59cc01/numpy-1.21.3.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/fb/48/b0708ebd7718a8933f0d3937513ef8ef2f4f04529f1f66ca86d873043921/numpy-1.21.4.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/c2/a8/a924a09492bdfee8c2ec3094d0a13f2799800b4fdc9c890738aeeb12c72e/numpy-1.21.5.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/45/b7/de7b8e67f2232c26af57c205aaad29fe17754f793404f59c8a730c7a191a/numpy-1.21.6.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/d3/e1/f2fe8f6113a657a1da83b358b16755e528a602c6976a43724a88f42b482a/numpy-2.5.0rc1.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/e7/05/3d27272d30698dc0ecb7fdfaa41ad70303b444f81722bb99bce1d818638a/numpy-2.5.0.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/22/fd/89965aa4ac08c74998539fcbf24fa3540f3e15237fbeb6bcf9c908f4aade/numpy-2.5.1.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/9a/80/db0b4559e57ec36362bedbb05530a87fafbcb6067708c946967a41d449e7/numpy-2.5.2.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/13/01/11703282db468b85f6f7b8c7f22d058de5970d5c7e60a3a8aaa313c3de36/numpy-2.5.3.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+Collecting numpy>=1.20.0 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for numpy>=1.20.0 from https://files.pythonhosted.org/packages/c5/31/7fc6239c12bce7e931463251cca4426c465e1876ba3cc785402ef4dd8f4e/numpy-2.4.6-cp311-cp311-win_amd64.whl.metadata
+  Downloading numpy-2.4.6-cp311-cp311-win_amd64.whl.metadata (6.6 kB)
+Collecting diskcache>=5.6.1 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for diskcache>=5.6.1 from https://files.pythonhosted.org/packages/3f/27/4570e78fc0bf5ea0ca45eb1de3818a23787af9b390c0b0a0033a1b8236f9/diskcache-5.6.3-py3-none-any.whl.metadata
+  Downloading diskcache-5.6.3-py3-none-any.whl.metadata (20 kB)
+Collecting jinja2>=2.11.3 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for jinja2>=2.11.3 from https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl.metadata
+  Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+Collecting MarkupSafe>=2.0 (from jinja2>=2.11.3->llama-cpp-python==0.3.2)
+  Obtaining dependency information for MarkupSafe>=2.0 from https://files.pythonhosted.org/packages/91/89/f2b509f7bf79352e40117824c1070dbeafd4df67031d3fa98165a3134228/markupsafe-3.0.4-cp311-cp311-win_amd64.whl.metadata
+  Downloading markupsafe-3.0.4-cp311-cp311-win_amd64.whl.metadata (2.8 kB)
+Downloading diskcache-5.6.3-py3-none-any.whl (45 kB)
+Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+Downloading markupsafe-3.0.4-cp311-cp311-win_amd64.whl (14 kB)
+Downloading numpy-2.4.6-cp311-cp311-win_amd64.whl (12.6 MB)
+   ---------------------------------------- 12.6/12.6 MB 21.4 MB/s  0:00:00
+Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Building wheels for collected packages: llama-cpp-python
+  Building wheel for llama-cpp-python (pyproject.toml): started
+  Running command Building wheel for llama-cpp-python (pyproject.toml)
+  *** scikit-build-core 1.1.1 using CMake 4.4.4 (wheel)
+  *** Configuring CMake...
+  loading initial cache file C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\CMakeInit.txt
+  -- Building for: Visual Studio 17 2022
+  -- Selecting Windows SDK version 10.0.22621.0 to target Windows 10.0.26200.
+  -- The C compiler identification is MSVC 19.44.35217.0
+  -- The CXX compiler identification is MSVC 19.44.35217.0
+  -- Detecting C compiler ABI info
+  -- Detecting C compiler ABI info - done
+  -- Check for working C compiler: C:/Program Files (x86)/Microsoft Visual
+Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+  -- Detecting C compile features
+  -- Detecting C compile features - done
+  -- Detecting CXX compiler ABI info
+  -- Detecting CXX compiler ABI info - done
+  -- Check for working CXX compiler: C:/Program Files (x86)/Microsoft Visual
+Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+  -- Detecting CXX compile features
+  -- Detecting CXX compile features - done
+  -- Found Git: C:/Program Files/Git/cmd/git.exe (found version "2.49.0.windows.1")
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+  -- Looking for pthread_create in pthreads
+  -- Looking for pthread_create in pthreads - not found
+  -- Looking for pthread_create in pthread
+  -- Looking for pthread_create in pthread - not found
+  -- Found Threads: TRUE
+  -- Warning: ccache not found - consider installing it for faster compilation or disable this warning with GGML_CCACHE=OFF
+  -- CMAKE_SYSTEM_PROCESSOR: AMD64
+  -- CMAKE_GENERATOR_PLATFORM: x64
+  -- Found OpenMP_C: -openmp (found version "2.0")
+  -- Found OpenMP_CXX: -openmp (found version "2.0")
+  -- Found OpenMP: TRUE (found version "2.0")
+  -- OpenMP found
+  -- Using llamafile
+  -- x86 detected
+  -- Performing Test HAS_AVX_1
+  -- Performing Test HAS_AVX_1 - Success
+  -- Performing Test HAS_AVX2_1
+  -- Performing Test HAS_AVX2_1 - Success
+  -- Performing Test HAS_FMA_1
+  -- Performing Test HAS_FMA_1 - Success
+  -- Performing Test HAS_AVX512_1
+  -- Performing Test HAS_AVX512_1 - Failed
+  -- Performing Test HAS_AVX512_2
+  -- Performing Test HAS_AVX512_2 - Failed
+  -- Using runtime weight conversion of Q4_0 to Q4_0_x_x to enable optimized GEMM/GEMV kernels
+  -- Including CPU backend
+  -- Using AMX
+  -- Including AMX backend
+  CMake Warning (author) at CMakeLists.txt:13 (install):
+    Target llama has PUBLIC_HEADER files but no PUBLIC_HEADER DESTINATION.
+  Call Stack (most recent call first):
+    CMakeLists.txt:80 (llama_cpp_python_install_target)
+  This warning is for project developers.  Use -Wno-author to suppress it.
+
+  CMake Warning (author) at CMakeLists.txt:21 (install):
+    Target llama has PUBLIC_HEADER files but no PUBLIC_HEADER DESTINATION.
+  Call Stack (most recent call first):
+    CMakeLists.txt:80 (llama_cpp_python_install_target)
+  This warning is for project developers.  Use -Wno-author to suppress it.
+
+  CMake Warning (author) at CMakeLists.txt:13 (install):
+    Target ggml has PUBLIC_HEADER files but no PUBLIC_HEADER DESTINATION.
+  Call Stack (most recent call first):
+    CMakeLists.txt:81 (llama_cpp_python_install_target)
+  This warning is for project developers.  Use -Wno-author to suppress it.
+
+  CMake Warning (author) at CMakeLists.txt:21 (install):
+    Target ggml has PUBLIC_HEADER files but no PUBLIC_HEADER DESTINATION.
+  Call Stack (most recent call first):
+    CMakeLists.txt:81 (llama_cpp_python_install_target)
+  This warning is for project developers.  Use -Wno-author to suppress it.
+
+  -- Configuring done (9.6s)
+  -- Generating done (0.2s)
+  -- Build files have been written to: C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build
+  *** Building project with Visual Studio 17 2022...
+  Change Dir: 'C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build'
+
+  Run Build Command(s): "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Current/Bin/amd64/MSBuild.exe"
+ALL_BUILD.vcxproj /p:Configuration=Release /p:Platform=x64 /p:VisualStudioVersion=17.0 /m:32 /v:n
+  Versione di MSBuild 17.14.23+b0019275e per .NET Framework
+  Compilazione avviata 09/10/2026 18:23:11.
+
+       1>Progetto "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" sul nodo 1 (destinazioni predefinite).
+       1>Compilazione di "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ZERO_CHECK.vcxproj" (2) dal progetto
+"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (1) sul nodo 1 (destinazioni predefinite).
+       2>PrepareForBuild:
+           Creazione directory "x64\Release\ZERO_CHECK\".
+       2>C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale. [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ZERO_CHECK.vcxproj]
+           L'output strutturato ├¿ abilitato. La formattazione della diagnostica del compilatore rifletter├á la gerarchia degli
+errori. Per altri dettagli, vedere https://aka.ms/cpp/structured-output.
+           Creazione directory "x64\Release\ZERO_CHECK\ZERO_CHECK.tlog\".
+         InitializeBuildStatus:
+           Creazione di "x64\Release\ZERO_CHECK\ZERO_CHECK.tlog\unsuccessfulbuild". ├ê stato specificato "AlwaysCreate".
+           Aggiornamento timestamp di "x64\Release\ZERO_CHECK\ZERO_CHECK.tlog\unsuccessfulbuild".
+         CustomBuild:
+           1>Checking Build System
+         FinalizeBuildStatus:
+           Eliminazione del file "x64\Release\ZERO_CHECK\ZERO_CHECK.tlog\unsuccessfulbuild" in corso.
+           Aggiornamento timestamp di "x64\Release\ZERO_CHECK\ZERO_CHECK.tlog\ZERO_CHECK.lastbuildstate".
+       2>Compilazione progetto "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ZERO_CHECK.vcxproj" (destinazioni predefinite)
+completata.
+       1>Compilazione di "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\build_info.vcxproj" (3) dal
+progetto "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (1) sul nodo 2 (destinazioni predefinite).
+       3>C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale. [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\build_info.vcxproj]
+           L'output strutturato ├¿ abilitato. La formattazione della diagnostica del compilatore rifletter├á la gerarchia degli
+errori. Per altri dettagli, vedere https://aka.ms/cpp/structured-output.
+           Creazione directory "build_info.dir\Release\build_info.tlog\".
+       3>InitializeBuildStatus:
+           Creazione di "build_info.dir\Release\build_info.tlog\unsuccessfulbuild". ├ê stato specificato "AlwaysCreate".
+           Aggiornamento timestamp di "build_info.dir\Release\build_info.tlog\unsuccessfulbuild".
+         CustomBuild:
+           Generating build details from Git
+       1>Compilazione di "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj" (4)
+dal progetto "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (1) sul nodo 3 (destinazioni predefinite).
+       4>Compilazione di "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-base.vcxproj" (7) dal
+progetto "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj" (4) sul nodo 4
+(destinazioni predefinite).
+       7>C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale. [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-base.vcxproj]
+           L'output strutturato ├¿ abilitato. La formattazione della diagnostica del compilatore rifletter├á la gerarchia degli
+errori. Per altri dettagli, vedere https://aka.ms/cpp/structured-output.
+           Creazione directory "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\bin\Release\".
+           Creazione directory "ggml-base.dir\Release\ggml-base.tlog\".
+       7>InitializeBuildStatus:
+           Creazione di "ggml-base.dir\Release\ggml-base.tlog\unsuccessfulbuild". ├ê stato specificato "AlwaysCreate".
+           Aggiornamento timestamp di "ggml-base.dir\Release\ggml-base.tlog\unsuccessfulbuild".
+       3>CustomBuild:
+           -- Found Git: C:/Program Files/Git/cmd/git.exe (found version "2.49.0.windows.1")
+       7>CustomBuild:
+           Building Custom Rule C:/Users/ido96/AppData/Local/Temp/pip-install-0_vjgn47/llama-cpp-python_8593fee4dab74cb0ae024bb1945
+432b4/vendor/llama.cpp/ggml/src/CMakeLists.txt
+       3>CustomBuild:
+           Building Custom Rule C:/Users/ido96/AppData/Local/Temp/pip-install-0_vjgn47/llama-cpp-python_8593fee4dab74cb0ae024bb1945
+432b4/vendor/llama.cpp/common/CMakeLists.txt
+       7>ClCompile:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\CL.exe /c /I"C:
+\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\src\."
+ /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\
+src\..\include" /nologo /W1 /WX- /diagnostics:column /O2 /Ob2 /D _WINDLL /D _MBCS /D WIN32 /D _WINDOWS /D NDEBUG /D GGML_BUILD /D
+GGML_SHARED /D _CRT_SECURE_NO_WARNINGS /D GGML_SCHED_MAX_COPIES=4 /D _XOPEN_SOURCE=600 /D "CMAKE_INTDIR=\"Release\"" /D
+ggml_base_EXPORTS /EHsc /MD /std:c11 /Fo"ggml-base.dir\Release\\" /Fd"ggml-base.dir\Release\vc143.pdb" /external:W1 /TC
+/errorReport:queue "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor
+\llama.cpp\ggml\src\ggml.c" "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432
+b4\vendor\llama.cpp\ggml\src\ggml-alloc.c" "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb
+0ae024bb1945432b4\vendor\llama.cpp\ggml\src\ggml-quants.c" "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python
+_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\src\ggml-aarch64.c"
+       3>ClCompile:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\CL.exe /c
+/nologo /W1 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D NDEBUG /D _CRT_SECURE_NO_WARNINGS /D
+"CMAKE_INTDIR=\"Release\"" /EHsc /MD /Fo"build_info.dir\Release\\" /Fd"build_info.dir\Release\build_info.pdb" /external:W1 /TP
+/errorReport:queue "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor
+\llama.cpp\common\build-info.cpp"
+       7>ClCompile:
+           ggml.c
+       3>ClCompile:
+           build-info.cpp
+         Lib:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\Lib.exe
+/OUT:"build_info.dir\Release\build_info.lib" /NOLOGO /MACHINE:X64  /machine:x64 "build_info.dir\Release\build-info.obj"
+           build_info.vcxproj ->
+C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\build_info.dir\Release\build_info.lib
+       7>ClCompile:
+           ggml-alloc.c
+       3>FinalizeBuildStatus:
+           Eliminazione del file "build_info.dir\Release\build_info.tlog\unsuccessfulbuild" in corso.
+           Aggiornamento timestamp di "build_info.dir\Release\build_info.tlog\build_info.lastbuildstate".
+       3>Compilazione progetto "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\build_info.vcxproj"
+(destinazioni predefinite) completata.
+       7>ClCompile:
+           ggml-quants.c
+       7>C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\assert.h(21,9): warning C4005: 'static_assert':
+ridefinizione macro [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-base.vcxproj]
+           (compilazione del file di origine
+'../../../../../../pip-install-0_vjgn47/llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4/vendor/llama.cpp/ggml/src/ggml-quants.c')
+               C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llam
+a.cpp\ggml\src\ggml-common.h(62,9):
+               vedi la precedente definizione di 'static_assert'
+
+           ggml-aarch64.c
+       7>C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\assert.h(21,9): warning C4005: 'static_assert':
+ridefinizione macro [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-base.vcxproj]
+           (compilazione del file di origine '../../../../../../pip-install-0_vjgn47/llama-cpp-python_8593fee4dab74cb0ae024bb194543
+2b4/vendor/llama.cpp/ggml/src/ggml-aarch64.c')
+               C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llam
+a.cpp\ggml\src\ggml-common.h(62,9):
+               vedi la precedente definizione di 'static_assert'
+
+           Generazione del codice in corso...
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\CL.exe /c /I"C:
+\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\src\."
+ /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\
+src\..\include" /nologo /W1 /WX- /diagnostics:column /O2 /Ob2 /D _WINDLL /D _MBCS /D WIN32 /D _WINDOWS /D NDEBUG /D GGML_BUILD /D
+GGML_SHARED /D _CRT_SECURE_NO_WARNINGS /D GGML_SCHED_MAX_COPIES=4 /D _XOPEN_SOURCE=600 /D "CMAKE_INTDIR=\"Release\"" /D
+ggml_base_EXPORTS /EHsc /MD /Fo"ggml-base.dir\Release\\" /Fd"ggml-base.dir\Release\vc143.pdb" /external:W1 /TP /errorReport:queue "
+C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\src\
+ggml-backend.cpp" "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\
+llama.cpp\ggml\src\ggml-threading.cpp"
+           ggml-backend.cpp
+           ggml-threading.cpp
+           Generazione del codice in corso...
+         MakeDirsForLink:
+           Creazione directory "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\Release\".
+         PreLinkEvent:
+           Auto build dll exports
+           setlocal
+           cd C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src
+           if %errorlevel% neq 0 goto :cmEnd
+           C:
+           if %errorlevel% neq 0 goto :cmEnd
+           C:\Users\ido96\AppData\Local\Temp\pip-build-env-x6p3tilq\normal\Lib\site-packages\cmake\data\bin\cmake.exe -E
+__create_def C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml-base.dir/Release/exports.def
+C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml-base.dir/Release//objects.txt
+           if %errorlevel% neq 0 goto :cmEnd
+           :cmEnd
+           endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+           :cmErrorLevel
+           exit /b %1
+           :cmDone
+           if %errorlevel% neq 0 goto :VCEnd
+           :VCEnd
+         Link:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\link.exe
+/OUT:"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\bin\Release\ggml-base.dll" /INCREMENTAL:NO /NOLOGO kernel32.lib
+user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
+/DEF:"C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml-base.dir/Release/exports.def" /MANIFEST
+/MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed
+/PDB:"C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/bin/Release/ggml-base.pdb" /SUBSYSTEM:CONSOLE /TLBID:1
+/IMPLIB:"C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/Release/ggml-base.lib" /MACHINE:X64
+/machine:x64 /DLL "ggml-base.dir\Release\ggml.obj"
+           "ggml-base.dir\Release\ggml-alloc.obj"
+           "ggml-base.dir\Release\ggml-backend.obj"
+           "ggml-base.dir\Release\ggml-threading.obj"
+           "ggml-base.dir\Release\ggml-quants.obj"
+           "ggml-base.dir\Release\ggml-aarch64.obj"
+              Creazione della libreria
+C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/Release/ggml-base.lib e dell'oggetto
+C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/Release/ggml-base.exp
+           ggml-base.vcxproj -> C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\bin\Release\ggml-base.dll
+         FinalizeBuildStatus:
+           Eliminazione del file "ggml-base.dir\Release\ggml-base.tlog\unsuccessfulbuild" in corso.
+           Aggiornamento timestamp di "ggml-base.dir\Release\ggml-base.tlog\ggml-base.lastbuildstate".
+       7>Compilazione progetto "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-base.vcxproj"
+(destinazioni predefinite) completata.
+       4>Compilazione di "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-amx\ggml-amx.vcxproj"
+(6) dal progetto "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj" (4) sul nodo
+3 (destinazioni predefinite).
+       6>C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale.
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-amx\ggml-amx.vcxproj]
+       4>Compilazione di "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu.vcxproj"
+(8) dal progetto "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj" (4) sul nodo
+6 (destinazioni predefinite).
+       8>C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale.
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu.vcxproj]
+           L'output strutturato ├¿ abilitato. La formattazione della diagnostica del compilatore rifletter├á la gerarchia degli
+errori. Per altri dettagli, vedere https://aka.ms/cpp/structured-output.
+       6>PrepareForBuild:
+           L'output strutturato ├¿ abilitato. La formattazione della diagnostica del compilatore rifletter├á la gerarchia degli
+errori. Per altri dettagli, vedere https://aka.ms/cpp/structured-output.
+       8>PrepareForBuild:
+           Creazione directory "ggml-cpu.dir\Release\ggml-cpu.tlog\".
+       6>PrepareForBuild:
+           Creazione directory "ggml-amx.dir\Release\ggml-amx.tlog\".
+       8>InitializeBuildStatus:
+           Creazione di "ggml-cpu.dir\Release\ggml-cpu.tlog\unsuccessfulbuild". ├ê stato specificato "AlwaysCreate".
+       6>InitializeBuildStatus:
+           Creazione di "ggml-amx.dir\Release\ggml-amx.tlog\unsuccessfulbuild". ├ê stato specificato "AlwaysCreate".
+       8>InitializeBuildStatus:
+           Aggiornamento timestamp di "ggml-cpu.dir\Release\ggml-cpu.tlog\unsuccessfulbuild".
+       6>InitializeBuildStatus:
+           Aggiornamento timestamp di "ggml-amx.dir\Release\ggml-amx.tlog\unsuccessfulbuild".
+         CustomBuild:
+           Building Custom Rule C:/Users/ido96/AppData/Local/Temp/pip-install-0_vjgn47/llama-cpp-python_8593fee4dab74cb0ae024bb1945
+432b4/vendor/llama.cpp/ggml/src/ggml-amx/CMakeLists.txt
+       8>CustomBuild:
+           Building Custom Rule C:/Users/ido96/AppData/Local/Temp/pip-install-0_vjgn47/llama-cpp-python_8593fee4dab74cb0ae024bb1945
+432b4/vendor/llama.cpp/ggml/src/ggml-cpu/CMakeLists.txt
+         ClCompile:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\CL.exe /c /I"C:
+\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\src\gg
+ml-cpu\." /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.
+cpp\ggml\src\ggml-cpu\.." /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432
+b4\vendor\llama.cpp\ggml\src\..\include" /nologo /W1 /WX- /diagnostics:column /O2 /Ob2 /D _WINDLL /D _MBCS /D WIN32 /D _WINDOWS /D
+NDEBUG /D GGML_BACKEND_BUILD /D GGML_BACKEND_SHARED /D _CRT_SECURE_NO_WARNINGS /D GGML_SCHED_MAX_COPIES=4 /D _XOPEN_SOURCE=600 /D
+GGML_USE_OPENMP /D GGML_USE_LLAMAFILE /D GGML_USE_CPU_AARCH64 /D GGML_SHARED /D "CMAKE_INTDIR=\"Release\"" /D ggml_cpu_EXPORTS
+/EHsc /MD /arch:AVX2 /openmp /std:c11 /Fo"ggml-cpu.dir\Release\ggml-cpu.c.obj" /Fd"ggml-cpu.dir\Release\vc143.pdb" /external:W1
+/TC /errorReport:queue "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\ve
+ndor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu.c"
+       6>ClCompile:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\CL.exe /c /I"C:
+\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\src\gg
+ml-amx\." /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.
+cpp\ggml\src\ggml-amx\.." /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432
+b4\vendor\llama.cpp\ggml\src\..\include" /nologo /W1 /WX- /diagnostics:column /O2 /Ob2 /D _WINDLL /D _MBCS /D WIN32 /D _WINDOWS /D
+NDEBUG /D GGML_BACKEND_BUILD /D GGML_BACKEND_SHARED /D _CRT_SECURE_NO_WARNINGS /D GGML_SCHED_MAX_COPIES=4 /D _XOPEN_SOURCE=600 /D
+GGML_SHARED /D "CMAKE_INTDIR=\"Release\"" /D ggml_amx_EXPORTS /EHsc /MD /arch:AVX2 /Fo"ggml-amx.dir\Release\\"
+/Fd"ggml-amx.dir\Release\vc143.pdb" /external:W1 /TP /errorReport:queue "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\lla
+ma-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\src\ggml-amx\ggml-amx.cpp" "C:\Users\ido96\AppData\Local\Temp\
+pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\src\ggml-amx\mmq.cpp"
+       8>ClCompile:
+           ggml-cpu.c
+       6>ClCompile:
+           ggml-amx.cpp
+           mmq.cpp
+           Generazione del codice in corso...
+         MakeDirsForLink:
+           Creazione directory "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-amx\Release\".
+         PreLinkEvent:
+           Auto build dll exports
+           setlocal
+           cd C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-amx
+           if %errorlevel% neq 0 goto :cmEnd
+           C:
+           if %errorlevel% neq 0 goto :cmEnd
+           C:\Users\ido96\AppData\Local\Temp\pip-build-env-x6p3tilq\normal\Lib\site-packages\cmake\data\bin\cmake.exe -E
+__create_def
+C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml-amx/ggml-amx.dir/Release/exports.def
+C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml-amx/ggml-amx.dir/Release//objects.txt
+           if %errorlevel% neq 0 goto :cmEnd
+           :cmEnd
+           endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+           :cmErrorLevel
+           exit /b %1
+           :cmDone
+           if %errorlevel% neq 0 goto :VCEnd
+           :VCEnd
+         Link:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\link.exe
+/OUT:"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\bin\Release\ggml-amx.dll" /INCREMENTAL:NO /NOLOGO
+"..\Release\ggml-base.lib" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib
+advapi32.lib
+/DEF:"C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml-amx/ggml-amx.dir/Release/exports.def"
+/MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed
+/PDB:"C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/bin/Release/ggml-amx.pdb" /SUBSYSTEM:CONSOLE /TLBID:1
+/IMPLIB:"C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml-amx/Release/ggml-amx.lib" /MACHINE:X64
+ /machine:x64 /DLL "ggml-amx.dir\Release\ggml-amx.obj"
+           "ggml-amx.dir\Release\mmq.obj"
+              Creazione della libreria
+C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml-amx/Release/ggml-amx.lib e dell'oggetto
+C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml-amx/Release/ggml-amx.exp
+           ggml-amx.vcxproj -> C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\bin\Release\ggml-amx.dll
+         FinalizeBuildStatus:
+           Eliminazione del file "ggml-amx.dir\Release\ggml-amx.tlog\unsuccessfulbuild" in corso.
+           Aggiornamento timestamp di "ggml-amx.dir\Release\ggml-amx.tlog\ggml-amx.lastbuildstate".
+       6>Compilazione progetto
+"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-amx\ggml-amx.vcxproj" (destinazioni
+predefinite) completata.
+       8>ClCompile:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\CL.exe /c /I"C:
+\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\src\gg
+ml-cpu\." /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.
+cpp\ggml\src\ggml-cpu\.." /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432
+b4\vendor\llama.cpp\ggml\src\..\include" /nologo /W1 /WX- /diagnostics:column /O2 /Ob2 /D _WINDLL /D _MBCS /D WIN32 /D _WINDOWS /D
+NDEBUG /D GGML_BACKEND_BUILD /D GGML_BACKEND_SHARED /D _CRT_SECURE_NO_WARNINGS /D GGML_SCHED_MAX_COPIES=4 /D _XOPEN_SOURCE=600 /D
+GGML_USE_OPENMP /D GGML_USE_LLAMAFILE /D GGML_USE_CPU_AARCH64 /D GGML_SHARED /D "CMAKE_INTDIR=\"Release\"" /D ggml_cpu_EXPORTS
+/EHsc /MD /arch:AVX2 /openmp /Fo"ggml-cpu.dir\Release\ggml-cpu.cpp.obj" /Fd"ggml-cpu.dir\Release\vc143.pdb" /external:W1 /TP
+/errorReport:queue "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor
+\llama.cpp\ggml\src\ggml-cpu\ggml-cpu.cpp"
+           ggml-cpu.cpp
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\CL.exe /c /I"C:
+\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\src\gg
+ml-cpu\." /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.
+cpp\ggml\src\ggml-cpu\.." /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432
+b4\vendor\llama.cpp\ggml\src\..\include" /nologo /W1 /WX- /diagnostics:column /O2 /Ob2 /D _WINDLL /D _MBCS /D WIN32 /D _WINDOWS /D
+NDEBUG /D GGML_BACKEND_BUILD /D GGML_BACKEND_SHARED /D _CRT_SECURE_NO_WARNINGS /D GGML_SCHED_MAX_COPIES=4 /D _XOPEN_SOURCE=600 /D
+GGML_USE_OPENMP /D GGML_USE_LLAMAFILE /D GGML_USE_CPU_AARCH64 /D GGML_SHARED /D "CMAKE_INTDIR=\"Release\"" /D ggml_cpu_EXPORTS
+/EHsc /MD /arch:AVX2 /openmp /std:c11 /Fo"ggml-cpu.dir\Release\\" /Fd"ggml-cpu.dir\Release\vc143.pdb" /external:W1 /TC
+/errorReport:queue "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor
+\llama.cpp\ggml\src\ggml-cpu\ggml-cpu-aarch64.c" "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4d
+ab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu-quants.c"
+           ggml-cpu-aarch64.c
+       8>C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\assert.h(21,9): warning C4005: 'static_assert':
+ridefinizione macro [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu.vcxproj]
+           (compilazione del file di origine '../../../../../../../pip-install-0_vjgn47/llama-cpp-python_8593fee4dab74cb0ae024bb194
+5432b4/vendor/llama.cpp/ggml/src/ggml-cpu/ggml-cpu-aarch64.c')
+               C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llam
+a.cpp\ggml\src\ggml-common.h(62,9):
+               vedi la precedente definizione di 'static_assert'
+
+           ggml-cpu-quants.c
+       8>C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\assert.h(21,9): warning C4005: 'static_assert':
+ridefinizione macro [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu.vcxproj]
+           (compilazione del file di origine '../../../../../../../pip-install-0_vjgn47/llama-cpp-python_8593fee4dab74cb0ae024bb194
+5432b4/vendor/llama.cpp/ggml/src/ggml-cpu/ggml-cpu-quants.c')
+               C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llam
+a.cpp\ggml\src\ggml-common.h(62,9):
+               vedi la precedente definizione di 'static_assert'
+
+           Generazione del codice in corso...
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\CL.exe /c /I"C:
+\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\src\gg
+ml-cpu\." /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.
+cpp\ggml\src\ggml-cpu\.." /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432
+b4\vendor\llama.cpp\ggml\src\..\include" /nologo /W1 /WX- /diagnostics:column /O2 /Ob2 /D _WINDLL /D _MBCS /D WIN32 /D _WINDOWS /D
+NDEBUG /D GGML_BACKEND_BUILD /D GGML_BACKEND_SHARED /D _CRT_SECURE_NO_WARNINGS /D GGML_SCHED_MAX_COPIES=4 /D _XOPEN_SOURCE=600 /D
+GGML_USE_OPENMP /D GGML_USE_LLAMAFILE /D GGML_USE_CPU_AARCH64 /D GGML_SHARED /D "CMAKE_INTDIR=\"Release\"" /D ggml_cpu_EXPORTS
+/EHsc /MD /arch:AVX2 /openmp /Fo"ggml-cpu.dir\Release\\" /Fd"ggml-cpu.dir\Release\vc143.pdb" /external:W1 /TP /errorReport:queue "C
+:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\src\g
+gml-cpu\llamafile\sgemm.cpp"
+           sgemm.cpp
+         MakeDirsForLink:
+           Creazione directory "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-cpu\Release\".
+         PreLinkEvent:
+           Auto build dll exports
+           setlocal
+           cd C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-cpu
+           if %errorlevel% neq 0 goto :cmEnd
+           C:
+           if %errorlevel% neq 0 goto :cmEnd
+           C:\Users\ido96\AppData\Local\Temp\pip-build-env-x6p3tilq\normal\Lib\site-packages\cmake\data\bin\cmake.exe -E
+__create_def
+C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml-cpu/ggml-cpu.dir/Release/exports.def
+C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml-cpu/ggml-cpu.dir/Release//objects.txt
+           if %errorlevel% neq 0 goto :cmEnd
+           :cmEnd
+           endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+           :cmErrorLevel
+           exit /b %1
+           :cmDone
+           if %errorlevel% neq 0 goto :VCEnd
+           :VCEnd
+         Link:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\link.exe
+/OUT:"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\bin\Release\ggml-cpu.dll" /INCREMENTAL:NO /NOLOGO
+"..\Release\ggml-base.lib" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib
+advapi32.lib
+/DEF:"C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml-cpu/ggml-cpu.dir/Release/exports.def"
+/MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed
+/PDB:"C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/bin/Release/ggml-cpu.pdb" /SUBSYSTEM:CONSOLE /TLBID:1
+/IMPLIB:"C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml-cpu/Release/ggml-cpu.lib" /MACHINE:X64
+ /machine:x64 /DLL "ggml-cpu.dir\Release\ggml-cpu-aarch64.obj"
+           "ggml-cpu.dir\Release\ggml-cpu-quants.obj"
+           "ggml-cpu.dir\Release\sgemm.obj"
+           "ggml-cpu.dir\Release\ggml-cpu.c.obj"
+           "ggml-cpu.dir\Release\ggml-cpu.cpp.obj"
+              Creazione della libreria
+C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml-cpu/Release/ggml-cpu.lib e dell'oggetto
+C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml-cpu/Release/ggml-cpu.exp
+           ggml-cpu.vcxproj -> C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\bin\Release\ggml-cpu.dll
+         FinalizeBuildStatus:
+           Eliminazione del file "ggml-cpu.dir\Release\ggml-cpu.tlog\unsuccessfulbuild" in corso.
+           Aggiornamento timestamp di "ggml-cpu.dir\Release\ggml-cpu.tlog\ggml-cpu.lastbuildstate".
+       8>Compilazione progetto
+"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu.vcxproj" (destinazioni
+predefinite) completata.
+       4>Compilazione di "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml.vcxproj" (5) dal
+progetto "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj" (4) sul nodo 2
+(destinazioni predefinite).
+       5>C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale. [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml.vcxproj]
+           L'output strutturato ├¿ abilitato. La formattazione della diagnostica del compilatore rifletter├á la gerarchia degli
+errori. Per altri dettagli, vedere https://aka.ms/cpp/structured-output.
+           Creazione directory "ggml.dir\Release\ggml.tlog\".
+       5>InitializeBuildStatus:
+           Creazione di "ggml.dir\Release\ggml.tlog\unsuccessfulbuild". ├ê stato specificato "AlwaysCreate".
+           Aggiornamento timestamp di "ggml.dir\Release\ggml.tlog\unsuccessfulbuild".
+         CustomBuild:
+           Building Custom Rule C:/Users/ido96/AppData/Local/Temp/pip-install-0_vjgn47/llama-cpp-python_8593fee4dab74cb0ae024bb1945
+432b4/vendor/llama.cpp/ggml/src/CMakeLists.txt
+         ClCompile:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\CL.exe /c /I"C:
+\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\src\..
+\include" /nologo /W1 /WX- /diagnostics:column /O2 /Ob2 /D _WINDLL /D _MBCS /D WIN32 /D _WINDOWS /D NDEBUG /D GGML_USE_CPU /D
+GGML_USE_AMX /D GGML_BUILD /D GGML_SHARED /D _CRT_SECURE_NO_WARNINGS /D GGML_SCHED_MAX_COPIES=4 /D _XOPEN_SOURCE=600 /D
+GGML_BACKEND_SHARED /D "CMAKE_INTDIR=\"Release\"" /D ggml_EXPORTS /EHsc /MD /Fo"ggml.dir\Release\\"
+/Fd"ggml.dir\Release\vc143.pdb" /external:W1 /TP /errorReport:queue "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-c
+pp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\src\ggml-backend-reg.cpp"
+           ggml-backend-reg.cpp
+         PreLinkEvent:
+           Auto build dll exports
+           setlocal
+           cd C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src
+           if %errorlevel% neq 0 goto :cmEnd
+           C:
+           if %errorlevel% neq 0 goto :cmEnd
+           C:\Users\ido96\AppData\Local\Temp\pip-build-env-x6p3tilq\normal\Lib\site-packages\cmake\data\bin\cmake.exe -E
+__create_def C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml.dir/Release/exports.def
+C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml.dir/Release//objects.txt
+           if %errorlevel% neq 0 goto :cmEnd
+           :cmEnd
+           endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+           :cmErrorLevel
+           exit /b %1
+           :cmDone
+           if %errorlevel% neq 0 goto :VCEnd
+           :VCEnd
+         Link:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\link.exe
+/OUT:"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\bin\Release\ggml.dll" /INCREMENTAL:NO /NOLOGO
+"ggml-cpu\Release\ggml-cpu.lib" "ggml-amx\Release\ggml-amx.lib" "Release\ggml-base.lib" kernel32.lib user32.lib gdi32.lib
+winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
+/DEF:"C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/ggml.dir/Release/exports.def" /MANIFEST
+/MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed
+/PDB:"C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/bin/Release/ggml.pdb" /SUBSYSTEM:CONSOLE /TLBID:1
+/IMPLIB:"C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/Release/ggml.lib" /MACHINE:X64
+/machine:x64 /DLL "ggml.dir\Release\ggml-backend-reg.obj"
+              Creazione della libreria
+C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/Release/ggml.lib e dell'oggetto
+C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/ggml/src/Release/ggml.exp
+           ggml.vcxproj -> C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\bin\Release\ggml.dll
+         FinalizeBuildStatus:
+           Eliminazione del file "ggml.dir\Release\ggml.tlog\unsuccessfulbuild" in corso.
+           Aggiornamento timestamp di "ggml.dir\Release\ggml.tlog\ggml.lastbuildstate".
+       5>Compilazione progetto "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml.vcxproj"
+(destinazioni predefinite) completata.
+       4>Compilazione di "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\src\llama.vcxproj" (9) dal progetto
+"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj" (4) sul nodo 5 (destinazioni
+predefinite).
+       9>C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale. [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\src\llama.vcxproj]
+           L'output strutturato ├¿ abilitato. La formattazione della diagnostica del compilatore rifletter├á la gerarchia degli
+errori. Per altri dettagli, vedere https://aka.ms/cpp/structured-output.
+           Creazione directory "llama.dir\Release\llama.tlog\".
+       9>InitializeBuildStatus:
+           Creazione di "llama.dir\Release\llama.tlog\unsuccessfulbuild". ├ê stato specificato "AlwaysCreate".
+           Aggiornamento timestamp di "llama.dir\Release\llama.tlog\unsuccessfulbuild".
+         CustomBuild:
+           Building Custom Rule C:/Users/ido96/AppData/Local/Temp/pip-install-0_vjgn47/llama-cpp-python_8593fee4dab74cb0ae024bb1945
+432b4/vendor/llama.cpp/src/CMakeLists.txt
+         ClCompile:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\CL.exe /c /I"C:
+\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\src\." /I"C
+:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\src\..\inc
+lude" /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+ggml\src\..\include" /nologo /W1 /WX- /diagnostics:column /O2 /Ob2 /D _WINDLL /D _MBCS /D WIN32 /D _WINDOWS /D NDEBUG /D
+LLAMA_BUILD /D LLAMA_SHARED /D _CRT_SECURE_NO_WARNINGS /D GGML_USE_CPU /D GGML_USE_AMX /D GGML_SHARED /D GGML_BACKEND_SHARED /D
+"CMAKE_INTDIR=\"Release\"" /D llama_EXPORTS /EHsc /MD /Fo"llama.dir\Release\\" /Fd"llama.dir\Release\vc143.pdb" /external:W1 /TP
+/errorReport:queue "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor
+\llama.cpp\src\llama.cpp" "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4
+\vendor\llama.cpp\src\llama-vocab.cpp" "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae0
+24bb1945432b4\vendor\llama.cpp\src\llama-grammar.cpp" "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593
+fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\src\llama-sampling.cpp" "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama
+-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\src\unicode.cpp" "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjg
+n47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\src\unicode-data.cpp"
+           llama.cpp
+           llama-vocab.cpp
+           llama-grammar.cpp
+           llama-sampling.cpp
+           unicode.cpp
+           unicode-data.cpp
+           Generazione del codice in corso...
+         MakeDirsForLink:
+           Creazione directory "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\src\Release\".
+         PreLinkEvent:
+           Auto build dll exports
+           setlocal
+           cd C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\src
+           if %errorlevel% neq 0 goto :cmEnd
+           C:
+           if %errorlevel% neq 0 goto :cmEnd
+           C:\Users\ido96\AppData\Local\Temp\pip-build-env-x6p3tilq\normal\Lib\site-packages\cmake\data\bin\cmake.exe -E
+__create_def C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/src/llama.dir/Release/exports.def
+C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/src/llama.dir/Release//objects.txt
+           if %errorlevel% neq 0 goto :cmEnd
+           :cmEnd
+           endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+           :cmErrorLevel
+           exit /b %1
+           :cmDone
+           if %errorlevel% neq 0 goto :VCEnd
+           :VCEnd
+         Link:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\link.exe
+/OUT:"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\bin\Release\llama.dll" /INCREMENTAL:NO /NOLOGO
+..\ggml\src\Release\ggml.lib "..\ggml\src\ggml-cpu\Release\ggml-cpu.lib" "..\ggml\src\ggml-amx\Release\ggml-amx.lib"
+"..\ggml\src\Release\ggml-base.lib" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib
+comdlg32.lib advapi32.lib
+/DEF:"C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/src/llama.dir/Release/exports.def" /MANIFEST
+/MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed
+/PDB:"C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/bin/Release/llama.pdb" /SUBSYSTEM:CONSOLE /TLBID:1
+/IMPLIB:"C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/src/Release/llama.lib" /MACHINE:X64  /machine:x64
+/DLL llama.dir\Release\llama.obj
+           "llama.dir\Release\llama-vocab.obj"
+           "llama.dir\Release\llama-grammar.obj"
+           "llama.dir\Release\llama-sampling.obj"
+           llama.dir\Release\unicode.obj
+           "llama.dir\Release\unicode-data.obj"
+              Creazione della libreria C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/src/Release/llama.lib
+e dell'oggetto C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/src/Release/llama.exp
+           llama.vcxproj -> C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\bin\Release\llama.dll
+         FinalizeBuildStatus:
+           Eliminazione del file "llama.dir\Release\llama.tlog\unsuccessfulbuild" in corso.
+           Aggiornamento timestamp di "llama.dir\Release\llama.tlog\llama.lastbuildstate".
+       9>Compilazione progetto "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\src\llama.vcxproj"
+(destinazioni predefinite) completata.
+       4>C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale. [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj]
+           L'output strutturato ├¿ abilitato. La formattazione della diagnostica del compilatore rifletter├á la gerarchia degli
+errori. Per altri dettagli, vedere https://aka.ms/cpp/structured-output.
+           Creazione directory "llava.dir\Release\llava.tlog\".
+       4>InitializeBuildStatus:
+           Creazione di "llava.dir\Release\llava.tlog\unsuccessfulbuild". ├ê stato specificato "AlwaysCreate".
+           Aggiornamento timestamp di "llava.dir\Release\llava.tlog\unsuccessfulbuild".
+         CustomBuild:
+           Building Custom Rule C:/Users/ido96/AppData/Local/Temp/pip-install-0_vjgn47/llama-cpp-python_8593fee4dab74cb0ae024bb1945
+432b4/vendor/llama.cpp/examples/llava/CMakeLists.txt
+         ClCompile:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\CL.exe /c /I"C:
+\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\examples\ll
+ava\." /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp
+\examples\llava\..\.." /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\
+vendor\llama.cpp\examples\llava\..\..\common" /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4da
+b74cb0ae024bb1945432b4\vendor\llama.cpp\include" /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee
+4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\include" /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python
+_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\ggml\src\..\include" /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\l
+lama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\src\." /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\
+llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\src\..\include" /nologo /W1 /WX- /diagnostics:column /O2 /Ob2
+/D _MBCS /D WIN32 /D _WINDOWS /D NDEBUG /D LLAMA_SHARED /D LLAMA_BUILD /D GGML_USE_CPU /D GGML_USE_AMX /D GGML_SHARED /D
+GGML_BACKEND_SHARED /D "CMAKE_INTDIR=\"Release\"" /EHsc /MD /Fo"llava.dir\Release\\" /Fd"llava.dir\Release\llava.pdb" /external:W1
+/TP /errorReport:queue "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\ve
+ndor\llama.cpp\examples\llava\llava.cpp" "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0a
+e024bb1945432b4\vendor\llama.cpp\examples\llava\clip.cpp"
+           llava.cpp
+           clip.cpp
+       4>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+examples\llava\clip.cpp(1042,9): warning C4297: 'clip_model_load': la funzione genera un'eccezione bench├® ci├▓ non fosse previsto
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj]
+               C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llam
+a.cpp\examples\llava\clip.cpp(1042,9):
+               Nella funzione non ├¿ stato specificato __declspec(nothrow), throw(), noexcept(true) o noexcept
+
+       4>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+examples\llava\clip.cpp(1470,13): warning C4297: 'clip_model_load': la funzione genera un'eccezione bench├® ci├▓ non fosse
+previsto [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj]
+               C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llam
+a.cpp\examples\llava\clip.cpp(1470,13):
+               Nella funzione non ├¿ stato specificato __declspec(nothrow), throw(), noexcept(true) o noexcept
+
+       4>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+examples\llava\clip.cpp(2615,5): warning C4297: 'clip_n_mmproj_embd': la funzione genera un'eccezione bench├® ci├▓ non fosse
+previsto [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj]
+               C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llam
+a.cpp\examples\llava\clip.cpp(2615,5):
+               Nella funzione non ├¿ stato specificato __declspec(nothrow), throw(), noexcept(true) o noexcept
+
+           Generazione del codice in corso...
+         Lib:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\Lib.exe
+/OUT:"llava.dir\Release\llava.lib" /NOLOGO /MACHINE:X64  /machine:x64 llava.dir\Release\llava.obj
+           llava.dir\Release\clip.obj
+           llava.vcxproj ->
+C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.dir\Release\llava.lib
+         FinalizeBuildStatus:
+           Eliminazione del file "llava.dir\Release\llava.tlog\unsuccessfulbuild" in corso.
+           Aggiornamento timestamp di "llava.dir\Release\llava.tlog\llava.lastbuildstate".
+       4>Compilazione progetto "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj"
+(destinazioni predefinite) completata.
+       1>Compilazione di
+"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava_static.vcxproj" (11) dal progetto
+"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (1) sul nodo 2 (destinazioni predefinite).
+      11>C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale.
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava_static.vcxproj]
+       1>Compilazione di
+"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava_shared.vcxproj" (10) dal progetto
+"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (1) sul nodo 1 (destinazioni predefinite).
+      10>C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale.
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava_shared.vcxproj]
+      11>PrepareForBuild:
+           L'output strutturato ├¿ abilitato. La formattazione della diagnostica del compilatore rifletter├á la gerarchia degli
+errori. Per altri dettagli, vedere https://aka.ms/cpp/structured-output.
+           Creazione directory "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\Release\".
+           Creazione directory "llava_static.dir\Release\llava_static.tlog\".
+      10>PrepareForBuild:
+           L'output strutturato ├¿ abilitato. La formattazione della diagnostica del compilatore rifletter├á la gerarchia degli
+errori. Per altri dettagli, vedere https://aka.ms/cpp/structured-output.
+           Creazione directory "llava_shared.dir\Release\llava_shared.tlog\".
+      11>InitializeBuildStatus:
+           Creazione di "llava_static.dir\Release\llava_static.tlog\unsuccessfulbuild". ├ê stato specificato "AlwaysCreate".
+           Aggiornamento timestamp di "llava_static.dir\Release\llava_static.tlog\unsuccessfulbuild".
+      10>InitializeBuildStatus:
+           Creazione di "llava_shared.dir\Release\llava_shared.tlog\unsuccessfulbuild". ├ê stato specificato "AlwaysCreate".
+           Aggiornamento timestamp di "llava_shared.dir\Release\llava_shared.tlog\unsuccessfulbuild".
+         CustomBuild:
+           Building Custom Rule C:/Users/ido96/AppData/Local/Temp/pip-install-0_vjgn47/llama-cpp-python_8593fee4dab74cb0ae024bb1945
+432b4/vendor/llama.cpp/examples/llava/CMakeLists.txt
+      11>CustomBuild:
+           Building Custom Rule C:/Users/ido96/AppData/Local/Temp/pip-install-0_vjgn47/llama-cpp-python_8593fee4dab74cb0ae024bb1945
+432b4/vendor/llama.cpp/examples/llava/CMakeLists.txt
+       1>Compilazione di "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj" (13) dal
+progetto "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (1) sul nodo 4 (destinazioni predefinite).
+      13>C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale. [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           L'output strutturato ├¿ abilitato. La formattazione della diagnostica del compilatore rifletter├á la gerarchia degli
+errori. Per altri dettagli, vedere https://aka.ms/cpp/structured-output.
+           Creazione directory "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\Release\".
+           Creazione directory "common.dir\Release\common.tlog\".
+      13>InitializeBuildStatus:
+           Creazione di "common.dir\Release\common.tlog\unsuccessfulbuild". ├ê stato specificato "AlwaysCreate".
+           Aggiornamento timestamp di "common.dir\Release\common.tlog\unsuccessfulbuild".
+      11>Lib:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\Lib.exe
+/OUT:"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\Release\llava_static.lib" /NOLOGO
+/MACHINE:X64  /machine:x64
+C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.dir\Release\llava.obj
+           C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.dir\Release\clip.obj
+      10>Link:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\link.exe
+/OUT:"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\Release\llava.dll" /INCREMENTAL:NO
+/NOLOGO ..\..\src\Release\llama.lib ..\..\ggml\src\Release\ggml.lib "..\..\ggml\src\ggml-cpu\Release\ggml-cpu.lib"
+"..\..\ggml\src\ggml-amx\Release\ggml-amx.lib" "..\..\ggml\src\Release\ggml-base.lib" kernel32.lib user32.lib gdi32.lib
+winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker'
+uiAccess='false'" /manifest:embed
+/PDB:"C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/examples/llava/Release/llava.pdb" /SUBSYSTEM:CONSOLE
+/TLBID:1 /IMPLIB:"C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/examples/llava/Release/llava.lib"
+/MACHINE:X64  /machine:x64 /DLL
+C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.dir\Release\llava.obj
+           C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.dir\Release\clip.obj
+      13>CustomBuild:
+           Building Custom Rule C:/Users/ido96/AppData/Local/Temp/pip-install-0_vjgn47/llama-cpp-python_8593fee4dab74cb0ae024bb1945
+432b4/vendor/llama.cpp/common/CMakeLists.txt
+      11>Lib:
+           llava_static.vcxproj ->
+C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\Release\llava_static.lib
+      10>Link:
+              Creazione della libreria
+C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/examples/llava/Release/llava.lib e dell'oggetto
+C:/Users/ido96/AppData/Local/Temp/tmploi1qsxp/build/vendor/llama.cpp/examples/llava/Release/llava.exp
+      11>FinalizeBuildStatus:
+           Eliminazione del file "llava_static.dir\Release\llava_static.tlog\unsuccessfulbuild" in corso.
+           Aggiornamento timestamp di "llava_static.dir\Release\llava_static.tlog\llava_static.lastbuildstate".
+      11>Compilazione progetto
+"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava_static.vcxproj" (destinazioni
+predefinite) completata.
+      13>ClCompile:
+           C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\CL.exe /c /I"C:
+\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\common\." /
+I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\src\."
+/I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\src\..
+\include" /I"C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.
+cpp\ggml\src\..\include" /nologo /W1 /WX- /diagnostics:column /O2 /Ob2 /D _MBCS /D WIN32 /D _WINDOWS /D NDEBUG /D
+_CRT_SECURE_NO_WARNINGS /D LLAMA_SHARED /D GGML_USE_CPU /D GGML_USE_AMX /D GGML_SHARED /D GGML_BACKEND_SHARED /D
+"CMAKE_INTDIR=\"Release\"" /EHsc /MD /Fo"common.dir\Release\\"
+/Fd"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\Release\common.pdb" /external:W1 /TP
+/errorReport:queue "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor
+\llama.cpp\common\arg.cpp" "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b
+4\vendor\llama.cpp\common\common.cpp" "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae02
+4bb1945432b4\vendor\llama.cpp\common\console.cpp" "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4
+dab74cb0ae024bb1945432b4\vendor\llama.cpp\common\json-schema-to-grammar.cpp" "C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn4
+7\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\common\log.cpp" "C:\Users\ido96\AppData\Local\Temp\pip-install
+-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\common\ngram-cache.cpp" "C:\Users\ido96\AppData\Local\
+Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\common\sampling.cpp"
+           arg.cpp
+      10>Link:
+           llava_shared.vcxproj ->
+C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\Release\llava.dll
+         FinalizeBuildStatus:
+           Eliminazione del file "llava_shared.dir\Release\llava_shared.tlog\unsuccessfulbuild" in corso.
+           Aggiornamento timestamp di "llava_shared.dir\Release\llava_shared.tlog\llava_shared.lastbuildstate".
+      10>Compilazione progetto
+"C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava_shared.vcxproj" (destinazioni
+predefinite) completata.
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\arg.cpp(1996,41): warning C4834: eliminazione in corso del valore restituito della funzione con attributo [[nodiscard]]
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           common.cpp
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\common.cpp(432,32): error C2039: 'system_clock': non ├¿ un membro di 'std::chrono'
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+               C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_chrono.hpp(286,11):
+               vedere la dichiarazione di 'std::chrono'
+
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\common.cpp(432,32): error C2061: errore di sintassi: identificatore 'system_clock'
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\common.cpp(434,11): error C2653: 'clock' non ├¿ il nome di una classe o di uno spazio dei nomi
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\common.cpp(434,5): error C4430: identificatore di tipo mancante, verr├á utilizzato int. Nota: default-int non ├¿ pi├╣
+supportato in C++ [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\common.cpp(434,29): error C2146: errore di sintassi: ';' mancante prima dell'identificatore 'current_time'
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\common.cpp(434,29): error C2065: 'current_time': identificatore non dichiarato
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\common.cpp(434,44): error C2653: 'clock' non ├¿ il nome di una classe o di uno spazio dei nomi
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\common.cpp(434,51): error C3861: 'now': identificatore non trovato
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\common.cpp(435,30): error C2653: 'clock' non ├¿ il nome di una classe o di uno spazio dei nomi
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\common.cpp(435,47): error C2065: 'current_time': identificatore non dichiarato
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\common.cpp(435,37): error C3861: 'to_time_t': identificatore non trovato
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\common.cpp(440,9): error C2065: 'current_time': identificatore non dichiarato
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\common.cpp(439,37): error C2672: 'std::chrono::duration_cast': non sono state trovate funzioni in overload corrispondenti
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+               C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_chrono.hpp(87,19):
+               potrebbe essere '_To std::chrono::duration_cast(const std::chrono::duration<_Rep,_Period> &) noexcept(<expr>)'
+
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\common.cpp(439,19): error C2737: 'ns': l'oggetto const deve essere inizializzato
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           console.cpp
+           json-schema-to-grammar.cpp
+           log.cpp
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\log.cpp(28,79): error C2039: 'system_clock': non ├¿ un membro di 'std::chrono'
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+               C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_chrono.hpp(286,11):
+               vedere la dichiarazione di 'std::chrono'
+
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\log.cpp(28,79): error C3083: 'system_clock': il simbolo a sinistra di '::' deve essere un tipo
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\log.cpp(28,93): error C2039: 'now': non ├¿ un membro di 'std::chrono'
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+               C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_chrono.hpp(286,11):
+               vedere la dichiarazione di 'std::chrono'
+
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\log.cpp(28,93): error C3861: 'now': identificatore non trovato
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+      13>C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cpp\
+common\log.cpp(28,25): error C2672: 'std::chrono::duration_cast': non sono state trovate funzioni in overload corrispondenti
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+               C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\include\__msvc_chrono.hpp(87,19):
+               potrebbe essere '_To std::chrono::duration_cast(const std::chrono::duration<_Rep,_Period> &) noexcept(<expr>)'
+
+           ngram-cache.cpp
+           sampling.cpp
+           Generazione del codice in corso...
+      13>Compilazione progetto "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj"
+(destinazioni predefinite) NON COMPLETATA.
+       1>Compilazione progetto "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (destinazioni predefinite)
+NON COMPLETATA.
+
+  Compilazione NON RIUSCITA.
+
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (destinazione predefinita) (1) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ZERO_CHECK.vcxproj" (destinazione predefinita) (2) ->
+         (destinazione: PrepareForBuild) ->
+           C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale. [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ZERO_CHECK.vcxproj]
+
+
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (destinazione predefinita) (1) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\build_info.vcxproj" (destinazione
+predefinita) (3) ->
+           C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale. [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\build_info.vcxproj]
+
+
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (destinazione predefinita) (1) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj" (destinazione
+predefinita) (4) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-base.vcxproj" (destinazione
+predefinita) (7) ->
+           C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale. [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-base.vcxproj]
+
+
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (destinazione predefinita) (1) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj" (destinazione
+predefinita) (4) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-base.vcxproj" (destinazione
+predefinita) (7) ->
+         (destinazione: ClCompile) ->
+           C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\assert.h(21,9): warning C4005: 'static_assert':
+ridefinizione macro [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-base.vcxproj]
+           C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\assert.h(21,9): warning C4005: 'static_assert':
+ridefinizione macro [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-base.vcxproj]
+
+
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (destinazione predefinita) (1) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj" (destinazione
+predefinita) (4) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-amx\ggml-amx.vcxproj" (destinazione
+predefinita) (6) ->
+         (destinazione: PrepareForBuild) ->
+           C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale.
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-amx\ggml-amx.vcxproj]
+
+
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (destinazione predefinita) (1) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj" (destinazione
+predefinita) (4) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu.vcxproj" (destinazione
+predefinita) (8) ->
+           C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale.
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu.vcxproj]
+
+
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (destinazione predefinita) (1) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj" (destinazione
+predefinita) (4) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu.vcxproj" (destinazione
+predefinita) (8) ->
+         (destinazione: ClCompile) ->
+           C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\assert.h(21,9): warning C4005: 'static_assert':
+ridefinizione macro [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu.vcxproj]
+           C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\assert.h(21,9): warning C4005: 'static_assert':
+ridefinizione macro [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu.vcxproj]
+
+
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (destinazione predefinita) (1) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj" (destinazione
+predefinita) (4) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml.vcxproj" (destinazione predefinita)
+(5) ->
+         (destinazione: PrepareForBuild) ->
+           C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale. [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\ggml\src\ggml.vcxproj]
+
+
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (destinazione predefinita) (1) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj" (destinazione
+predefinita) (4) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\src\llama.vcxproj" (destinazione predefinita) (9) ->
+           C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale. [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\src\llama.vcxproj]
+
+
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (destinazione predefinita) (1) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj" (destinazione
+predefinita) (4) ->
+           C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale. [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj]
+
+
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (destinazione predefinita) (1) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj" (destinazione
+predefinita) (4) ->
+         (destinazione: ClCompile) ->
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\examples\llava\clip.cpp(1042,9): warning C4297: 'clip_model_load': la funzione genera un'eccezione bench├® ci├▓ non fosse
+previsto [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\examples\llava\clip.cpp(1470,13): warning C4297: 'clip_model_load': la funzione genera un'eccezione bench├® ci├▓ non fosse
+previsto [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\examples\llava\clip.cpp(2615,5): warning C4297: 'clip_n_mmproj_embd': la funzione genera un'eccezione bench├® ci├▓ non fosse
+previsto [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava.vcxproj]
+
+
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (destinazione predefinita) (1) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava_static.vcxproj" (destinazione
+predefinita) (11) ->
+         (destinazione: PrepareForBuild) ->
+           C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale.
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava_static.vcxproj]
+
+
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (destinazione predefinita) (1) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava_shared.vcxproj" (destinazione
+predefinita) (10) ->
+           C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale.
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\examples\llava\llava_shared.vcxproj]
+
+
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (destinazione predefinita) (1) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj" (destinazione predefinita)
+(13) ->
+           C:\Program Files (x86)\Microsoft Visual
+Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(548,5): warning MSB8029: la directory intermedia o la
+directory di output non pu├▓ risiedere nella directory temporanea perch├® tale condizione potrebbe causare problemi con la
+compilazione incrementale. [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+
+
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (destinazione predefinita) (1) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj" (destinazione predefinita)
+(13) ->
+         (destinazione: ClCompile) ->
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\arg.cpp(1996,41): warning C4834: eliminazione in corso del valore restituito della funzione con attributo [[nodiscard]]
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+
+
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\ALL_BUILD.vcxproj" (destinazione predefinita) (1) ->
+         "C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj" (destinazione predefinita)
+(13) ->
+         (destinazione: ClCompile) ->
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\common.cpp(432,32): error C2039: 'system_clock': non ├¿ un membro di 'std::chrono'
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\common.cpp(432,32): error C2061: errore di sintassi: identificatore 'system_clock'
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\common.cpp(434,11): error C2653: 'clock' non ├¿ il nome di una classe o di uno spazio dei nomi
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\common.cpp(434,5): error C4430: identificatore di tipo mancante, verr├á utilizzato int. Nota: default-int non ├¿ pi├╣
+supportato in C++ [C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\common.cpp(434,29): error C2146: errore di sintassi: ';' mancante prima dell'identificatore 'current_time'
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\common.cpp(434,29): error C2065: 'current_time': identificatore non dichiarato
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\common.cpp(434,44): error C2653: 'clock' non ├¿ il nome di una classe o di uno spazio dei nomi
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\common.cpp(434,51): error C3861: 'now': identificatore non trovato
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\common.cpp(435,30): error C2653: 'clock' non ├¿ il nome di una classe o di uno spazio dei nomi
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\common.cpp(435,47): error C2065: 'current_time': identificatore non dichiarato
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\common.cpp(435,37): error C3861: 'to_time_t': identificatore non trovato
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\common.cpp(440,9): error C2065: 'current_time': identificatore non dichiarato
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\common.cpp(439,37): error C2672: 'std::chrono::duration_cast': non sono state trovate funzioni in overload corrispondenti
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\common.cpp(439,19): error C2737: 'ns': l'oggetto const deve essere inizializzato
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\log.cpp(28,79): error C2039: 'system_clock': non ├¿ un membro di 'std::chrono'
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\log.cpp(28,79): error C3083: 'system_clock': il simbolo a sinistra di '::' deve essere un tipo
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\log.cpp(28,93): error C2039: 'now': non ├¿ un membro di 'std::chrono'
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\log.cpp(28,93): error C3861: 'now': identificatore non trovato
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+           C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4\vendor\llama.cp
+p\common\log.cpp(28,25): error C2672: 'std::chrono::duration_cast': non sono state trovate funzioni in overload corrispondenti
+[C:\Users\ido96\AppData\Local\Temp\tmploi1qsxp\build\vendor\llama.cpp\common\common.vcxproj]
+
+      Avvisi: 19
+      Errori: 19
+
+  Tempo trascorso 00:00:40.84
+
+
+  *** CMake build failed
+  error: subprocess-exited-with-error
+
+  Building wheel for llama-cpp-python (pyproject.toml) did not run successfully.
+  exit code: 1
+
+  No available output.
+
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+  full command: 'C:\Users\ido96\Desktop\remixr\backend\.venv\Scripts\python.exe'
+'C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip\_vendor\pyproject_hooks\_in_process\_in_process.py' build_wheel
+'C:\Users\ido96\AppData\Local\Temp\tmpfhhp8ep7'
+  cwd: C:\Users\ido96\AppData\Local\Temp\pip-install-0_vjgn47\llama-cpp-python_8593fee4dab74cb0ae024bb1945432b4
+  Building wheel for llama-cpp-python (pyproject.toml): finished with status 'error'
+  ERROR: Failed building wheel for llama-cpp-python
+Failed to build llama-cpp-python
+error: failed-wheel-build-for-install
+
+Failed to build installable wheels for some pyproject.toml based projects
+
+llama-cpp-python
+
+pip exit code: 1
+
+--- verifica supporto GPU
+pip ha fallito, salto la verifica.
+
+Strategia 'wheel' non riuscita. Proseguo con la successiva (se presente).
+
+==============================================================================
+== 5. Sommario
+==============================================================================
+
+Strategy                PipExit GpuOffload
+--------                ------- ----------
+ninja                         1      False
+ninja-allow-unsupported       1      False
+msbuild                       1      False
+wheel                         1      False
+NESSUNA strategia e' riuscita.
+
+Da provare, in ordine:
+  1) una versione piu' recente:   .\tools\build-llama-cuda.ps1 -Version <x.y.z>
+     (lista versioni: python -m pip index versions llama-cpp-python)
+  2) senza pin su cmake:          .\tools\build-llama-cuda.ps1 -CmakePin cmake
+  3) solo la wheel precompilata:  .\tools\build-llama-cuda.ps1 -Strategy wheel
+
+Mandami il log: C:\Users\ido96\Desktop\remixr\tools\logs\build-llama-20261009-182137.log
+Cerca la prima riga con 'error' / 'nvcc fatal' / 'CMake Error': e' quella che conta.
+
+Log completo: C:\Users\ido96\Desktop\remixr\tools\logs\build-llama-20261009-182137.log
+Committalo:   git add tools/logs && git commit -m "build log" && git push
+**********************
+Fine trascrizione Windows PowerShell
+Ora di fine: 20261009182353
+**********************
