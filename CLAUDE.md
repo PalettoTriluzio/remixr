@@ -50,9 +50,16 @@ pip install llama-cpp-python==0.3.2 --no-cache-dir
 Rilevato dal log `errors.txt`: Python 3.11, CUDA **12.6** (`v12.6`), MSVC **19.44** (VS BuildTools 17.14), driver ok, tutte le dipendenze di `requirements.txt` installate nel venv.
 - **Blocco build llama-cpp**: `CUDA 12.6.targets(606,9): error : The CUDA Toolkit v12.6 directory '' does not exist`. CMake trovava CUDA correttamente (`Found CUDAToolkit ... v12.6`, `Using CUDA architectures: 89`), ma MSBuild legge il path da `CUDA_PATH_V12_6`, **non settata** → `CudaToolkitDir` vuoto. Risolto nello script (variabile ricostruita + Ninja che bypassa del tutto i `.targets`).
 - MSVC 19.44 è oltre quanto CUDA 12.6 dichiara di supportare → serve `-allow-unsupported-compiler`.
-- `scikit-build-core` si scaricava **cmake 4.4.4** nell'ambiente isolato → ora pinnato `cmake<4` nel venv.
+- `scikit-build-core` si scaricava **cmake 4.4.4** nell'ambiente isolato → `cmake<4` nel venv non bastava (vedi run 18:21 sotto).
 - `torch` installato è la wheel **CPU** di PyPI: irrilevante finché non arriva F5 (niente importa torch adesso), ma demucs girerebbe su CPU.
 - Repo su Windows di proprietà di `BUILTIN\Administrators` → serviva `git config --global --add safe.directory`.
+
+**Run build 2026-10-09 18:21 (`tools/logs/build-llama-20261009-182137.log`)**: tutte e 4 le strategie fallite per bug dello script (corretti):
+- `CUDAToolkit_ROOT=C:/Program Files/...` dentro `CMAKE_ARGS` → spezzato sugli spazi → "CUDA Toolkit not found". Ora i path passano da env (`CUDAToolkit_ROOT`, `CUDACXX`).
+- Build isolation di pip → `cmake.exe` del venv `No module named 'cmake'` → scaricato cmake 4.4.4. Ora `--no-build-isolation` + `scikit-build-core` nel venv + bin dir reale di cmake nel PATH.
+- llama.cpp di 0.3.2 + MSVC 19.44: `'system_clock' non è un membro di 'std::chrono'` → `CXXFLAGS=/FIchrono`.
+- Non esiste una wheel cu124 per 0.3.2 su Windows: la strategia `wheel` ricompilava dal sorgente una versione CPU. Ora usa `--only-binary` e, senza `-Version`, prende l'ultima wheel disponibile.
+- La regex della versione MSVC non riconosceva il banner italiano ("versione") → ora `riskyCombo` viene rilevato.
 
 **L'app gira già senza llama-cpp**: nessun modulo importa `llama_cpp`/`demucs`/`torch`, gli endpoint F4/F5 sono stub 501.
 

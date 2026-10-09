@@ -148,9 +148,11 @@ $env:CUDA_PATH_V12_6 = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
 
 $env:CMAKE_GENERATOR = "Ninja"   # skips MSBuild's CUDA integration entirely
 $env:CMAKE_ARGS = "-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=89 -DLLAVA_BUILD=OFF"
+$env:CUDACXX = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin\nvcc.exe"  # never put paths with spaces in CMAKE_ARGS
+$env:CXXFLAGS = "/FIchrono"      # MSVC 19.44+ with the llama.cpp vendored in 0.3.2
 $env:FORCE_CMAKE = "1"
-pip install "cmake<4" ninja
-pip install llama-cpp-python==0.3.2 --no-cache-dir --verbose
+pip install "cmake<4" ninja "scikit-build-core[pyproject]>=0.9.2"
+pip install llama-cpp-python==0.3.2 --no-cache-dir --no-build-isolation --verbose
 ```
 
 What the flags do:
@@ -223,11 +225,18 @@ $env:CMAKE_ARGS = "$env:CMAKE_ARGS -DCMAKE_CUDA_FLAGS=-allow-unsupported-compile
 ```
 This is the `ninja-allow-unsupported` strategy in the build script.
 
-**Build picks CMake 4.x and configure fails in odd places**
-→ `scikit-build-core` downloads its own CMake when none is on PATH, and CMake 4 dropped compatibility shims that the vendored llama.cpp still relies on. Install a 3.x in the venv first — it gets picked up instead:
+**Build picks CMake 4.x and configure fails in odd places** (log shows `No module named 'cmake'`)
+→ `scikit-build-core` downloads its own CMake when it can't run one, and CMake 4 dropped compatibility shims that the vendored llama.cpp still relies on. Having `cmake<4` in the venv is not enough: pip's build isolation hides the venv's site-packages, so the venv's `cmake.exe` launcher crashes. Build without isolation:
 ```powershell
-pip install "cmake<4" ninja
+pip install "cmake<4" ninja "scikit-build-core[pyproject]>=0.9.2"
+pip install llama-cpp-python==0.3.2 --no-cache-dir --no-build-isolation --verbose
 ```
+
+**`Could not find nvcc executable in path specified by variable CUDAToolkit_ROOT=C:/Program`**
+→ A path with spaces inside `CMAKE_ARGS`: it gets split on whitespace. Pass paths through env vars instead (`$env:CUDAToolkit_ROOT`, `$env:CUDACXX`) and keep `CMAKE_ARGS` path-free.
+
+**`common.cpp: error C2039: 'system_clock': is not a member of 'std::chrono'`**
+→ MSVC 19.44+ no longer pulls in `<chrono>` transitively and the llama.cpp vendored in 0.3.2 forgets to include it. Force-include it: `$env:CXXFLAGS = "/FIchrono"` (or try a newer `llama-cpp-python`).
 
 **`No CUDA toolset found` (or `CMake Error ... CUDA_TOOLKIT_ROOT_DIR not found`)**
 → You installed CUDA before VS Build Tools, so the MSBuild integration is missing. Copy it in manually (adjust paths to your CUDA version / VS edition):
@@ -264,9 +273,9 @@ Also double-check you're not using the old `-DLLAMA_CUBLAS=on` flag — it does 
 
 **Last-resort escape hatch:** if the source build is truly unrecoverable, there are pre-built CUDA wheels:
 ```powershell
-pip install llama-cpp-python==0.3.2 --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu124
+pip install llama-cpp-python --only-binary llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu124
 ```
-They lag behind on versions and aren't tuned for Ada, so prefer the source build.
+`--only-binary` matters: without it, if there's no wheel for your version/Python, pip silently compiles a **CPU** build from source. They lag behind on versions and aren't tuned for Ada, so prefer the source build.
 
 ### Git / general
 

@@ -35,7 +35,10 @@ git push
 2. **Variabili CUDA** — ricostruisce `CUDA_PATH_V<maj>_<min>`, `CudaToolkitDir` e `CUDAToolkit_ROOT` dal path reale di `nvcc`. Senza `CUDA_PATH_V12_6` MSBuild muore con:
    `The CUDA Toolkit v12.6 directory '' does not exist`
    anche con CUDA installato e trovato da CMake.
-3. **cmake 4.x** — pinna `cmake<4` + `ninja` nel venv, così `scikit-build-core` li trova nel PATH e non si scarica CMake 4 nell'ambiente isolato.
+3. **cmake 4.x** — pinna `cmake<4` + `ninja` + `scikit-build-core` nel venv e builda con `--no-build-isolation`: con l'isolamento di pip il `cmake.exe` del venv muore con `No module named 'cmake'` e `scikit-build-core` si scarica CMake 4.
+3b. **Path con spazi** — `CMAKE_ARGS` viene spezzato sugli spazi (`CUDAToolkit_ROOT=C:/Program`): toolkit e nvcc passano da env `CUDAToolkit_ROOT` / `CUDACXX`, mai da `CMAKE_ARGS`.
+3c. **`<chrono>` mancante** — MSVC 19.44 + llama.cpp di 0.3.2 → `'system_clock' non è un membro di 'std::chrono'`. Fix: `CXXFLAGS=/FIchrono`.
+3d. **Strategia `wheel`** — usa `--only-binary`: se la wheel manca fallisce, invece di ricompilare in silenzio una build CPU.
 4. **Check versione MSVC di nvcc** — `-allow-unsupported-compiler` quando MSVC è più recente di quanto il toolkit dichiara di supportare (es. MSVC 19.44 + CUDA 12.6).
 5. **Build CPU silenziosa** — `pip uninstall` + `--no-cache-dir --force-reinstall --no-binary` prima di ogni tentativo, e verifica `llama_supports_gpu_offload()` dopo. Non ti ritrovi con una build CPU che sembra riuscita.
 

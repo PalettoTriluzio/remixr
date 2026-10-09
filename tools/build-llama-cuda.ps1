@@ -6,7 +6,8 @@
        -> non serve la "x64 Native Tools Command Prompt"
     2. ricostruisce le variabili CUDA che mancano (CUDA_PATH_V<maj>_<min>, CudaToolkitDir):
        e' la causa dell'errore "The CUDA Toolkit v12.6 directory '' does not exist"
-    3. pinna cmake<4 e ninja nel venv, cosi' scikit-build-core non si scarica cmake 4.x
+    3. pinna cmake<4, ninja e scikit-build-core nel venv e builda con --no-build-isolation
+       (path CUDA via env CUDAToolkit_ROOT/CUDACXX, CXXFLAGS=/FIchrono per MSVC 19.44)
     4. compila con strategie in cascata:
          A) ninja-allow-unsupported  Ninja + -allow-unsupported-compiler (nvcc ignora il check versione MSVC)
          B) ninja                    Ninja puro
@@ -114,7 +115,8 @@ Write-Host ("cl.exe      : " + $cl.Source)
 $clBanner = (& cl 2>&1 | Select-Object -First 2 | Out-String).Trim()
 Write-Host $clBanner
 $clMinor = 0
-if ($clBanner -match 'Version\s+19\.(\d+)\.') { $clMinor = [int]$matches[1] }
+# Banner localizzato ("Version" / "versione"): cerco solo il numero 19.xx
+if ($clBanner -match '\b19\.(\d+)\.\d+') { $clMinor = [int]$matches[1] }
 
 # -------------------------------------------------------------- 2. CUDA
 Head "2. CUDA (toolkit + variabili d'ambiente)"
@@ -157,6 +159,9 @@ Set-Item -Path ("env:" + $verVar) -Value $cudaRoot
 if (-not $env:CUDA_PATH) { $env:CUDA_PATH = $cudaRoot }
 $env:CudaToolkitDir   = $cudaRoot
 $env:CUDAToolkit_ROOT = $cudaRoot
+# Compilatore CUDA via env (CUDACXX), NON via CMAKE_ARGS: scikit-build-core spezza
+# CMAKE_ARGS sugli spazi e "C:/Program Files/..." diventava "C:/Program".
+$env:CUDACXX          = $nvccPath
 
 if ($PersistCudaEnv) {
     Write-Host "Rendo permanente $verVar nell'ambiente utente (setx) ..."
@@ -202,10 +207,19 @@ if (-not $SkipDeps) {
     Write-Host "--- $CmakePin + ninja nel venv"
     Write-Host "    (se cmake e ninja sono gia' nel PATH, scikit-build-core non si scarica cmake 4.x da solo)"
     & $py -m pip install --upgrade "$CmakePin" ninja 2>&1 | Out-String | Write-Host
+    # Build backend nel venv: la build gira con --no-build-isolation, altrimenti pip
+    # nasconde il site-packages del venv, il cmake.exe del venv muore con
+    # "No module named 'cmake'" e scikit-build-core si scarica cmake 4.x.
+    Write-Host ''
+    Write-Host "--- scikit-build-core nel venv (serve per --no-build-isolation)"
+    & $py -m pip install --upgrade "scikit-build-core[pyproject]>=0.9.2" 2>&1 | Out-String | Write-Host
 
     # Il cmake del venv deve precedere eventuali altri nel PATH.
+    # Davanti anche la cartella col cmake.exe VERO (non il launcher python di Scripts).
     $venvScripts = Split-Path -Parent $py
+    $cmakeBin = (& $py -c "import cmake;print(cmake.CMAKE_BIN_DIR)" 2>$null | Out-String).Trim()
     $env:PATH = $venvScripts + ';' + $env:PATH
+    if ($cmakeBin -and (Test-Path $cmakeBin)) { $env:PATH = $cmakeBin + ';' + $env:PATH }
     $cm = Get-Command cmake.exe -ErrorAction SilentlyContinue
     if ($cm) { Write-Host ("cmake usato : " + $cm.Source + "  -> " + ((& cmake --version 2>&1 | Select-Object -First 1 | Out-String).Trim())) }
     $nj = Get-Command ninja.exe -ErrorAction SilentlyContinue
@@ -215,15 +229,16 @@ if (-not $SkipDeps) {
 # ------------------------------------------------------------- 4. strategie
 Head "4. Build"
 
-# Path con backslash: in CMAKE_ARGS vanno passati con slash normali.
-$cudaRootCMake = $cudaRoot -replace '\\', '/'
-$nvccCMake     = $nvccPath -replace '\\', '/'
-
 # LLAVA_BUILD=OFF: non ci serve il multimodale e salta una parte che su MSVC rompe spesso.
 # GGML_CCACHE=OFF: silenzia il warning su ccache assente.
-# CUDAToolkit_ROOT + CMAKE_CUDA_COMPILER espliciti: niente autodetection ambigua.
-$baseArgs = "-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=$CudaArch -DLLAVA_BUILD=OFF -DGGML_CCACHE=OFF " +
-            "-DCUDAToolkit_ROOT=$cudaRootCMake -DCMAKE_CUDA_COMPILER=$nvccCMake"
+# Niente path in CMAKE_ARGS (vengono spezzati sugli spazi): toolkit e nvcc passano
+# da env CUDAToolkit_ROOT / CUDACXX, impostate nella sezione 2.
+$baseArgs = "-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=$CudaArch -DLLAVA_BUILD=OFF -DGGML_CCACHE=OFF"
+
+# MSVC 19.44 non include piu' <chrono> transitivamente: il llama.cpp vendorizzato
+# in 0.3.2 rompe su common.cpp/log.cpp ("'system_clock' non e' un membro di 'std::chrono'").
+# Forced include su tutti i .cpp. CMake legge CXXFLAGS dall'env e ci accoda i flag di default.
+$env:CXXFLAGS = '/FIchrono'
 
 $plan = @(
     [pscustomobject]@{
@@ -318,8 +333,10 @@ foreach ($s in $plan) {
         Write-Host ''
         Write-Host "--- pip install (10-20 min, output verboso)"
         $t0 = Get-Date
+        Write-Host ("CUDACXX         = " + $env:CUDACXX)
+        Write-Host ("CXXFLAGS        = " + $env:CXXFLAGS)
         & $py -m pip install "llama-cpp-python==$Version" `
-            --no-cache-dir --force-reinstall --no-binary llama-cpp-python --verbose 2>&1 |
+            --no-cache-dir --force-reinstall --no-build-isolation --no-binary llama-cpp-python --verbose 2>&1 |
             Out-String -Stream | Write-Host
         $exit = $LASTEXITCODE
         $mins = [math]::Round(((Get-Date) - $t0).TotalMinutes, 1)
@@ -327,9 +344,13 @@ foreach ($s in $plan) {
         Write-Host ("pip exit code: $exit  (durata: $mins min)")
     } else {
         Write-Host ''
-        Write-Host "--- pip install da indice wheel precompilate: $WheelIndex"
-        & $py -m pip install "llama-cpp-python==$Version" `
-            --force-reinstall --no-cache-dir --extra-index-url $WheelIndex --verbose 2>&1 |
+        # --only-binary: se la wheel non c'e' deve FALLIRE, non ricompilare in silenzio
+        # dal sorgente (versione CPU). Senza -Version esplicito prendo l'ultima wheel disponibile.
+        $spec = 'llama-cpp-python'
+        if ($PSBoundParameters.ContainsKey('Version')) { $spec = "llama-cpp-python==$Version" }
+        Write-Host "--- pip install $spec da indice wheel precompilate: $WheelIndex"
+        & $py -m pip install $spec `
+            --force-reinstall --no-cache-dir --only-binary llama-cpp-python --extra-index-url $WheelIndex --verbose 2>&1 |
             Out-String -Stream | Write-Host
         $exit = $LASTEXITCODE
         Write-Host ''
