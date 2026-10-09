@@ -1,6 +1,6 @@
 # PLAN — Remixr
 
-Stato: **F2 — DSP engine** (F0, F1 completati 2026-08-21). Data inizio: 2026-08-21.
+Stato: **F3 — UI DAW-style** (F0, F1 completati 2026-08-21 · F2 completato 2026-10-09). Data inizio: 2026-08-21.
 
 Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 
@@ -27,12 +27,17 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 - ☑ Frontend `store.ts` (zustand): track + analysis + wavesurfer instance + play/pause state
 - ☑ `TransportBar` play/pause funzionante + volume + time counter (loop/A-B ancora F3)
 
-## F2 — DSP engine (pedalboard chain)
-- ☐ `backend/app/dsp/chain.py`: builder da params → `pedalboard.Pedalboard`
-- ☐ Effetti: HP/LP, EQ 3-band parametrica (peaking), Compressor, Limiter, Reverb, Delay, Distortion, Stereo width (mid/side)
-- ☐ Pitch shift (pedalboard.PitchShift) + Tempo (pyrubberband.time_stretch)
-- ☐ `POST /api/render/export` — applica chain, salva WAV
-- ☐ `POST /api/render/preview` — versione short (regione o full a bitrate ridotto) per audizione rapida
+## F2 — DSP engine (pedalboard chain) ☑
+- ☑ `backend/app/dsp/chain.py`: builder da params → `pedalboard.Pedalboard` (ordine fisso, vedi CLAUDE.md §DSP chain)
+- ☑ Effetti: HP/LP, EQ 3-band peaking, Compressor (+makeup Gain), Limiter, Reverb, Delay, Distortion, Stereo width (mid/side numpy)
+- ☑ Pitch + Tempo: `pedalboard.time_stretch` in un passaggio, fallback `pyrubberband` → `librosa`; solo-pitch via plugin `PitchShift`
+- ☑ `app/dsp/render.py`: cache LRU del decode + clip pre-quantizzazione + write WAV 24-bit / MP3 (libsndfile)
+- ☑ `app/audio/loader.py`: `load_audio_segment()` (decode della sola regione, soundfile seek / librosa offset)
+- ☑ `app/storage.py`: `find_render()`
+- ☑ `POST /api/render/export` — WAV 24-bit (o MP3), regione opzionale → `{render_id, path, duration_sec}`
+- ☑ `POST /api/render/preview` — WAV 16-bit in memoria, max 30 s, no-store
+- ☑ `GET /api/render/file/{render_id}` — download
+- ☐ (rinviato a F5) `per_stem` nel render: ora risponde 501
 
 ## F3 — UI DAW-style (rack manuale)
 - ☐ Componenti `EffectCard` (bypass toggle, sliders, knobs) per ogni effetto
@@ -69,9 +74,11 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 
 ## Decisioni tecniche pendenti
 - Nome definitivo del progetto (placeholder: `remixr`)
-- Ordine di default degli effetti nella chain (proposta: HP → EQ → Comp → Distortion → LP → Delay → Reverb → Stereo → Limiter)
 
 ## Decisioni prese
+- **Ordine chain** (fisso, implementato in F2): `[time/pitch] → gain → HP → EQ → Comp → Distortion → LP → Delay → Reverb → Stereo → Limiter`.
+- **`tempo.ratio` = moltiplicatore di velocità** (2.0 = doppia velocità). Lo `stretch_factor` di pedalboard viene sondato a runtime perché la sua semantica cambia tra versioni.
+- **Preview**: WAV 16-bit, finestra max 30 s, non persistito. Export: WAV 24-bit. MP3 320 CBR vero → F7 (ffmpeg).
 - **LLM**: Qwen2.5-**7B**-Instruct Q4_K_M di default (~4.4 GB, full GPU offload su 16 GB VRAM). 14B Q4_K_M (~9 GB) come opzione se serve più affidabilità sul JSON.
 - **llama-cpp-python**: build da sorgente con `-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=89`. Vedi CLAUDE.md e README §8.
 
@@ -81,3 +88,6 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 - 2026-08-21: README esteso con guida completa Windows (VS Build Tools, CMake, ffmpeg via winget, wheel pre-buildate llama-cpp-python, rubberband opzionale, troubleshooting).
 - 2026-08-21: F1 completato. Upload reale con validazione formato/dimensione (max 200 MB), audio loader universale (soundfile→librosa), analyze endpoint (BPM/key/peaks/spectrum), dropzone drag-drop, wavesurfer.js v7 con play/pause funzionante + volume + time counter. Store zustand centralizzato.
 - 2026-08-21: setup LLM cambiato da wheel CPU a **build CUDA da sorgente** (target RTX 4090 Laptop, arch 89). README riscritto: nuova §5 CUDA Toolkit 12.4, §8 dedicata alla compilazione, troubleshooting CUDA esteso (No CUDA toolset found, gpu_offload=False, arch non supportata, build lenta, OOM VRAM). `llama-cpp-python` rimosso da `requirements.txt` per evitare l'installazione CPU. Modello di default fissato a Qwen2.5-7B Q4_K_M.
+- 2026-10-09: F2 completato. `app/dsp/chain.py` (11 effetti + mid/side + time/pitch con probe della convenzione `stretch_factor`), `app/dsp/render.py` (cache LRU decode, export WAV 24-bit / MP3, preview WAV 16-bit in memoria), `loader.load_audio_segment()`, `storage.find_render()`, 3 endpoint render implementati. `per_stem` → 501 fino a F5. Nessun tocco al frontend (contratto API invariato).
+- 2026-10-09: aggiunta `tools/` con `diag.ps1` (diagnostica ambiente Windows, sola lettura) e `build-llama-cuda.ps1` (build llama-cpp-python con CUDA, strategie msbuild → ninja → ninja+allow-unsupported-compiler → wheel precompilata, con verifica `llama_supports_gpu_offload()` dopo ogni tentativo). Log in `tools/logs/`, committati per condividerli fra le due macchine. Setup bloccato sulla build CUDA: in attesa dei log dell'utente.
+- 2026-10-09: diagnosticato il blocco build CUDA dal log utente (`errors.txt`): non era il flag `GGML_CUDA` ma `CUDA_PATH_V12_6` non settata → `CudaToolkitDir` vuoto → `CUDA 12.6.targets(606,9): The CUDA Toolkit v12.6 directory '' does not exist`. `build-llama-cuda.ps1` riscritto: ricostruisce le variabili CUDA da `nvcc`, pinna `cmake<4`+`ninja`, passa `CUDAToolkit_ROOT`/`CMAKE_CUDA_COMPILER` espliciti, nuovo ordine strategie (Ninja prima di MSBuild) e `-allow-unsupported-compiler` per MSVC 19.44 + CUDA 12.6. `diag.ps1` ora controlla `CUDA_PATH_V*` e la dubious ownership di git. README: 4 voci nuove di troubleshooting.

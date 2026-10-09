@@ -19,3 +19,9 @@ def find_upload(track_id: str) -> Path | None:
     """Given a track_id (uuid), find its uploaded file (any extension)."""
     matches = list(UPLOADS_DIR.glob(f"{track_id}.*"))
     return matches[0] if matches else None
+
+
+def find_render(render_id: str) -> Path | None:
+    """Given a render_id (uuid), find its rendered file (any extension)."""
+    matches = list(RENDERS_DIR.glob(f"{render_id}.*"))
+    return matches[0] if matches else None

@@ -121,7 +121,18 @@ pip install -r requirements.txt
 
 ### 8. Build `llama-cpp-python` from source with CUDA
 
-Run this **from the "x64 Native Tools Command Prompt for VS 2022"** (Start menu), not from a plain PowerShell — it puts MSVC on the PATH for the whole build. Then switch it to PowerShell and activate the venv:
+> **This step is only needed for F4 (the LLM prompt bar).** Everything else — upload, waveform, BPM/key analysis, the whole DSP chain, preview and export — runs without it. If the build is fighting you, skip to "Running" and come back later.
+
+**Recommended: use the script.** It loads the MSVC environment itself, repairs the CUDA environment variables, and tries four build strategies in cascade until `llama_supports_gpu_offload()` is `True`:
+
+```powershell
+cd C:\path\to\remixr
+powershell -ExecutionPolicy Bypass -File .\tools\build-llama-cuda.ps1
+```
+
+Full log lands in `tools\logs\`. See `tools/README.md` for the options. Run `.\tools\diag.ps1` first if something looks off — it's read-only and tells you what's missing.
+
+**Manual path** (reference — what the script automates). Run from the "x64 Native Tools Command Prompt for VS 2022" (Start menu), then switch to PowerShell and activate the venv:
 
 ```
 powershell
@@ -131,8 +142,14 @@ cd C:\path\to\remixr\backend
 
 Set the build flags and compile:
 ```powershell
-$env:CMAKE_ARGS = "-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=89"
+# MSBuild reads the toolkit path from this variable. If it's missing you get
+# "The CUDA Toolkit v12.6 directory '' does not exist". Adjust to your version.
+$env:CUDA_PATH_V12_6 = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6"
+
+$env:CMAKE_GENERATOR = "Ninja"   # skips MSBuild's CUDA integration entirely
+$env:CMAKE_ARGS = "-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=89 -DLLAVA_BUILD=OFF"
 $env:FORCE_CMAKE = "1"
+pip install "cmake<4" ninja
 pip install llama-cpp-python==0.3.2 --no-cache-dir --verbose
 ```
 
@@ -188,6 +205,30 @@ Backend health check: http://127.0.0.1:8000/api/health
 
 ### llama-cpp-python / CUDA build
 
+**`CUDA 12.6.targets(606,9): error : The CUDA Toolkit v12.6 directory '' does not exist`**
+→ The CUDA/MSBuild integration *is* installed, but MSBuild reads the toolkit path from `CUDA_PATH_V<major>_<minor>` and that variable isn't set, so `CudaToolkitDir` resolves to empty. Two fixes:
+```powershell
+# A) set it (permanently, for your user) and reopen the terminal
+setx CUDA_PATH_V12_6 "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6"
+
+# B) better: don't use MSBuild at all — Ninja calls nvcc directly
+$env:CMAKE_GENERATOR = "Ninja"
+```
+`tools\build-llama-cuda.ps1` does both automatically.
+
+**`unsupported Microsoft Visual Studio version`**
+→ Your MSVC is newer than what `nvcc` whitelists (e.g. MSVC 19.44 / VS 17.14 with CUDA 12.6). Add the override:
+```powershell
+$env:CMAKE_ARGS = "$env:CMAKE_ARGS -DCMAKE_CUDA_FLAGS=-allow-unsupported-compiler"
+```
+This is the `ninja-allow-unsupported` strategy in the build script.
+
+**Build picks CMake 4.x and configure fails in odd places**
+→ `scikit-build-core` downloads its own CMake when none is on PATH, and CMake 4 dropped compatibility shims that the vendored llama.cpp still relies on. Install a 3.x in the venv first — it gets picked up instead:
+```powershell
+pip install "cmake<4" ninja
+```
+
 **`No CUDA toolset found` (or `CMake Error ... CUDA_TOOLKIT_ROOT_DIR not found`)**
 → You installed CUDA before VS Build Tools, so the MSBuild integration is missing. Copy it in manually (adjust paths to your CUDA version / VS edition):
 ```powershell
@@ -226,6 +267,20 @@ Also double-check you're not using the old `-DLLAMA_CUBLAS=on` flag — it does 
 pip install llama-cpp-python==0.3.2 --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu124
 ```
 They lag behind on versions and aren't tuned for Ada, so prefer the source build.
+
+### Git / general
+
+**`fatal: detected dubious ownership in repository`**
+→ The repo folder is owned by `BUILTIN\Administrators` (created by an elevated process), so git refuses it. Whitelist it:
+```powershell
+git config --global --add safe.directory C:/Users/<you>/Desktop/remixr
+```
+
+**`torch.cuda.is_available()` is `False`**
+→ The default PyPI wheel for Windows is CPU-only. Harmless for now (nothing imports torch until F5), but demucs stem separation will be slow. When you get to F5:
+```powershell
+pip install --force-reinstall torch torchaudio --index-url https://download.pytorch.org/whl/cu124
+```
 
 ### Audio / general
 

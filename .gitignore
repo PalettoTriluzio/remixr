@@ -32,3 +32,7 @@ backend/models/*
 # Env
 .env
 .env.local
+
+# I log di tools/ vanno committati (serve condividerli fra le due macchine),
+# quindi NON sono ignorati. Qui solo i residui di build.
+tools/logs/*.tmp

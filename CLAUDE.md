@@ -40,6 +40,22 @@ pip install llama-cpp-python==0.3.2 --no-cache-dir
 - **Non** in `requirements.txt` (pip installerebbe la versione CPU)
 - A runtime: `n_gpu_layers=-1` (offload totale, il modello ci sta in 16 GB)
 
+### Diagnostica e build (script in `tools/`, li lancia l'utente)
+- `tools/diag.ps1` — fotografia dell'ambiente Windows (GPU/CUDA/`CUDA_PATH_V*`/MSVC/Python/pacchetti/ffmpeg/node/git). **Sola lettura.**
+- `tools/build-llama-cuda.ps1` — build di `llama-cpp-python` con CUDA, 4 strategie in cascata: `ninja-allow-unsupported` → `ninja` → `msbuild` → `wheel` precompilata. Si ferma alla prima con `llama_supports_gpu_offload() == True`.
+- Entrambi caricano `vcvars64.bat` da soli (niente "x64 Native Tools Prompt") e scrivono in `tools/logs/`, che **non è gitignorata**: i log si committano e si leggono dall'altra macchina.
+- Dettagli in `tools/README.md`.
+
+### Stato ambiente macchina utente (2026-10-09)
+Rilevato dal log `errors.txt`: Python 3.11, CUDA **12.6** (`v12.6`), MSVC **19.44** (VS BuildTools 17.14), driver ok, tutte le dipendenze di `requirements.txt` installate nel venv.
+- **Blocco build llama-cpp**: `CUDA 12.6.targets(606,9): error : The CUDA Toolkit v12.6 directory '' does not exist`. CMake trovava CUDA correttamente (`Found CUDAToolkit ... v12.6`, `Using CUDA architectures: 89`), ma MSBuild legge il path da `CUDA_PATH_V12_6`, **non settata** → `CudaToolkitDir` vuoto. Risolto nello script (variabile ricostruita + Ninja che bypassa del tutto i `.targets`).
+- MSVC 19.44 è oltre quanto CUDA 12.6 dichiara di supportare → serve `-allow-unsupported-compiler`.
+- `scikit-build-core` si scaricava **cmake 4.4.4** nell'ambiente isolato → ora pinnato `cmake<4` nel venv.
+- `torch` installato è la wheel **CPU** di PyPI: irrilevante finché non arriva F5 (niente importa torch adesso), ma demucs girerebbe su CPU.
+- Repo su Windows di proprietà di `BUILTIN\Administrators` → serviva `git config --global --add safe.directory`.
+
+**L'app gira già senza llama-cpp**: nessun modulo importa `llama_cpp`/`demucs`/`torch`, gli endpoint F4/F5 sono stub 501.
+
 ## Formati audio
 - **Input**: MP3, WAV, FLAC, AAC/M4A, OGG (via `soundfile` + `librosa`/`audioread` fallback)
 - **Output**: WAV 24-bit (default) + MP3 320kbps opzionale
@@ -55,7 +71,8 @@ remixr/
 │   │   ├── api/               # endpoints (upload/audio, analyze, render, llm, presets, stems)
 │   │   ├── audio/             # loader.py: soundfile→librosa fallback (MP3/WAV/FLAC/M4A/AAC/OGG)
 │   │   ├── analysis/          # features.py: BPM (librosa.beat), key (Krumhansl), peaks, mel-spectrum
-│   │   ├── dsp/               # (F2) pedalboard chain builder
+│   │   ├── dsp/               # chain.py: params→pedalboard + mid/side + time/pitch
+│   │   │                      # render.py: decode cache → process → WAV/MP3
 │   │   ├── llm/               # (F4) llama.cpp wrapper + prompt→JSON schema
 │   │   ├── stems/             # (F5) demucs wrapper
 │   │   └── presets/           # (F6) I/O preset JSON + genre templates
@@ -90,9 +107,9 @@ remixr/
 - `GET  /api/analyze/{track_id}` → `{bpm, key, peaks[], spectrum[]}` ✅
 - `POST /api/stems/{track_id}` (async) → `{job_id, status}` / `GET /api/stems/{track_id}` → status+paths (F5)
 - `POST /api/llm/interpret` `{prompt, current_params, genre?}` → `{params, explanation, changed_fields[]}` (F4)
-- `POST /api/render/preview` `{track_id, params, region?}` → audio stream (F2)
-- `POST /api/render/export` `{track_id, params, format}` → `{render_id, path, duration_sec}` (F2)
-- `GET  /api/render/file/{render_id}` → download (F2)
+- `POST /api/render/preview` `{track_id, params, region?}` → WAV 16-bit stream, max 30 s ✅
+- `POST /api/render/export` `{track_id, params, format}` → `{render_id, path, duration_sec}` ✅
+- `GET  /api/render/file/{render_id}` → download ✅
 - `GET/POST/DELETE /api/presets` → CRUD (F6)
 - `GET  /api/genre-templates` → list (F6)
 
@@ -107,6 +124,20 @@ Struttura:
   per_stem: {vocals: {...chain}, drums: {...}, bass: {...}, other: {...}} | null
 }
 ```
+
+## DSP chain (F2)
+Ordine fisso in `app/dsp/chain.py`:
+```
+[time/pitch] → input_gain → HP → EQ(3 peaking) → Comp(+makeup Gain) → Distortion
+             → LP → Delay → Reverb → [stereo width] → Limiter
+```
+- **Time/pitch prima**: trasformano la sorgente, il resto è colore. `pedalboard.time_stretch` (Rubber Band) in un passaggio solo per tempo+pitch; fallback `pyrubberband` → `librosa`. Solo pitch → plugin `PitchShift`.
+- `tempo.ratio` = **moltiplicatore di velocità** (2.0 = doppia velocità, metà durata). La semantica di `stretch_factor` in pedalboard è ambigua tra versioni → sondata una volta a runtime con un buffer di 1 s (`_stretch_factor_is_speed`).
+- **Stereo width** = mid/side in numpy (nessun plugin pedalboard): per questo la catena è spezzata in due board con lo step numpy in mezzo. Su mono è no-op.
+- `Compressor` di pedalboard non ha makeup → `Gain` subito dopo.
+- Band EQ a 0 dB e effetti disabilitati vengono saltati (meno passaggi).
+- Clip a [-1, 1] prima della quantizzazione int (l'overflow wrappa → rumore full-scale).
+- Cache LRU (4 entry) dell'audio decodificato in `app/dsp/render.py`: le preview di F3 ricalcolano solo la catena, non il decode.
 
 ## Progressione (vedi PLAN.md per dettaglio)
 MVP → DSP core → LLM integration → Stems → Preset & templates → Polish UI.
