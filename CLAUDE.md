@@ -61,6 +61,8 @@ Rilevato dal log `errors.txt`: Python 3.11, CUDA **12.6** (`v12.6`), MSVC **19.4
 - Non esiste una wheel cu124 per 0.3.2 su Windows: la strategia `wheel` ricompilava dal sorgente una versione CPU. Ora usa `--only-binary` e, senza `-Version`, prende l'ultima wheel disponibile.
 - La regex della versione MSVC non riconosceva il banner italiano ("versione") → ora `riskyCombo` viene rilevato.
 
+**✅ Build CUDA riuscita (2026-10-09)** con la strategia `ninja-allow-unsupported` (llama-cpp-python 0.3.2, `llama_supports_gpu_offload() == True`). Prossimo: modello GGUF in `backend/models/` (README §9), poi F4.
+
 **L'app gira già senza llama-cpp**: nessun modulo importa `llama_cpp`/`demucs`/`torch`, gli endpoint F4/F5 sono stub 501.
 
 ## Formati audio

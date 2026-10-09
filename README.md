@@ -177,6 +177,20 @@ At runtime, Remixr loads the model with `n_gpu_layers=-1` (offload every layer).
   - **Optional, smarter — [Qwen2.5-14B-Instruct-GGUF](https://huggingface.co/Qwen/Qwen2.5-14B-Instruct-GGUF)** → `qwen2.5-14b-instruct-q4_k_m.gguf` (~9 GB). Still fits fully in 16 GB with room for context; better at producing valid JSON on complex prompts.
 - Put the file in `backend\models\`
 
+Note: in the official Qwen repo the Q4_K_M is **split** into `-00001-of-0000N.gguf` parts (llama.cpp loads them if you point at part 1, all parts in the same folder). A single file is simpler — from the command line:
+```powershell
+cd backend
+.venv\Scripts\activate
+pip install -U "huggingface_hub[cli]"
+hf download bartowski/Qwen2.5-7B-Instruct-GGUF Qwen2.5-7B-Instruct-Q4_K_M.gguf --local-dir models
+```
+
+**Check that the model loads on the GPU:**
+```powershell
+python -c "from llama_cpp import Llama; m=Llama('models/Qwen2.5-7B-Instruct-Q4_K_M.gguf', n_gpu_layers=-1, n_ctx=4096, verbose=True); print(m.create_chat_completion(messages=[{'role':'user','content':'Say OK'}])['choices'][0]['message']['content'])"
+```
+In the output look for `offloaded 29/29 layers to GPU`, then the reply.
+
 ---
 
 ## Running (dev mode)
