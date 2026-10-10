@@ -61,9 +61,9 @@ Rilevato dal log `errors.txt`: Python 3.11, CUDA **12.6** (`v12.6`), MSVC **19.4
 - Non esiste una wheel cu124 per 0.3.2 su Windows: la strategia `wheel` ricompilava dal sorgente una versione CPU. Ora usa `--only-binary` e, senza `-Version`, prende l'ultima wheel disponibile.
 - La regex della versione MSVC non riconosceva il banner italiano ("versione") → ora `riskyCombo` viene rilevato.
 
-**✅ Build CUDA riuscita (2026-10-09)** con la strategia `ninja-allow-unsupported` (llama-cpp-python 0.3.2, `llama_supports_gpu_offload() == True`). Prossimo: modello GGUF in `backend/models/` (README §9), poi F4.
+**✅ Build CUDA riuscita (2026-10-09)** con la strategia `ninja-allow-unsupported` (llama-cpp-python 0.3.2, `llama_supports_gpu_offload() == True`). Modelli GGUF scaricati in `backend/models/` (2026-10-10).
 
-**L'app gira già senza llama-cpp**: nessun modulo importa `llama_cpp`/`demucs`/`torch`, gli endpoint F4/F5 sono stub 501.
+**L'app gira anche senza llama-cpp**: `llama_cpp` è importato solo dentro `app/llm/engine.py` al primo load → senza, `/llm/interpret` risponde 503 e il resto funziona. `demucs`/`torch` non importati (F5 stub 501).
 
 ## Formati audio
 - **Input**: MP3, WAV, FLAC, AAC/M4A, OGG (via `soundfile` + `librosa`/`audioread` fallback)
@@ -82,7 +82,8 @@ remixr/
 │   │   ├── analysis/          # features.py: BPM (librosa.beat), key (Krumhansl), peaks, mel-spectrum
 │   │   ├── dsp/               # chain.py: params→pedalboard + mid/side + time/pitch
 │   │   │                      # render.py: decode cache → process → WAV/MP3
-│   │   ├── llm/               # (F4) llama.cpp wrapper + prompt→JSON schema
+│   │   ├── llm/               # engine.py: Llama singleton (lock, warm-up, grammar JSON)
+│   │   │                      # interpret.py: prompt → delta params → merge/clamp/diff
 │   │   ├── stems/             # (F5) demucs wrapper
 │   │   └── presets/           # (F6) I/O preset JSON + genre templates
 │   ├── data/
@@ -95,9 +96,10 @@ remixr/
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── components/        # WaveformView, EffectRack, EffectCard, PromptBar, PresetMenu, TransportBar
-│   │   ├── hooks/             # useAudioEngine, useLLM, usePresets
-│   │   ├── lib/               # api client, types, param schemas
+│   │   ├── components/        # WaveformView (+regions), EffectRack, EffectCard, Knob, PromptPanel, TransportBar
+│   │   ├── hooks/             # usePreviewSync (debounce 300 ms → /render/preview)
+│   │   ├── lib/               # api, types, store (track), remixStore (params/A-B/chat),
+│   │   │                      # effects (metadata knob + path helpers), player (motore A/B)
 │   │   ├── App.tsx
 │   │   └── main.tsx
 │   ├── package.json
@@ -115,7 +117,8 @@ remixr/
 - `GET  /api/audio/{track_id}` → raw audio file stream (for wavesurfer) ✅
 - `GET  /api/analyze/{track_id}` → `{bpm, key, peaks[], spectrum[]}` ✅
 - `POST /api/stems/{track_id}` (async) → `{job_id, status}` / `GET /api/stems/{track_id}` → status+paths (F5)
-- `POST /api/llm/interpret` `{prompt, current_params, genre?}` → `{params, explanation, changed_fields[]}` (F4)
+- `GET  /api/llm/status` → `{state: idle|loading|ready|error, model, gpu_offload, error}` ✅
+- `POST /api/llm/interpret` `{prompt, current_params, genre?, bpm?, key?}` → `{params, explanation, changed_fields[]}` ✅ (503 = LLM non disponibile, 502 = output non valido)
 - `POST /api/render/preview` `{track_id, params, region?}` → WAV 16-bit stream, max 30 s ✅
 - `POST /api/render/export` `{track_id, params, format}` → `{render_id, path, duration_sec}` ✅
 - `GET  /api/render/file/{render_id}` → download ✅
@@ -147,6 +150,22 @@ Ordine fisso in `app/dsp/chain.py`:
 - Band EQ a 0 dB e effetti disabilitati vengono saltati (meno passaggi).
 - Clip a [-1, 1] prima della quantizzazione int (l'overflow wrappa → rumore full-scale).
 - Cache LRU (4 entry) dell'audio decodificato in `app/dsp/render.py`: le preview di F3 ricalcolano solo la catena, non il decode.
+
+## UI / A-B (F3)
+- **A** = originale (wavesurfer, traccia intera). **B** = preview remix: WAV della finestra (regione trascinata sulla waveform, max 30 s; senza regione i primi 30 s) suonato da un `<audio>` nascosto in `lib/player.ts`.
+- Il tempo cambia la durata del render → posizioni mappate con `speed` della preview (`orig = start + t·speed`). Il cursore della waveform mostra sempre il tempo dell'originale.
+- Ogni modifica ai params → nuova preview (debounce 300 ms, fetch abortita se superata) e passaggio automatico a B; lo spostamento della regione re-renderizza senza cambiare lato. Catena neutra (nessun effetto, gain 0) → nessuna preview, B disabilitato.
+- Loop = sulla regione (o finestra di preview) in A, `audio.loop` in B.
+- Ordine catena **fisso** → niente drag-to-reorder nel rack; le card seguono il flusso del segnale.
+- Knob: drag verticale (Shift = fine), doppio click = default, frecce = step. Range = bound Pydantic.
+
+## LLM (F4)
+- Il modello **non** restituisce Params completi: `{explanation, changes}` con `changes` = EffectChain parziale. Grammar GBNF generata dallo schema (tutte le chiavi opzionali, **ordine delle chiavi = ordine dei campi** in `models.py`), fallback a JSON generico.
+- Il delta viene unito ai params correnti: chiavi sconosciute scartate, numeri clampati ai bound Pydantic, effetto toccato senza `enabled` → acceso. `changed_fields` = diff (`global_chain.reverb.wet`).
+- Schema grammar e tabella range nel system prompt derivano da `models.py` (single source of truth). `per_stem` passa invariato.
+- Spiegazione nella lingua del prompt. BPM/key dall'analisi vanno nel prompt (delay a tempo, ratio verso un BPM target).
+- Modello caricato da un thread di warm-up all'avvio; un lock serializza load e inferenza. Env: `REMIXR_LLM_MODEL` (default: primo `*.gguf` in `backend/models/`, 7B preferito), `REMIXR_LLM_CTX` (8192), `REMIXR_LLM_GPU_LAYERS` (-1), `REMIXR_LLM_PRELOAD` (1), `REMIXR_LLM_VERBOSE` (1).
+- UI: badge stato modello (poll `/llm/status`), chat con diff `vecchio → nuovo` per risposta + "annulla", knob/card toccati dall'AI evidenziati (rosa) finché non li modifichi.
 
 ## Progressione (vedi PLAN.md per dettaglio)
 MVP → DSP core → LLM integration → Stems → Preset & templates → Polish UI.

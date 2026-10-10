@@ -3,8 +3,10 @@ import { WaveformView } from "./components/WaveformView";
 import { EffectRack } from "./components/EffectRack";
 import { PromptPanel } from "./components/PromptPanel";
 import { TransportBar } from "./components/TransportBar";
+import { usePreviewSync } from "./hooks/usePreviewSync";
 
 export default function App() {
+  usePreviewSync();
   return (
     <div className="h-full flex flex-col">
       <TopBar />

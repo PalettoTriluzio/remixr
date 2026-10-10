@@ -67,6 +67,15 @@ export interface LLMInterpretRequest {
   prompt: string;
   current_params: Params;
   genre?: string | null;
+  bpm?: number | null;
+  key?: string | null;
+}
+
+export interface LLMStatus {
+  state: "idle" | "loading" | "ready" | "error";
+  model?: string | null;
+  gpu_offload?: boolean | null;
+  error?: string | null;
 }
 
 export interface LLMInterpretResponse {
@@ -105,7 +114,7 @@ export interface StemsJobResponse {
 
 // ---- Defaults ----
 
-const defaultChain = (): EffectChain => ({
+export const defaultChain = (): EffectChain => ({
   input_gain_db: 0,
   hp: { enabled: false, freq: 80 },
   eq: {

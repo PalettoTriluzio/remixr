@@ -1,9 +1,23 @@
+import threading
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import upload, analyze, stems, llm, render, presets
+from app.llm import engine
 
-app = FastAPI(title="Remixr", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Load the LLM in the background: the server answers immediately and
+    # /api/llm/status reports "loading" until the model is on the GPU.
+    if engine.PRELOAD:
+        threading.Thread(target=engine.warmup, name="llm-warmup", daemon=True).start()
+    yield
+
+
+app = FastAPI(title="Remixr", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type WaveSurfer from "wavesurfer.js";
 import type { AnalyzeResponse, UploadResponse } from "./types";
 import { api } from "./api";
+import { useRemixStore } from "./remixStore";
 
 interface TrackState {
   track: UploadResponse | null;
@@ -17,7 +18,6 @@ interface TrackState {
   setWavesurfer: (ws: WaveSurfer | null) => void;
   setPlaying: (v: boolean) => void;
   setCurrentTime: (t: number) => void;
-  togglePlay: () => void;
 
   uploadFile: (file: File) => Promise<void>;
   reset: () => void;
@@ -36,13 +36,10 @@ export const useTrackStore = create<TrackState>((set, get) => ({
   setWavesurfer: (ws) => set({ wavesurfer: ws, isPlaying: false, currentTime: 0 }),
   setPlaying: (v) => set({ isPlaying: v }),
   setCurrentTime: (t) => set({ currentTime: t }),
-  togglePlay: () => {
-    const ws = get().wavesurfer;
-    if (!ws) return;
-    ws.playPause();
-  },
+  // Play/pause goes through lib/player.ts (A/B aware).
 
   uploadFile: async (file: File) => {
+    useRemixStore.getState().resetSession();
     set({ isUploading: true, error: null, track: null, analysis: null });
     try {
       const track = await api.upload(file);
@@ -70,11 +67,14 @@ export const useTrackStore = create<TrackState>((set, get) => ({
     }
   },
 
-  reset: () => set({
-    track: null, analysis: null, error: null,
-    isUploading: false, isAnalyzing: false,
-    wavesurfer: null, isPlaying: false, currentTime: 0,
-  }),
+  reset: () => {
+    useRemixStore.getState().resetSession();
+    set({
+      track: null, analysis: null, error: null,
+      isUploading: false, isAnalyzing: false,
+      wavesurfer: null, isPlaying: false, currentTime: 0,
+    });
+  },
 }));
 
 export const audioUrl = (trackId: string) => `/api/audio/${trackId}`;

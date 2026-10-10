@@ -1,13 +1,21 @@
 import { useEffect, useRef } from "react";
 import WaveSurfer from "wavesurfer.js";
+import RegionsPlugin, { type Region } from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { X } from "lucide-react";
 import { audioUrl, useTrackStore } from "../lib/store";
+import { bindWavesurfer } from "../lib/player";
+import { useRemixStore } from "../lib/remixStore";
 import { formatDuration } from "../lib/format";
 import { Dropzone } from "./Dropzone";
 
+const PREVIEW_MAX_SEC = 30;
+
 export function WaveformView() {
-  const { track, analysis, reset, setWavesurfer, setPlaying, setCurrentTime } = useTrackStore();
+  const { track, analysis, reset, setWavesurfer } = useTrackStore();
+  const region = useRemixStore((s) => s.region);
+  const setRegion = useRemixStore((s) => s.setRegion);
   const containerRef = useRef<HTMLDivElement>(null);
+  const regionsRef = useRef<RegionsPlugin | null>(null);
 
   useEffect(() => {
     if (!track || !containerRef.current) return;
@@ -26,17 +34,35 @@ export function WaveformView() {
       url: audioUrl(track.track_id),
     });
 
-    ws.on("play", () => setPlaying(true));
-    ws.on("pause", () => setPlaying(false));
-    ws.on("finish", () => setPlaying(false));
-    ws.on("timeupdate", (t) => setCurrentTime(t));
+    // One region at a time = the preview / loop window (max 30 s, the
+    // backend's preview cap).
+    const regions = ws.registerPlugin(RegionsPlugin.create());
+    regions.enableDragSelection({ color: "rgba(124, 92, 255, 0.18)" });
+    const commit = (r: Region) => {
+      if (r.end - r.start > PREVIEW_MAX_SEC) r.setOptions({ end: r.start + PREVIEW_MAX_SEC });
+      setRegion({ start: r.start, end: r.end });
+    };
+    regions.on("region-created", (r) => {
+      regions.getRegions().forEach((o) => { if (o !== r) o.remove(); });
+      commit(r);
+    });
+    regions.on("region-updated", commit);
+    regionsRef.current = regions;
+
+    bindWavesurfer(ws);
     setWavesurfer(ws);
 
     return () => {
+      regionsRef.current = null;
       setWavesurfer(null);
       ws.destroy();
     };
-  }, [track?.track_id, setWavesurfer, setPlaying, setCurrentTime]);
+  }, [track?.track_id, setWavesurfer, setRegion]);
+
+  // Region cleared from the transport bar.
+  useEffect(() => {
+    if (!region) regionsRef.current?.clearRegions();
+  }, [region]);
 
   if (!track) {
     return (

@@ -191,6 +191,12 @@ python -c "from llama_cpp import Llama; m=Llama('models/Qwen2.5-7B-Instruct-Q4_K
 ```
 In the output look for `offloaded 29/29 layers to GPU`, then the reply.
 
+**Which model Remixr loads**: the first `*.gguf` in `backend\models\` (a 7B is preferred if there are several). To pick another one (e.g. the 14B), set it before starting the backend:
+```powershell
+$env:REMIXR_LLM_MODEL = "Qwen2.5-14B-Instruct-Q4_K_M.gguf"   # name in backend\models\ or absolute path
+```
+Other knobs: `REMIXR_LLM_CTX` (default 8192), `REMIXR_LLM_GPU_LAYERS` (default -1 = all), `REMIXR_LLM_PRELOAD=0` (load on the first prompt instead of at startup), `REMIXR_LLM_VERBOSE=0` (silence the llama.cpp log).
+
 ---
 
 ## Running (dev mode)
@@ -214,6 +220,12 @@ npm run dev
 Open http://localhost:5173
 
 Backend health check: http://127.0.0.1:8000/api/health
+LLM status: http://127.0.0.1:8000/api/llm/status (`loading` for a few seconds after startup, then `ready`; the badge top-right of the AI panel shows the same).
+
+**Quick tour**
+- Drop a track → the effect rack (left) is live: power button = bypass, drag a knob vertically (Shift = fine), double-click = default.
+- Every change renders a preview (first 30 s, or the region you drag on the waveform, max 30 s) and switches to **B** (remix). **A** = original. Loop button loops the region.
+- AI panel (right): describe the remix, Enter to send. The answer shows each changed parameter `old → new`, the touched knobs turn pink in the rack, "annulla" reverts that answer.
 
 ---
 

@@ -1,5 +1,5 @@
 import type {
-  AnalyzeResponse, LLMInterpretRequest, LLMInterpretResponse,
+  AnalyzeResponse, LLMInterpretRequest, LLMInterpretResponse, LLMStatus,
   Preset, RenderRequest, RenderResponse, StemsJobResponse, UploadResponse,
 } from "./types";
 
@@ -10,11 +10,20 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
     ...init,
   });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`${res.status} ${res.statusText}: ${text}`);
-  }
+  if (!res.ok) throw new Error(await errorText(res));
   return res.json() as Promise<T>;
+}
+
+/** FastAPI errors are `{detail: "..."}`: surface the detail, not the JSON. */
+async function errorText(res: Response): Promise<string> {
+  const text = await res.text();
+  try {
+    const detail = JSON.parse(text)?.detail;
+    if (typeof detail === "string") return detail;
+  } catch {
+    /* not JSON */
+  }
+  return `${res.status} ${res.statusText}: ${text}`;
 }
 
 export const api = {
@@ -37,18 +46,25 @@ export const api = {
   getStems: (trackId: string) =>
     request<StemsJobResponse>(`/stems/${trackId}`),
 
+  llmStatus: () => request<LLMStatus>("/llm/status"),
+
   interpret: (req: LLMInterpretRequest) =>
     request<LLMInterpretResponse>("/llm/interpret", {
       method: "POST",
       body: JSON.stringify(req),
     }),
 
-  renderPreview: (req: RenderRequest) =>
-    fetch(`${BASE}/render/preview`, {
+  /** WAV blob of the processed window (max 30 s). */
+  renderPreview: async (req: RenderRequest, signal?: AbortSignal): Promise<Blob> => {
+    const res = await fetch(`${BASE}/render/preview`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(req),
-    }),
+      signal,
+    });
+    if (!res.ok) throw new Error(await errorText(res));
+    return res.blob();
+  },
 
   renderExport: (req: RenderRequest) =>
     request<RenderResponse>("/render/export", {

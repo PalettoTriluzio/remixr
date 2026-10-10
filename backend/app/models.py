@@ -128,15 +128,26 @@ class AnalyzeResponse(BaseModel):
 
 
 class LLMInterpretRequest(BaseModel):
-    prompt: str
+    prompt: str = Field(..., min_length=1, max_length=2000)
     current_params: Params
     genre: Optional[str] = None
+    # Track context from /analyze, optional: lets the model sync delay times
+    # and compute tempo ratios toward a target BPM.
+    bpm: Optional[float] = None
+    key: Optional[str] = None
 
 
 class LLMInterpretResponse(BaseModel):
     params: Params
     explanation: str
     changed_fields: list[str]
+
+
+class LLMStatus(BaseModel):
+    state: Literal["idle", "loading", "ready", "error"]
+    model: Optional[str] = None        # GGUF file name
+    gpu_offload: Optional[bool] = None  # llama_supports_gpu_offload(), known after load
+    error: Optional[str] = None
 
 
 class RenderRequest(BaseModel):
