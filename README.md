@@ -231,6 +231,77 @@ LLM status: http://127.0.0.1:8000/api/llm/status (`loading` for a few seconds af
 
 ## Troubleshooting
 
+### "Not implemented (F4)" / il pannello AI non risponde
+
+Il codice attuale non contiene più quella scritta: se la vedi, ti sta rispondendo un **backend vecchio**. Segui i passi in ordine, dalla root del repo.
+
+**1. Il codice è aggiornato?**
+```powershell
+git pull
+git log --oneline -3     # tra le righe deve esserci "27366d4 F3 + F4: ..."
+dir backend\app\llm      # devono esserci engine.py e interpret.py
+```
+Se `backend\app\llm` non c'è, il pull non è andato: risolvi prima quello (vedi "Git / general").
+
+**2. Chi risponde sulla porta 8000?**
+Con il backend acceso, apri http://127.0.0.1:8000/api/llm/status:
+- `{"state":"loading"...}` o `{"state":"ready"...}` → backend nuovo, ok (salta al passo 5)
+- `{"detail":"Not Found"}` → risponde un **processo vecchio**, vai al passo 3
+- la pagina non si apre → nessun backend acceso
+
+Per vedere quanti processi stanno in ascolto (con un backend solo deve esserci **una** riga, al massimo due con `--reload`):
+```powershell
+Get-NetTCPConnection -LocalPort 8000 -State Listen | Select-Object OwningProcess, @{n="Avviato";e={(Get-Process -Id $_.OwningProcess).StartTime}}
+```
+Su Windows `uvicorn --reload` può lasciare processi Python orfani sulla porta, e Windows permette a due processi di aprire la stessa porta: risponde quello vecchio.
+
+**3. Chiudi tutti i backend**
+Chiudi i terminali del backend, poi:
+```powershell
+Get-NetTCPConnection -LocalPort 8000 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+Get-NetTCPConnection -LocalPort 8000 -State Listen    # non deve stampare niente
+```
+Se stampa ancora qualcosa: riavvia il PC.
+
+**4. Riporta numpy alla versione giusta**
+La build di `llama-cpp-python` ha aggiornato numpy da 1.26.4 a 2.4.6 (si vede nel log della build). `requirements.txt` vuole 1.26.4, e numpy 2.4 può rompere librosa/numba (analisi BPM/key):
+```powershell
+cd backend
+.venv\Scripts\activate
+pip install numpy==1.26.4
+python -c "import numpy, llama_cpp; print(numpy.__version__, llama_cpp.__version__, llama_cpp.llama_supports_gpu_offload())"
+```
+Deve stampare `1.26.4 0.3.2 True`.
+
+**5. Riavvia il backend salvando il log**
+Sempre in `backend` con il venv attivo:
+```powershell
+dir models\*.gguf      # deve esserci almeno un .gguf
+uvicorn app.main:app --host 127.0.0.1 --port 8000 2>&1 | Tee-Object -FilePath "..\tools\logs\backend-$(Get-Date -Format yyyyMMdd-HHmmss).log"
+```
+(Senza `--reload` per questa prova: niente processi figli che restano appesi.) Il log finisce in `tools\logs\`.
+
+Entro qualche secondo nel log deve comparire `offloaded 29/29 layers to GPU`, e http://127.0.0.1:8000/api/llm/status deve dire `"state":"ready"` e `"gpu_offload":true`.
+
+**6. Riavvia il frontend**
+In un altro terminale: `cd frontend`, `npm install`, `npm run dev`, poi ricarica la pagina con **Ctrl+F5**. In alto a destra nel pannello AI il pallino deve essere verde con il nome del modello e `GPU`.
+
+**7. Se non funziona ancora**
+Prova un prompt, chiudi il backend con Ctrl+C e manda il log:
+```powershell
+git add tools/logs
+git commit -m "log backend"
+git push
+```
+Cosa cercare nel log / nello status:
+| Messaggio | Causa |
+|---|---|
+| `llama-cpp-python non installato` | venv sbagliato, o la build è finita in un altro Python → passo 4 |
+| `Nessun modello .gguf in ...` | il file non è in `backend\models\`, o `REMIXR_LLM_MODEL` punta a un nome sbagliato |
+| `Caricamento di ... fallito` | file GGUF incompleto/corrotto, o VRAM piena (chiudi altri programmi che usano la GPU) |
+| `gpu_offload: false` / `CPU` nel badge | è installata la build CPU di llama-cpp-python → rifai README §8 |
+| `502 ... JSON` | il modello ha risposto male: riprova, o usa il 14B (README §9) |
+
 ### llama-cpp-python / CUDA build
 
 **`CUDA 12.6.targets(606,9): error : The CUDA Toolkit v12.6 directory '' does not exist`**
