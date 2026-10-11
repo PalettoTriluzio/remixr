@@ -1,0 +1,1944 @@
+﻿**********************
+Inizio trascrizione Windows PowerShell
+Ora di inizio: 20261009183435
+Nome utente: PALETTOSBEAST\ido96
+Esegui come utente: PALETTOSBEAST\ido96
+Nome configurazione: 
+Computer PALETTOSBEAST (Microsoft Windows NT 10.0.26200.0)
+Applicazione host: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File .\tools\build-llama-cuda.ps1
+ID processo: 15092
+PSVersion: 5.1.26100.9444
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9444
+BuildVersion: 10.0.26100.9444
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+==============================================================================
+== 0. Contesto
+==============================================================================
+data        : 2026-10-09 18:34:35
+repo        : C:\Users\ido96\Desktop\remixr
+versione    : llama-cpp-python==0.3.2
+cuda arch   : 89
+strategia   : auto
+cmake pin   : cmake<4
+log         : C:\Users\ido96\Desktop\remixr\tools\logs\build-llama-20261009-183435.log
+PowerShell  : 5.1.26100.9444
+CPU threads : 32
+
+==============================================================================
+== 1. Ambiente MSVC x64
+==============================================================================
+VS trovato  : C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools
+Importo l'ambiente da vcvars64.bat ...
+variabili importate: 103
+cl.exe      : C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\cl.exe
+cl.exe : Microsoft (R) C/C++ Optimizing Compiler versione 19.44.35217 per x64
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:115 car:14
++ $clBanner = (& cl 2>&1 | Select-Object -First 2 | Out-String).Trim()
++              ~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Microsoft (R) C...4.35217 per x64:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Copyright (C) Microsoft Corporation. Tutti i diritti  sono riservati.
+
+==============================================================================
+== 2. CUDA (toolkit + variabili d'ambiente)
+==============================================================================
+nvcc        : C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin\nvcc.exe
+nvcc: NVIDIA (R) Cuda compiler driver
+Copyright (c) 2005-2024 NVIDIA Corporation
+Built on Fri_Jun_14_16:44:19_Pacific_Daylight_Time_2024
+Cuda compilation tools, release 12.6, V12.6.20
+Build cuda_12.6.r12.6/compiler.34431801_0
+cuda root   : C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+versione    : 12.6
+
+--- variabili CUDA
+CUDA_PATH       = C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+CUDA_PATH_V12_6 =
+CudaToolkitDir  =
+MANCA CUDA_PATH_V12_6 -> la imposto per questa build: C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+
+name, driver_version, memory.total [MiB], compute_cap
+NVIDIA GeForce RTX 4090 Laptop GPU, 580.88, 16376 MiB, 8.9
+
+NOTA: MSVC 19.44 e' piu' recente di quanto CUDA 12.6 dichiari di supportare.
+      Parto dalla strategia con -allow-unsupported-compiler.
+
+==============================================================================
+== 3. Python / venv
+==============================================================================
+python      : C:\Users\ido96\Desktop\remixr\backend\.venv\Scripts\python.exe
+3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]
+bits 64
+
+--- pip / setuptools / wheel
+Requirement already satisfied: pip in .\backend\.venv\Lib\site-packages (26.2.1)
+Requirement already satisfied: setuptools in .\backend\.venv\Lib\site-packages (84.0.0)
+Requirement already satisfied: wheel in .\backend\.venv\Lib\site-packages (0.48.0)
+Requirement already satisfied: packaging>=24.0 in .\backend\.venv\Lib\site-packages (from wheel) (26.3)
+
+--- cmake<4 + ninja nel venv
+    (se cmake e ninja sono gia' nel PATH, scikit-build-core non si scarica cmake 4.x da solo)
+Requirement already satisfied: cmake<4 in .\backend\.venv\Lib\site-packages (3.31.10)
+Requirement already satisfied: ninja in .\backend\.venv\Lib\site-packages (1.13.2)
+
+--- scikit-build-core nel venv (serve per --no-build-isolation)
+Collecting scikit-build-core>=0.9.2 (from scikit-build-core[pyproject]>=0.9.2)
+  Using cached scikit_build_core-1.1.1-py3-none-any.whl.metadata (19 kB)
+Requirement already satisfied: packaging>=23.2 in .\backend\.venv\Lib\site-packages (from scikit-build-core>=0.9.2->scikit-build-core[pyproject]>=0.9.2) (26.3)
+Collecting pathspec>=0.12.0 (from scikit-build-core>=0.9.2->scikit-build-core[pyproject]>=0.9.2)
+  Using cached pathspec-1.1.1-py3-none-any.whl.metadata (14 kB)
+python.exe : WARNING: scikit-build-core 1.1.1 does not provide the extra 'pyproject'
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:215 car:5
++     & $py -m pip install --upgrade "scikit-build-core[pyproject]>=0.9 ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: scikit...tra 'pyproject':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Using cached scikit_build_core-1.1.1-py3-none-any.whl (293 kB)
+Using cached pathspec-1.1.1-py3-none-any.whl (57 kB)
+Installing collected packages: pathspec, scikit-build-core
+
+Successfully installed pathspec-1.1.1 scikit-build-core-1.1.1
+cmake usato : C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\cmake\data\bin\cmake.exe  -> cmake version 3.31.10
+ninja usato : C:\Users\ido96\Desktop\remixr\backend\.venv\Scripts\ninja.exe  -> 1.13.2.git.kitware.jobserver-pipe-1
+
+==============================================================================
+== 4. Build
+==============================================================================
+
+==============================================================================
+== Strategia: ninja-allow-unsupported
+==============================================================================
+Ninja + -allow-unsupported-compiler (bypassa il check versione MSVC di nvcc)
+
+--- rimuovo installazioni precedenti (evita il riuso di una build CPU)
+python.exe : WARNING: Skipping llama-cpp-python as it is not installed.
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:316 car:5
++     & $py -m pip uninstall -y llama-cpp-python 2>&1 | Out-String | Wr ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: Skippi... not installed.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+CMAKE_ARGS      = -DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=89 -DLLAVA_BUILD=OFF -DGGML_CCACHE=OFF -DCMAKE_CUDA_FLAGS=-allow-unsupported-compiler
+CMAKE_GENERATOR = Ninja
+CudaToolkitDir  = C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+PARALLEL_LEVEL  = 32
+
+--- pip install (10-20 min, output verboso)
+CUDACXX         = C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin\nvcc.exe
+CXXFLAGS        = /FIchrono
+Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+Collecting llama-cpp-python==0.3.2
+  Downloading llama_cpp_python-0.3.2.tar.gz (65.0 MB)
+     ---------------------------------------- 65.0/65.0 MB 20.0 MB/s  0:00:03
+  Preparing metadata (pyproject.toml): started
+python.exe :   Running command Preparing metadata (pyproject.toml)
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:338 car:9
++         & $py -m pip install "llama-cpp-python==$Version" `
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (  Running comma...pyproject.toml):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+  *** scikit-build-core 1.1.1 using CMake 3.31.10 (metadata_wheel)
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting typing-extensions>=4.5.0 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for typing-extensions>=4.5.0 from https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl.metadata
+  Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/3a/be/650f9c091ef71cb01d735775d554e068752d3ff63d7943b26316dc401749/numpy-1.21.2.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/5f/d6/ad58ded26556eaeaa8c971e08b6466f17c4ac4d786cd3d800e26ce59cc01/numpy-1.21.3.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/fb/48/b0708ebd7718a8933f0d3937513ef8ef2f4f04529f1f66ca86d873043921/numpy-1.21.4.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/c2/a8/a924a09492bdfee8c2ec3094d0a13f2799800b4fdc9c890738aeeb12c72e/numpy-1.21.5.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/45/b7/de7b8e67f2232c26af57c205aaad29fe17754f793404f59c8a730c7a191a/numpy-1.21.6.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/d3/e1/f2fe8f6113a657a1da83b358b16755e528a602c6976a43724a88f42b482a/numpy-2.5.0rc1.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/e7/05/3d27272d30698dc0ecb7fdfaa41ad70303b444f81722bb99bce1d818638a/numpy-2.5.0.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/22/fd/89965aa4ac08c74998539fcbf24fa3540f3e15237fbeb6bcf9c908f4aade/numpy-2.5.1.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/9a/80/db0b4559e57ec36362bedbb05530a87fafbcb6067708c946967a41d449e7/numpy-2.5.2.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/13/01/11703282db468b85f6f7b8c7f22d058de5970d5c7e60a3a8aaa313c3de36/numpy-2.5.3.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+Collecting numpy>=1.20.0 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for numpy>=1.20.0 from https://files.pythonhosted.org/packages/c5/31/7fc6239c12bce7e931463251cca4426c465e1876ba3cc785402ef4dd8f4e/numpy-2.4.6-cp311-cp311-win_amd64.whl.metadata
+  Downloading numpy-2.4.6-cp311-cp311-win_amd64.whl.metadata (6.6 kB)
+Collecting diskcache>=5.6.1 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for diskcache>=5.6.1 from https://files.pythonhosted.org/packages/3f/27/4570e78fc0bf5ea0ca45eb1de3818a23787af9b390c0b0a0033a1b8236f9/diskcache-5.6.3-py3-none-any.whl.metadata
+  Downloading diskcache-5.6.3-py3-none-any.whl.metadata (20 kB)
+Collecting jinja2>=2.11.3 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for jinja2>=2.11.3 from https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl.metadata
+  Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+Collecting MarkupSafe>=2.0 (from jinja2>=2.11.3->llama-cpp-python==0.3.2)
+  Obtaining dependency information for MarkupSafe>=2.0 from https://files.pythonhosted.org/packages/91/89/f2b509f7bf79352e40117824c1070dbeafd4df67031d3fa98165a3134228/markupsafe-3.0.4-cp311-cp311-win_amd64.whl.metadata
+  Downloading markupsafe-3.0.4-cp311-cp311-win_amd64.whl.metadata (2.8 kB)
+Downloading diskcache-5.6.3-py3-none-any.whl (45 kB)
+Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+Downloading markupsafe-3.0.4-cp311-cp311-win_amd64.whl (14 kB)
+Downloading numpy-2.4.6-cp311-cp311-win_amd64.whl (12.6 MB)
+   ---------------------------------------- 12.6/12.6 MB 20.8 MB/s  0:00:00
+Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Building wheels for collected packages: llama-cpp-python
+  Building wheel for llama-cpp-python (pyproject.toml): started
+  Running command Building wheel for llama-cpp-python (pyproject.toml)
+  *** scikit-build-core 1.1.1 using CMake 3.31.10 (wheel)
+  *** Configuring CMake...
+  loading initial cache file C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\build\CMakeInit.txt
+  -- Building for: Ninja
+  -- The C compiler identification is MSVC 19.44.35217.0
+  -- The CXX compiler identification is MSVC 19.44.35217.0
+  -- Detecting C compiler ABI info
+  -- Detecting C compiler ABI info - done
+  -- Check for working C compiler: C:/Program Files (x86)/Microsoft Visual
+Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+  -- Detecting C compile features
+  -- Detecting C compile features - done
+  -- Detecting CXX compiler ABI info
+  -- Detecting CXX compiler ABI info - done
+  -- Check for working CXX compiler: C:/Program Files (x86)/Microsoft Visual
+Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+  -- Detecting CXX compile features
+  -- Detecting CXX compile features - done
+  -- Found Git: C:/Program Files/Git/cmd/git.exe (found version "2.49.0.windows.1")
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+  -- Looking for pthread_create in pthreads
+  -- Looking for pthread_create in pthreads - not found
+  -- Looking for pthread_create in pthread
+  -- Looking for pthread_create in pthread - not found
+  -- Found Threads: TRUE
+  -- CMAKE_SYSTEM_PROCESSOR: AMD64
+  -- CMAKE_GENERATOR_PLATFORM:
+  -- Found OpenMP_C: -openmp (found version "2.0")
+  -- Found OpenMP_CXX: -openmp (found version "2.0")
+  -- Found OpenMP: TRUE (found version "2.0")
+  -- OpenMP found
+  -- Using llamafile
+  -- x86 detected
+  -- Performing Test HAS_AVX_1
+  -- Performing Test HAS_AVX_1 - Success
+  -- Performing Test HAS_AVX2_1
+  -- Performing Test HAS_AVX2_1 - Success
+  -- Performing Test HAS_FMA_1
+  -- Performing Test HAS_FMA_1 - Success
+  -- Performing Test HAS_AVX512_1
+  -- Performing Test HAS_AVX512_1 - Failed
+  -- Performing Test HAS_AVX512_2
+  -- Performing Test HAS_AVX512_2 - Failed
+  -- Using runtime weight conversion of Q4_0 to Q4_0_x_x to enable optimized GEMM/GEMV kernels
+  -- Including CPU backend
+  CMake Warning at vendor/llama.cpp/ggml/src/ggml-amx/CMakeLists.txt:106 (message):
+    AMX requires x86 and gcc version > 11.0.  Turning off GGML_AMX.
+
+
+  -- Found CUDAToolkit: C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6/include (found version "12.6.20")
+  -- CUDA Toolkit found
+  -- Using CUDA architectures: 89
+  -- The CUDA compiler identification is NVIDIA 12.6.20 with host compiler MSVC 19.44.35217.0
+  -- Detecting CUDA compiler ABI info
+  -- Detecting CUDA compiler ABI info - done
+  -- Check for working CUDA compiler: C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6/bin/nvcc.exe - skipped
+  -- Detecting CUDA compile features
+  -- Detecting CUDA compile features - done
+  -- Including CUDA backend
+  CMake Warning (dev) at CMakeLists.txt:13 (install):
+    Target llama has PUBLIC_HEADER files but no PUBLIC_HEADER DESTINATION.
+  Call Stack (most recent call first):
+    CMakeLists.txt:80 (llama_cpp_python_install_target)
+  This warning is for project developers.  Use -Wno-dev to suppress it.
+
+  CMake Warning (dev) at CMakeLists.txt:21 (install):
+    Target llama has PUBLIC_HEADER files but no PUBLIC_HEADER DESTINATION.
+  Call Stack (most recent call first):
+    CMakeLists.txt:80 (llama_cpp_python_install_target)
+  This warning is for project developers.  Use -Wno-dev to suppress it.
+
+  CMake Warning (dev) at CMakeLists.txt:13 (install):
+    Target ggml has PUBLIC_HEADER files but no PUBLIC_HEADER DESTINATION.
+  Call Stack (most recent call first):
+    CMakeLists.txt:81 (llama_cpp_python_install_target)
+  This warning is for project developers.  Use -Wno-dev to suppress it.
+
+  CMake Warning (dev) at CMakeLists.txt:21 (install):
+    Target ggml has PUBLIC_HEADER files but no PUBLIC_HEADER DESTINATION.
+  Call Stack (most recent call first):
+    CMakeLists.txt:81 (llama_cpp_python_install_target)
+  This warning is for project developers.  Use -Wno-dev to suppress it.
+
+  -- Configuring done (18.2s)
+  -- Generating done (0.1s)
+  -- Build files have been written to: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/build
+  *** Building project with Ninja...
+  Change Dir: 'C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/build'
+
+  Run Build Command(s): C:\Users\ido96\Desktop\remixr\backend\.venv\Scripts\ninja -v -j 32
+  [1/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo -DGGML_BUILD
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600 -Dggml_base_EXPORTS -IC:\Users\ido96\AppData\
+Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\. -IC:\Users\ido96\AppD
+ata\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include /DWIN32
+/D_WINDOWS /O2 /Ob2 /DNDEBUG -std:c11 -MD /showIncludes /Fovendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\ggml-aarch64.c.obj
+/Fdvendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\ /FS -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-pyth
+on_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-aarch64.c
+  C:\Program Files (x86)\Windows Kits\10\include\10.0.22621.0\ucrt\assert.h(21): warning C4005: 'static_assert': ridefinizione
+macro
+  C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\sr
+c\ggml-common.h(62): note: vedi la precedente definizione di 'static_assert'
+  [2/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo -DGGML_BUILD
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600 -Dggml_base_EXPORTS -IC:\Users\ido96\AppData\
+Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\. -IC:\Users\ido96\AppD
+ata\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include /DWIN32
+/D_WINDOWS /O2 /Ob2 /DNDEBUG -std:c11 -MD /showIncludes /Fovendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\ggml-alloc.c.obj
+/Fdvendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\ /FS -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-pyth
+on_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-alloc.c
+  [3/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_AARCH64 -DGGML_USE_LLAMAFILE -DGGML_USE_OPENMP
+-D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp
+-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cpu\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii94
+9_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cpu\.. -IC:\Users\ido96\AppData\Local\Temp\pip
+-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include /DWIN32 /D_WINDOWS /O2
+/Ob2 /DNDEBUG -std:c11 -MD /arch:AVX2 -openmp /showIncludes
+/Fovendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\ggml-cpu-quants.c.obj
+/Fdvendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\ /FS -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-
+cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu-quants.c
+  C:\Program Files (x86)\Windows Kits\10\include\10.0.22621.0\ucrt\assert.h(21): warning C4005: 'static_assert': ridefinizione
+macro
+  C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\sr
+c\ggml-cpu\..\ggml-common.h(62): note: vedi la precedente definizione di 'static_assert'
+  [4/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_AARCH64 -DGGML_USE_LLAMAFILE -DGGML_USE_OPENMP
+-D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp
+-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cpu\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii94
+9_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cpu\.. -IC:\Users\ido96\AppData\Local\Temp\pip
+-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include /DWIN32 /D_WINDOWS /O2
+/Ob2 /DNDEBUG -std:c11 -MD /arch:AVX2 -openmp /showIncludes
+/Fovendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\ggml-cpu-aarch64.c.obj
+/Fdvendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\ /FS -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-
+cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu-aarch64.c
+  C:\Program Files (x86)\Windows Kits\10\include\10.0.22621.0\ucrt\assert.h(21): warning C4005: 'static_assert': ridefinizione
+macro
+  C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\sr
+c\ggml-common.h(62): note: vedi la precedente definizione di 'static_assert'
+  [5/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BUILD
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600 -Dggml_base_EXPORTS -IC:\Users\ido96\AppData\
+Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\. -IC:\Users\ido96\AppD
+ata\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include
+/FIchrono  /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /showIncludes
+/Fovendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\ggml-threading.cpp.obj
+/Fdvendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\ /FS -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-pyth
+on_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-threading.cpp
+  [6/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_AARCH64 -DGGML_USE_LLAMAFILE -DGGML_USE_OPENMP
+-D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp
+-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cpu\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii94
+9_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cpu\.. -IC:\Users\ido96\AppData\Local\Temp\pip
+-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include /FIchrono  /DWIN32
+/D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /arch:AVX2 -openmp /showIncludes
+/Fovendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\ggml-cpu.cpp.obj
+/Fdvendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\ /FS -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-
+cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu.cpp
+  [7/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo -DGGML_BUILD
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600 -Dggml_base_EXPORTS -IC:\Users\ido96\AppData\
+Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\. -IC:\Users\ido96\AppD
+ata\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include /DWIN32
+/D_WINDOWS /O2 /Ob2 /DNDEBUG -std:c11 -MD /showIncludes /Fovendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\ggml.c.obj
+/Fdvendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\ /FS -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-pyth
+on_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml.c
+  [8/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_AARCH64 -DGGML_USE_LLAMAFILE -DGGML_USE_OPENMP
+-D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp
+-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cpu\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii94
+9_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cpu\.. -IC:\Users\ido96\AppData\Local\Temp\pip
+-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include /FIchrono  /DWIN32
+/D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /arch:AVX2 -openmp /showIncludes
+/Fovendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\llamafile\sgemm.cpp.obj
+/Fdvendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\ /FS -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-
+cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cpu\llamafile\sgemm.cpp
+  [9/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BUILD
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600 -Dggml_base_EXPORTS -IC:\Users\ido96\AppData\
+Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\. -IC:\Users\ido96\AppD
+ata\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include
+/FIchrono  /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /showIncludes
+/Fovendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\ggml-backend.cpp.obj /Fdvendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\
+/FS -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\gg
+ml\src\ggml-backend.cpp
+  [10/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo -DGGML_BUILD
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600 -Dggml_base_EXPORTS -IC:\Users\ido96\AppData\
+Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\. -IC:\Users\ido96\AppD
+ata\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include /DWIN32
+/D_WINDOWS /O2 /Ob2 /DNDEBUG -std:c11 -MD /showIncludes /Fovendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\ggml-quants.c.obj
+/Fdvendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\ /FS -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-pyth
+on_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-quants.c
+  C:\Program Files (x86)\Windows Kits\10\include\10.0.22621.0\ucrt\assert.h(21): warning C4005: 'static_assert': ridefinizione
+macro
+  C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\sr
+c\ggml-common.h(62): note: vedi la precedente definizione di 'static_assert'
+  [11/103] C:\Windows\system32\cmd.exe /C "C:\Windows\system32\cmd.exe /C
+"C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\cmake\data\bin\cmake.exe -E __create_def
+C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\build\vendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\.\exports.def
+C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\build\vendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\.\exports.def.objs && cd
+C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\build" &&
+C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\cmake\data\bin\cmake.exe -E vs_link_dll --msvc-ver=1944
+--intdir=vendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir --rc=C:\PROGRA~2\WI3CF2~1\10\bin\100226~1.0\x64\rc.exe
+--mt=C:\PROGRA~2\WI3CF2~1\10\bin\100226~1.0\x64\mt.exe --manifests  --
+C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\link.exe /nologo
+vendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\ggml.c.obj vendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\ggml-alloc.c.obj
+vendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\ggml-backend.cpp.obj
+vendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\ggml-threading.cpp.obj
+vendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\ggml-quants.c.obj
+vendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\ggml-aarch64.c.obj  /out:bin\ggml-base.dll
+/implib:vendor\llama.cpp\ggml\src\ggml-base.lib /pdb:bin\ggml-base.pdb /dll /version:0.0 /machine:x64 /INCREMENTAL:NO
+/DEF:vendor\llama.cpp\ggml\src\CMakeFiles\ggml-base.dir\.\exports.def  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib
+ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+  [12/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_AARCH64 -DGGML_USE_LLAMAFILE -DGGML_USE_OPENMP
+-D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp
+-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cpu\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii94
+9_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cpu\.. -IC:\Users\ido96\AppData\Local\Temp\pip
+-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include /DWIN32 /D_WINDOWS /O2
+/Ob2 /DNDEBUG -std:c11 -MD /arch:AVX2 -openmp /showIncludes
+/Fovendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\ggml-cpu.c.obj
+/Fdvendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\ /FS -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-
+cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu.c
+  [13/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\arange.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\arange.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install
+-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\arange.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\arange.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  arange.cu
+  tmpxft_00000e74_00000000-10_arange.cudafe1.cpp
+  [14/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\clamp.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\clamp.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-
+9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\clamp.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\clamp.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  clamp.cu
+  tmpxft_00005f00_00000000-10_clamp.cudafe1.cpp
+  [15/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\argsort.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\argsort.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-instal
+l-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\argsort.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\argsort.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  argsort.cu
+  tmpxft_00004f5c_00000000-10_argsort.cudafe1.cpp
+  [16/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\acc.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\acc.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9i
+i949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\acc.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\acc.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  acc.cu
+  tmpxft_00003db8_00000000-10_acc.cudafe1.cpp
+  [17/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\conv-transpose-1d.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\conv-transpose-1d.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\
+pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\conv-transpose-1d.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\conv-transpose-1d.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  conv-transpose-1d.cu
+  tmpxft_00005e84_00000000-10_conv-transpose-1d.cudafe1.cpp
+  [18/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\pad.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\pad.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9i
+i949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\pad.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\pad.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  pad.cu
+  tmpxft_00006594_00000000-10_pad.cudafe1.cpp
+  [19/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\concat.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\concat.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install
+-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\concat.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\concat.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  concat.cu
+  tmpxft_00003260_00000000-10_concat.cudafe1.cpp
+  [20/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\argmax.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\argmax.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install
+-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\argmax.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\argmax.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  argmax.cu
+  tmpxft_000036a4_00000000-10_argmax.cudafe1.cpp
+  [21/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\count-equal.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\count-equal.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-in
+stall-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\count-equal.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\count-equal.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  count-equal.cu
+  tmpxft_00004cd4_00000000-10_count-equal.cudafe1.cpp
+  [22/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\diagmask.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\diagmask.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-insta
+ll-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\diagmask.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\diagmask.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  diagmask.cu
+  tmpxft_00004a10_00000000-10_diagmask.cudafe1.cpp
+  [23/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\im2col.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\im2col.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install
+-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\im2col.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\im2col.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  im2col.cu
+  tmpxft_0000712c_00000000-10_im2col.cudafe1.cpp
+  [24/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\norm.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\norm.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9
+ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\norm.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\norm.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  norm.cu
+  tmpxft_00002190_00000000-10_norm.cudafe1.cpp
+  [25/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\pool2d.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\pool2d.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install
+-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\pool2d.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\pool2d.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  pool2d.cu
+  tmpxft_00007874_00000000-10_pool2d.cudafe1.cpp
+  [26/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\scale.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\scale.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-
+9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\scale.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\scale.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  scale.cu
+  tmpxft_00006138_00000000-10_scale.cudafe1.cpp
+  [27/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\opt-step-adamw.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\opt-step-adamw.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip
+-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\opt-step-adamw.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\opt-step-adamw.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  opt-step-adamw.cu
+  tmpxft_00003f64_00000000-10_opt-step-adamw.cudafe1.cpp
+  [28/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\getrows.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\getrows.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-instal
+l-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\getrows.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\getrows.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  getrows.cu
+  tmpxft_00006338_00000000-10_getrows.cudafe1.cpp
+  [29/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\cross-entropy-loss.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\cross-entropy-loss.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp
+\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\cross-entropy-loss.cu
+-o vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\cross-entropy-loss.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  cross-entropy-loss.cu
+  tmpxft_00002984_00000000-10_cross-entropy-loss.cudafe1.cpp
+  [30/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\mmq.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\mmq.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9i
+i949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\mmq.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\mmq.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq.cu
+  tmpxft_000042a4_00000000-10_mmq.cudafe1.cpp
+  [31/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\out-prod.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\out-prod.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-insta
+ll-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\out-prod.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\out-prod.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  out-prod.cu
+  tmpxft_00001a80_00000000-10_out-prod.cudafe1.cpp
+  [32/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\convert.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\convert.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-instal
+l-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\convert.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\convert.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  convert.cu
+  tmpxft_00000fe0_00000000-10_convert.cudafe1.cpp
+  [33/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\dmmv.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\dmmv.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9
+ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\dmmv.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\dmmv.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  dmmv.cu
+  tmpxft_0000671c_00000000-10_dmmv.cudafe1.cpp
+  [34/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\quantize.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\quantize.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-insta
+ll-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\quantize.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\quantize.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  quantize.cu
+  tmpxft_00006a84_00000000-10_quantize.cudafe1.cpp
+  [35/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\binbcast.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\binbcast.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-insta
+ll-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\binbcast.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\binbcast.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  binbcast.cu
+  tmpxft_00005b84_00000000-10_binbcast.cudafe1.cpp
+  [36/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\cpy.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\cpy.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9i
+i949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\cpy.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\cpy.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  cpy.cu
+  tmpxft_00007268_00000000-10_cpy.cudafe1.cpp
+  [37/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\rope.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\rope.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9
+ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\rope.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\rope.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  rope.cu
+  tmpxft_000067c0_00000000-10_rope.cudafe1.cpp
+  [38/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\ggml-cuda.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\ggml-cuda.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-inst
+all-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\ggml-cuda.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\ggml-cuda.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  ggml-cuda.cu
+  tmpxft_00003244_00000000-10_ggml-cuda.cudafe1.cpp
+  [39/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\softmax.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\softmax.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-instal
+l-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\softmax.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\softmax.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  softmax.cu
+  tmpxft_00002ac4_00000000-10_softmax.cudafe1.cpp
+  [40/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\sumrows.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\sumrows.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-instal
+l-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\sumrows.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\sumrows.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  sumrows.cu
+  tmpxft_000073a4_00000000-10_sumrows.cudafe1.cpp
+  [41/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\tsembd.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\tsembd.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install
+-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\tsembd.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\tsembd.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  tsembd.cu
+  tmpxft_00003770_00000000-10_tsembd.cudafe1.cpp
+  [42/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\upscale.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\upscale.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-instal
+l-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\upscale.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\upscale.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  upscale.cu
+  tmpxft_00001444_00000000-10_upscale.cudafe1.cpp
+  [43/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\wkv6.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\wkv6.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9
+ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\wkv6.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\wkv6.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  wkv6.cu
+  tmpxft_00003878_00000000-10_wkv6.cudafe1.cpp
+  [44/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\unary.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\unary.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-
+9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\unary.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\unary.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  unary.cu
+  tmpxft_00005e60_00000000-10_unary.cudafe1.cpp
+  [45/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\fattn-tile-f32.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\fattn-tile-f32.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip
+-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\fattn-tile-f32.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\fattn-tile-f32.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn-tile-f32.cu
+  tmpxft_00002658_00000000-10_fattn-tile-f32.cudafe1.cpp
+  [46/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\fattn-tile-f16.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\fattn-tile-f16.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip
+-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\fattn-tile-f16.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\fattn-tile-f16.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn-tile-f16.cu
+  tmpxft_00000894_00000000-10_fattn-tile-f16.cudafe1.cpp
+  [47/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\fattn.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\fattn.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-
+9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\fattn.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\fattn.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn.cu
+  tmpxft_00002c64_00000000-10_fattn.cudafe1.cpp
+  [48/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\sum.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\sum.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9i
+i949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\sum.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\sum.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  sum.cu
+  tmpxft_000072f4_00000000-10_sum.cudafe1.cpp
+  [49/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-wmma-f16-instance-kqhalf-cpb8.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-wmma-f16-instance-kqhalf-cpb8.cu.obj.d -x cu
+-c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\s
+rc\ggml-cuda\template-instances\fattn-wmma-f16-instance-kqhalf-cpb8.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-wmma-f16-instance-kqhalf-cpb8.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn-wmma-f16-instance-kqhalf-cpb8.cu
+  tmpxft_00002710_00000000-10_fattn-wmma-f16-instance-kqhalf-cpb8.cudafe1.cpp
+  [50/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-wmma-f16-instance-kqhalf-cpb16.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-wmma-f16-instance-kqhalf-cpb16.cu.obj.d -x
+cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggm
+l\src\ggml-cuda\template-instances\fattn-wmma-f16-instance-kqhalf-cpb16.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-wmma-f16-instance-kqhalf-cpb16.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn-wmma-f16-instance-kqhalf-cpb16.cu
+  tmpxft_00004cfc_00000000-10_fattn-wmma-f16-instance-kqhalf-cpb16.cudafe1.cpp
+  [51/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-wmma-f16-instance-kqfloat-cpb16.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-wmma-f16-instance-kqfloat-cpb16.cu.obj.d -x
+cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggm
+l\src\ggml-cuda\template-instances\fattn-wmma-f16-instance-kqfloat-cpb16.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-wmma-f16-instance-kqfloat-cpb16.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn-wmma-f16-instance-kqfloat-cpb16.cu
+  tmpxft_00003a7c_00000000-10_fattn-wmma-f16-instance-kqfloat-cpb16.cudafe1.cpp
+  [52/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BACKEND_SHARED
+-DGGML_BUILD -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU -DGGML_USE_CUDA -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\ll
+ama.cpp\ggml\src\..\include /FIchrono  /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /showIncludes
+/Fovendor\llama.cpp\ggml\src\CMakeFiles\ggml.dir\ggml-backend-reg.cpp.obj /Fdvendor\llama.cpp\ggml\src\CMakeFiles\ggml.dir\ /FS -c
+C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\
+ggml-backend-reg.cpp
+  [53/103] C:\Windows\system32\cmd.exe /C "C:\Windows\system32\cmd.exe /C
+"C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\cmake\data\bin\cmake.exe -E __create_def
+C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\build\vendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\.\exports.def
+C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\build\vendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\.\exports.def.objs
+&& cd C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\build" &&
+C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\cmake\data\bin\cmake.exe -E vs_link_dll --msvc-ver=1944
+--intdir=vendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir --rc=C:\PROGRA~2\WI3CF2~1\10\bin\100226~1.0\x64\rc.exe
+--mt=C:\PROGRA~2\WI3CF2~1\10\bin\100226~1.0\x64\mt.exe --manifests  --
+C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\link.exe /nologo
+vendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\ggml-cpu.c.obj
+vendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\ggml-cpu.cpp.obj
+vendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\ggml-cpu-aarch64.c.obj
+vendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\ggml-cpu-quants.c.obj
+vendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\llamafile\sgemm.cpp.obj  /out:bin\ggml-cpu.dll
+/implib:vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu.lib /pdb:bin\ggml-cpu.pdb /dll /version:0.0 /machine:x64 /INCREMENTAL:NO
+/DEF:vendor\llama.cpp\ggml\src\ggml-cpu\CMakeFiles\ggml-cpu.dir\.\exports.def  vendor\llama.cpp\ggml\src\ggml-base.lib
+kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+  [54/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\mmvq.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\mmvq.cu.obj.d -x cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9
+ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\mmvq.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\mmvq.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmvq.cu
+  tmpxft_00007210_00000000-10_mmvq.cudafe1.cpp
+  [55/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BACKEND_SHARED
+-DGGML_SHARED -DGGML_USE_CPU -DGGML_USE_CUDA -DLLAMA_BUILD -DLLAMA_SHARED -D_CRT_SECURE_NO_WARNINGS -Dllama_EXPORTS
+-IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\. -
+IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\..\i
+nclude -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\
+ggml\src\..\include /FIchrono  /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /showIncludes
+/Fovendor\llama.cpp\src\CMakeFiles\llama.dir\llama-vocab.cpp.obj /Fdvendor\llama.cpp\src\CMakeFiles\llama.dir\ /FS -c C:\Users\ido9
+6\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\llama-vocab.cpp
+  [56/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-wmma-f16-instance-kqfloat-cpb32.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-wmma-f16-instance-kqfloat-cpb32.cu.obj.d -x
+cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggm
+l\src\ggml-cuda\template-instances\fattn-wmma-f16-instance-kqfloat-cpb32.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-wmma-f16-instance-kqfloat-cpb32.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn-wmma-f16-instance-kqfloat-cpb32.cu
+  tmpxft_00007878_00000000-10_fattn-wmma-f16-instance-kqfloat-cpb32.cudafe1.cpp
+  [57/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BACKEND_SHARED
+-DGGML_SHARED -DGGML_USE_CPU -DGGML_USE_CUDA -DLLAMA_BUILD -DLLAMA_SHARED -D_CRT_SECURE_NO_WARNINGS -Dllama_EXPORTS
+-IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\. -
+IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\..\i
+nclude -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\
+ggml\src\..\include /FIchrono  /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /showIncludes
+/Fovendor\llama.cpp\src\CMakeFiles\llama.dir\llama-grammar.cpp.obj /Fdvendor\llama.cpp\src\CMakeFiles\llama.dir\ /FS -c C:\Users\id
+o96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\llama-grammar.cp
+p
+  [58/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BACKEND_SHARED
+-DGGML_SHARED -DGGML_USE_CPU -DGGML_USE_CUDA -DLLAMA_BUILD -DLLAMA_SHARED -D_CRT_SECURE_NO_WARNINGS -Dllama_EXPORTS
+-IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\. -
+IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\..\i
+nclude -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\
+ggml\src\..\include /FIchrono  /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /showIncludes
+/Fovendor\llama.cpp\src\CMakeFiles\llama.dir\llama-sampling.cpp.obj /Fdvendor\llama.cpp\src\CMakeFiles\llama.dir\ /FS -c C:\Users\i
+do96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\llama-sampling.
+cpp
+  [59/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BACKEND_SHARED
+-DGGML_SHARED -DGGML_USE_CPU -DGGML_USE_CUDA -DLLAMA_BUILD -DLLAMA_SHARED -D_CRT_SECURE_NO_WARNINGS -Dllama_EXPORTS
+-IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\. -
+IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\..\i
+nclude -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\
+ggml\src\..\include /FIchrono  /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /showIncludes
+/Fovendor\llama.cpp\src\CMakeFiles\llama.dir\unicode.cpp.obj /Fdvendor\llama.cpp\src\CMakeFiles\llama.dir\ /FS -c C:\Users\ido96\Ap
+pData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\unicode.cpp
+  [60/103] C:\Windows\system32\cmd.exe /C "cd /D
+C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp &&
+C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\cmake\data\bin\cmake.exe -DMSVC=1
+-DCMAKE_C_COMPILER_VERSION=19.44.35217.0 -DCMAKE_C_COMPILER_ID=MSVC -DCMAKE_VS_PLATFORM_NAME= "-DCMAKE_C_COMPILER=C:/Program Files
+(x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe" -P C:/Users/ido96/AppData/Local/Tem
+p/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/vendor/llama.cpp/common/cmake/build-info-gen-cpp.cmake"
+  -- Found Git: C:/Program Files/Git/cmd/git.exe (found version "2.49.0.windows.1")
+  [61/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP
+-D_CRT_SECURE_NO_WARNINGS  /FIchrono  /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /showIncludes
+/Fovendor\llama.cpp\common\CMakeFiles\build_info.dir\build-info.cpp.obj /Fdvendor\llama.cpp\common\CMakeFiles\build_info.dir\ /FS
+-c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\common
+\build-info.cpp
+  [62/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-wmma-f16-instance-kqhalf-cpb32.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-wmma-f16-instance-kqhalf-cpb32.cu.obj.d -x
+cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggm
+l\src\ggml-cuda\template-instances\fattn-wmma-f16-instance-kqhalf-cpb32.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-wmma-f16-instance-kqhalf-cpb32.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn-wmma-f16-instance-kqhalf-cpb32.cu
+  tmpxft_00006094_00000000-10_fattn-wmma-f16-instance-kqhalf-cpb32.cudafe1.cpp
+  [63/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f16-instance-hs64-f16-f16.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f16-instance-hs64-f16-f16.cu.obj.d -x cu
+-c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\s
+rc\ggml-cuda\template-instances\fattn-vec-f16-instance-hs64-f16-f16.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f16-instance-hs64-f16-f16.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn-vec-f16-instance-hs64-f16-f16.cu
+  tmpxft_00004ad8_00000000-10_fattn-vec-f16-instance-hs64-f16-f16.cudafe1.cpp
+  [64/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BACKEND_SHARED
+-DGGML_SHARED -DGGML_USE_CPU -DGGML_USE_CUDA -DLLAMA_SHARED -D_CRT_SECURE_NO_WARNINGS -IC:\Users\ido96\AppData\Local\Temp\pip-insta
+ll-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\common\.
+-IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\. -
+IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\..\i
+nclude -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\
+ggml\src\..\include /FIchrono  /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /showIncludes
+/Fovendor\llama.cpp\common\CMakeFiles\common.dir\common.cpp.obj /Fdvendor\llama.cpp\common\CMakeFiles\common.dir\common.pdb /FS -c
+C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\common\co
+mmon.cpp
+  [65/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BACKEND_SHARED
+-DGGML_SHARED -DGGML_USE_CPU -DGGML_USE_CUDA -DLLAMA_SHARED -D_CRT_SECURE_NO_WARNINGS -IC:\Users\ido96\AppData\Local\Temp\pip-insta
+ll-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\common\.
+-IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\. -
+IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\..\i
+nclude -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\
+ggml\src\..\include /FIchrono  /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /showIncludes
+/Fovendor\llama.cpp\common\CMakeFiles\common.dir\arg.cpp.obj /Fdvendor\llama.cpp\common\CMakeFiles\common.dir\common.pdb /FS -c C:\
+Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\common\arg.c
+pp
+  C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\common\
+arg.cpp(1996): warning C4834: eliminazione in corso del valore restituito della funzione con attributo [[nodiscard]]
+  [66/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BACKEND_SHARED
+-DGGML_SHARED -DGGML_USE_CPU -DGGML_USE_CUDA -DLLAMA_SHARED -D_CRT_SECURE_NO_WARNINGS -IC:\Users\ido96\AppData\Local\Temp\pip-insta
+ll-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\common\.
+-IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\. -
+IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\..\i
+nclude -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\
+ggml\src\..\include /FIchrono  /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /showIncludes
+/Fovendor\llama.cpp\common\CMakeFiles\common.dir\console.cpp.obj /Fdvendor\llama.cpp\common\CMakeFiles\common.dir\common.pdb /FS
+-c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\common
+\console.cpp
+  [67/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BACKEND_SHARED
+-DGGML_SHARED -DGGML_USE_CPU -DGGML_USE_CUDA -DLLAMA_SHARED -D_CRT_SECURE_NO_WARNINGS -IC:\Users\ido96\AppData\Local\Temp\pip-insta
+ll-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\common\.
+-IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\. -
+IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\..\i
+nclude -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\
+ggml\src\..\include /FIchrono  /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /showIncludes
+/Fovendor\llama.cpp\common\CMakeFiles\common.dir\log.cpp.obj /Fdvendor\llama.cpp\common\CMakeFiles\common.dir\common.pdb /FS -c C:\
+Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\common\log.c
+pp
+  [68/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BACKEND_SHARED
+-DGGML_SHARED -DGGML_USE_CPU -DGGML_USE_CUDA -DLLAMA_SHARED -D_CRT_SECURE_NO_WARNINGS -IC:\Users\ido96\AppData\Local\Temp\pip-insta
+ll-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\common\.
+-IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\. -
+IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\..\i
+nclude -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\
+ggml\src\..\include /FIchrono  /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /showIncludes
+/Fovendor\llama.cpp\common\CMakeFiles\common.dir\ngram-cache.cpp.obj /Fdvendor\llama.cpp\common\CMakeFiles\common.dir\common.pdb
+/FS -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\co
+mmon\ngram-cache.cpp
+  [69/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BACKEND_SHARED
+-DGGML_SHARED -DGGML_USE_CPU -DGGML_USE_CUDA -DLLAMA_SHARED -D_CRT_SECURE_NO_WARNINGS -IC:\Users\ido96\AppData\Local\Temp\pip-insta
+ll-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\common\.
+-IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\. -
+IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\..\i
+nclude -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\
+ggml\src\..\include /FIchrono  /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /showIncludes
+/Fovendor\llama.cpp\common\CMakeFiles\common.dir\sampling.cpp.obj /Fdvendor\llama.cpp\common\CMakeFiles\common.dir\common.pdb /FS
+-c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\common
+\sampling.cpp
+  [70/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BACKEND_SHARED
+-DGGML_SHARED -DGGML_USE_CPU -DGGML_USE_CUDA -DLLAMA_SHARED -D_CRT_SECURE_NO_WARNINGS -IC:\Users\ido96\AppData\Local\Temp\pip-insta
+ll-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\common\.
+-IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\. -
+IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\..\i
+nclude -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\
+ggml\src\..\include /FIchrono  /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /showIncludes
+/Fovendor\llama.cpp\common\CMakeFiles\common.dir\json-schema-to-grammar.cpp.obj
+/Fdvendor\llama.cpp\common\CMakeFiles\common.dir\common.pdb /FS -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp
+-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\common\json-schema-to-grammar.cpp
+  [71/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f32-instance-hs64-f16-f16.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f32-instance-hs64-f16-f16.cu.obj.d -x cu
+-c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\s
+rc\ggml-cuda\template-instances\fattn-vec-f32-instance-hs64-f16-f16.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f32-instance-hs64-f16-f16.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn-vec-f32-instance-hs64-f16-f16.cu
+  tmpxft_000048a4_00000000-10_fattn-vec-f32-instance-hs64-f16-f16.cudafe1.cpp
+  [72/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BACKEND_SHARED
+-DGGML_SHARED -DGGML_USE_CPU -DGGML_USE_CUDA -DLLAMA_BUILD -DLLAMA_SHARED -D_CRT_SECURE_NO_WARNINGS -Dllama_EXPORTS
+-IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\. -
+IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\..\i
+nclude -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\
+ggml\src\..\include /FIchrono  /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /showIncludes
+/Fovendor\llama.cpp\src\CMakeFiles\llama.dir\unicode-data.cpp.obj /Fdvendor\llama.cpp\src\CMakeFiles\llama.dir\ /FS -c C:\Users\ido
+96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\unicode-data.cpp
+  [73/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q4_1.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q4_1.cu.obj.d -x cu -c C:\Users\ido96\
+AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\templ
+ate-instances\mmq-instance-q4_1.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q4_1.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-q4_1.cu
+  tmpxft_00006af8_00000000-10_mmq-instance-q4_1.cudafe1.cpp
+  [74/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq1_s.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq1_s.cu.obj.d -x cu -c C:\Users\ido96
+\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\temp
+late-instances\mmq-instance-iq1_s.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq1_s.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-iq1_s.cu
+  tmpxft_00006d08_00000000-10_mmq-instance-iq1_s.cudafe1.cpp
+  [75/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq3_xxs.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq3_xxs.cu.obj.d -x cu -c C:\Users\ido
+96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\te
+mplate-instances\mmq-instance-iq3_xxs.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq3_xxs.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-iq3_xxs.cu
+  tmpxft_00000c50_00000000-10_mmq-instance-iq3_xxs.cudafe1.cpp
+  [76/103] C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\cl.exe  /nologo /TP -DGGML_BACKEND_SHARED
+-DGGML_SHARED -DGGML_USE_CPU -DGGML_USE_CUDA -DLLAMA_BUILD -DLLAMA_SHARED -D_CRT_SECURE_NO_WARNINGS -Dllama_EXPORTS
+-IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\. -
+IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\..\i
+nclude -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\
+ggml\src\..\include /FIchrono  /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD /showIncludes
+/Fovendor\llama.cpp\src\CMakeFiles\llama.dir\llama.cpp.obj /Fdvendor\llama.cpp\src\CMakeFiles\llama.dir\ /FS -c C:\Users\ido96\AppD
+ata\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\src\llama.cpp
+  [77/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f16-instance-hs128-q8_0-q8_0.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f16-instance-hs128-q8_0-q8_0.cu.obj.d -x
+cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggm
+l\src\ggml-cuda\template-instances\fattn-vec-f16-instance-hs128-q8_0-q8_0.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f16-instance-hs128-q8_0-q8_0.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn-vec-f16-instance-hs128-q8_0-q8_0.cu
+  tmpxft_00006b38_00000000-10_fattn-vec-f16-instance-hs128-q8_0-q8_0.cudafe1.cpp
+  [78/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q4_k.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q4_k.cu.obj.d -x cu -c C:\Users\ido96\
+AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\templ
+ate-instances\mmq-instance-q4_k.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q4_k.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-q4_k.cu
+  tmpxft_0000316c_00000000-10_mmq-instance-q4_k.cudafe1.cpp
+  [79/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f32-instance-hs128-q8_0-q8_0.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f32-instance-hs128-q8_0-q8_0.cu.obj.d -x
+cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggm
+l\src\ggml-cuda\template-instances\fattn-vec-f32-instance-hs128-q8_0-q8_0.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f32-instance-hs128-q8_0-q8_0.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn-vec-f32-instance-hs128-q8_0-q8_0.cu
+  tmpxft_00003bfc_00000000-10_fattn-vec-f32-instance-hs128-q8_0-q8_0.cudafe1.cpp
+  [80/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q8_0.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q8_0.cu.obj.d -x cu -c C:\Users\ido96\
+AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\templ
+ate-instances\mmq-instance-q8_0.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q8_0.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-q8_0.cu
+  tmpxft_00004588_00000000-10_mmq-instance-q8_0.cudafe1.cpp
+  [81/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q4_0.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q4_0.cu.obj.d -x cu -c C:\Users\ido96\
+AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\templ
+ate-instances\mmq-instance-q4_0.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q4_0.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-q4_0.cu
+  tmpxft_00005b7c_00000000-10_mmq-instance-q4_0.cudafe1.cpp
+  [82/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq2_xxs.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq2_xxs.cu.obj.d -x cu -c C:\Users\ido
+96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\te
+mplate-instances\mmq-instance-iq2_xxs.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq2_xxs.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-iq2_xxs.cu
+  tmpxft_000079d4_00000000-10_mmq-instance-iq2_xxs.cudafe1.cpp
+  [83/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f32-instance-hs128-q4_0-q4_0.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f32-instance-hs128-q4_0-q4_0.cu.obj.d -x
+cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggm
+l\src\ggml-cuda\template-instances\fattn-vec-f32-instance-hs128-q4_0-q4_0.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f32-instance-hs128-q4_0-q4_0.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn-vec-f32-instance-hs128-q4_0-q4_0.cu
+  tmpxft_00001b40_00000000-10_fattn-vec-f32-instance-hs128-q4_0-q4_0.cudafe1.cpp
+  [84/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f16-instance-hs128-q4_0-q4_0.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f16-instance-hs128-q4_0-q4_0.cu.obj.d -x
+cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggm
+l\src\ggml-cuda\template-instances\fattn-vec-f16-instance-hs128-q4_0-q4_0.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f16-instance-hs128-q4_0-q4_0.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn-vec-f16-instance-hs128-q4_0-q4_0.cu
+  tmpxft_00005e84_00000000-10_fattn-vec-f16-instance-hs128-q4_0-q4_0.cudafe1.cpp
+  [85/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq3_s.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq3_s.cu.obj.d -x cu -c C:\Users\ido96
+\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\temp
+late-instances\mmq-instance-iq3_s.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq3_s.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-iq3_s.cu
+  tmpxft_00005770_00000000-10_mmq-instance-iq3_s.cudafe1.cpp
+  [86/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f16-instance-hs128-f16-f16.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f16-instance-hs128-f16-f16.cu.obj.d -x
+cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggm
+l\src\ggml-cuda\template-instances\fattn-vec-f16-instance-hs128-f16-f16.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f16-instance-hs128-f16-f16.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn-vec-f16-instance-hs128-f16-f16.cu
+  tmpxft_00007504_00000000-10_fattn-vec-f16-instance-hs128-f16-f16.cudafe1.cpp
+  [87/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q5_k.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q5_k.cu.obj.d -x cu -c C:\Users\ido96\
+AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\templ
+ate-instances\mmq-instance-q5_k.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q5_k.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-q5_k.cu
+  tmpxft_00001734_00000000-10_mmq-instance-q5_k.cudafe1.cpp
+  [88/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq2_xs.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq2_xs.cu.obj.d -x cu -c C:\Users\ido9
+6\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\tem
+plate-instances\mmq-instance-iq2_xs.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq2_xs.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-iq2_xs.cu
+  tmpxft_0000625c_00000000-10_mmq-instance-iq2_xs.cudafe1.cpp
+  [89/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q5_1.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q5_1.cu.obj.d -x cu -c C:\Users\ido96\
+AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\templ
+ate-instances\mmq-instance-q5_1.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q5_1.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-q5_1.cu
+  tmpxft_00004e68_00000000-10_mmq-instance-q5_1.cudafe1.cpp
+  [90/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f32-instance-hs128-f16-f16.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f32-instance-hs128-f16-f16.cu.obj.d -x
+cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggm
+l\src\ggml-cuda\template-instances\fattn-vec-f32-instance-hs128-f16-f16.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f32-instance-hs128-f16-f16.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn-vec-f32-instance-hs128-f16-f16.cu
+  tmpxft_00000dac_00000000-10_fattn-vec-f32-instance-hs128-f16-f16.cudafe1.cpp
+  [91/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq4_nl.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq4_nl.cu.obj.d -x cu -c C:\Users\ido9
+6\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\tem
+plate-instances\mmq-instance-iq4_nl.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq4_nl.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-iq4_nl.cu
+  tmpxft_00004fb0_00000000-10_mmq-instance-iq4_nl.cudafe1.cpp
+  [92/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq4_xs.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq4_xs.cu.obj.d -x cu -c C:\Users\ido9
+6\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\tem
+plate-instances\mmq-instance-iq4_xs.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq4_xs.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-iq4_xs.cu
+  tmpxft_00003bf8_00000000-10_mmq-instance-iq4_xs.cudafe1.cpp
+  [93/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq2_s.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq2_s.cu.obj.d -x cu -c C:\Users\ido96
+\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\temp
+late-instances\mmq-instance-iq2_s.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-iq2_s.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-iq2_s.cu
+  tmpxft_00004d34_00000000-10_mmq-instance-iq2_s.cudafe1.cpp
+  [94/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q5_0.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q5_0.cu.obj.d -x cu -c C:\Users\ido96\
+AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\templ
+ate-instances\mmq-instance-q5_0.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q5_0.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-q5_0.cu
+  tmpxft_00000594_00000000-10_mmq-instance-q5_0.cudafe1.cpp
+  [95/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q3_k.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q3_k.cu.obj.d -x cu -c C:\Users\ido96\
+AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\templ
+ate-instances\mmq-instance-q3_k.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q3_k.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-q3_k.cu
+  tmpxft_000077a0_00000000-10_mmq-instance-q3_k.cudafe1.cpp
+  [96/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q2_k.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q2_k.cu.obj.d -x cu -c C:\Users\ido96\
+AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\templ
+ate-instances\mmq-instance-q2_k.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q2_k.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-q2_k.cu
+  tmpxft_000009ac_00000000-10_mmq-instance-q2_k.cudafe1.cpp
+  [97/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f16-instance-hs256-f16-f16.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f16-instance-hs256-f16-f16.cu.obj.d -x
+cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggm
+l\src\ggml-cuda\template-instances\fattn-vec-f16-instance-hs256-f16-f16.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f16-instance-hs256-f16-f16.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn-vec-f16-instance-hs256-f16-f16.cu
+  tmpxft_00001d20_00000000-10_fattn-vec-f16-instance-hs256-f16-f16.cudafe1.cpp
+  [98/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f32-instance-hs256-f16-f16.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f32-instance-hs256-f16-f16.cu.obj.d -x
+cu -c C:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggm
+l\src\ggml-cuda\template-instances\fattn-vec-f32-instance-hs256-f16-f16.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\fattn-vec-f32-instance-hs256-f16-f16.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  fattn-vec-f32-instance-hs256-f16-f16.cu
+  tmpxft_000020c0_00000000-10_fattn-vec-f32-instance-hs256-f16-f16.cudafe1.cpp
+  [99/103] C:\PROGRA~1\NVIDIA~2\CUDA\v12.6\bin\nvcc.exe -forward-unknown-to-host-compiler -DGGML_BACKEND_BUILD
+-DGGML_BACKEND_SHARED -DGGML_CUDA_DMMV_X=32 -DGGML_CUDA_MMV_Y=1 -DGGML_CUDA_PEER_MAX_BATCH_SIZE=128 -DGGML_CUDA_USE_GRAPHS
+-DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DK_QUANTS_PER_ITERATION=2 -D_CRT_SECURE_NO_WARNINGS -D_XOPEN_SOURCE=600
+-Dggml_cuda_EXPORTS -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vend
+or\llama.cpp\ggml\src\ggml-cuda\. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a
+3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\.. -IC:\Users\ido96\AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e546
+2bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\..\include -isystem "C:\Program Files\NVIDIA GPU Computing
+Toolkit\CUDA\v12.6\include" -allow-unsupported-compiler -Xcompiler="-O2 -Ob2" -DNDEBUG
+"--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q6_k.cu.obj -MF
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q6_k.cu.obj.d -x cu -c C:\Users\ido96\
+AppData\Local\Temp\pip-install-9ii949_k\llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18\vendor\llama.cpp\ggml\src\ggml-cuda\templ
+ate-instances\mmq-instance-q6_k.cu -o
+vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\template-instances\mmq-instance-q6_k.cu.obj
+-Xcompiler=-Fdvendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\,-FS
+  mmq-instance-q6_k.cu
+  tmpxft_00006448_00000000-10_mmq-instance-q6_k.cudafe1.cpp
+  [100/103] C:\Windows\system32\cmd.exe /C "C:\Windows\system32\cmd.exe /C
+"C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\cmake\data\bin\cmake.exe -E __create_def
+C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\build\vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\.\exports.def C:\U
+sers\ido96\AppData\Local\Temp\tmpf7twbgp8\build\vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\.\exports.def.objs &&
+cd C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\build" &&
+C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\cmake\data\bin\cmake.exe -E vs_link_dll
+--intdir=vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir --rc=C:\PROGRA~2\WI3CF2~1\10\bin\100226~1.0\x64\rc.exe
+--mt=C:\PROGRA~2\WI3CF2~1\10\bin\100226~1.0\x64\mt.exe --manifests  --
+C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\link.exe /nologo @CMakeFiles\ggml-cuda.rsp
+/out:bin\ggml-cuda.dll /implib:vendor\llama.cpp\ggml\src\ggml-cuda\ggml-cuda.lib /pdb:bin\ggml-cuda.pdb /dll /version:0.0
+/machine:x64 /INCREMENTAL:NO  /DEF:vendor\llama.cpp\ggml\src\ggml-cuda\CMakeFiles\ggml-cuda.dir\.\exports.def -LIBPATH:"C:/Program
+Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6/lib/x64" && cd ."
+  [101/103] C:\Windows\system32\cmd.exe /C "C:\Windows\system32\cmd.exe /C
+"C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\cmake\data\bin\cmake.exe -E __create_def
+C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\build\vendor\llama.cpp\ggml\src\CMakeFiles\ggml.dir\.\exports.def
+C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\build\vendor\llama.cpp\ggml\src\CMakeFiles\ggml.dir\.\exports.def.objs && cd
+C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\build" &&
+C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\cmake\data\bin\cmake.exe -E vs_link_dll --msvc-ver=1944
+--intdir=vendor\llama.cpp\ggml\src\CMakeFiles\ggml.dir --rc=C:\PROGRA~2\WI3CF2~1\10\bin\100226~1.0\x64\rc.exe
+--mt=C:\PROGRA~2\WI3CF2~1\10\bin\100226~1.0\x64\mt.exe --manifests  --
+C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\link.exe /nologo
+vendor\llama.cpp\ggml\src\CMakeFiles\ggml.dir\ggml-backend-reg.cpp.obj  /out:bin\ggml.dll
+/implib:vendor\llama.cpp\ggml\src\ggml.lib /pdb:bin\ggml.pdb /dll /version:0.0 /machine:x64 /INCREMENTAL:NO
+/DEF:vendor\llama.cpp\ggml\src\CMakeFiles\ggml.dir\.\exports.def  vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu.lib
+vendor\llama.cpp\ggml\src\ggml-cuda\ggml-cuda.lib  vendor\llama.cpp\ggml\src\ggml-base.lib  kernel32.lib user32.lib gdi32.lib
+winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+  [102/103] C:\Windows\system32\cmd.exe /C "C:\Windows\system32\cmd.exe /C
+"C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\cmake\data\bin\cmake.exe -E __create_def
+C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\build\vendor\llama.cpp\src\CMakeFiles\llama.dir\.\exports.def
+C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\build\vendor\llama.cpp\src\CMakeFiles\llama.dir\.\exports.def.objs && cd
+C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\build" &&
+C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\cmake\data\bin\cmake.exe -E vs_link_dll --msvc-ver=1944
+--intdir=vendor\llama.cpp\src\CMakeFiles\llama.dir --rc=C:\PROGRA~2\WI3CF2~1\10\bin\100226~1.0\x64\rc.exe
+--mt=C:\PROGRA~2\WI3CF2~1\10\bin\100226~1.0\x64\mt.exe --manifests  --
+C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\link.exe /nologo
+vendor\llama.cpp\src\CMakeFiles\llama.dir\llama.cpp.obj vendor\llama.cpp\src\CMakeFiles\llama.dir\llama-vocab.cpp.obj
+vendor\llama.cpp\src\CMakeFiles\llama.dir\llama-grammar.cpp.obj vendor\llama.cpp\src\CMakeFiles\llama.dir\llama-sampling.cpp.obj
+vendor\llama.cpp\src\CMakeFiles\llama.dir\unicode.cpp.obj vendor\llama.cpp\src\CMakeFiles\llama.dir\unicode-data.cpp.obj
+/out:bin\llama.dll /implib:vendor\llama.cpp\src\llama.lib /pdb:bin\llama.pdb /dll /version:0.0 /machine:x64 /INCREMENTAL:NO
+/DEF:vendor\llama.cpp\src\CMakeFiles\llama.dir\.\exports.def  vendor\llama.cpp\ggml\src\ggml.lib
+vendor\llama.cpp\ggml\src\ggml-cpu\ggml-cpu.lib  vendor\llama.cpp\ggml\src\ggml-cuda\ggml-cuda.lib
+vendor\llama.cpp\ggml\src\ggml-base.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib
+uuid.lib comdlg32.lib advapi32.lib && cd ."
+  [103/103] C:\Windows\system32\cmd.exe /C "cd . &&
+C:\PROGRA~2\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1444~1.352\bin\Hostx64\x64\lib.exe /nologo /machine:x64
+/out:vendor\llama.cpp\common\common.lib vendor\llama.cpp\common\CMakeFiles\build_info.dir\build-info.cpp.obj
+vendor\llama.cpp\common\CMakeFiles\common.dir\arg.cpp.obj vendor\llama.cpp\common\CMakeFiles\common.dir\common.cpp.obj
+vendor\llama.cpp\common\CMakeFiles\common.dir\console.cpp.obj
+vendor\llama.cpp\common\CMakeFiles\common.dir\json-schema-to-grammar.cpp.obj
+vendor\llama.cpp\common\CMakeFiles\common.dir\log.cpp.obj vendor\llama.cpp\common\CMakeFiles\common.dir\ngram-cache.cpp.obj
+vendor\llama.cpp\common\CMakeFiles\common.dir\sampling.cpp.obj && cd ."
+
+  *** Installing project into wheel...
+  -- Install configuration: "Release"
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/lib/ggml-cpu.lib
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/bin/ggml-cpu.dll
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/lib/ggml-cuda.lib
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/bin/ggml-cuda.dll
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/lib/ggml.lib
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/bin/ggml.dll
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml.h
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-cpu.h
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-alloc.h
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-backend.h
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-blas.h
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-cann.h
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-cuda.h
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-kompute.h
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-metal.h
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-rpc.h
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-sycl.h
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-vulkan.h
+  -- Up-to-date: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/lib/ggml.lib
+  -- Up-to-date: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/bin/ggml.dll
+  -- Up-to-date: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml.h
+  -- Up-to-date: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-cpu.h
+  -- Up-to-date: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-alloc.h
+  -- Up-to-date: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-backend.h
+  -- Up-to-date: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-blas.h
+  -- Up-to-date: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-cann.h
+  -- Up-to-date: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-cuda.h
+  -- Up-to-date: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-kompute.h
+  -- Up-to-date: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-metal.h
+  -- Up-to-date: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-rpc.h
+  -- Up-to-date: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-sycl.h
+  -- Up-to-date: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/ggml-vulkan.h
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/lib/ggml-base.lib
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/bin/ggml-base.dll
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/lib/llama.lib
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/bin/llama.dll
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/include/llama.h
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/lib/cmake/llama/llama-config.cmake
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/lib/cmake/llama/llama-version.cmake
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/bin/convert_hf_to_gguf.py
+  -- Installing: C:\Users\ido96\AppData\Local\Temp\tmpf7twbgp8\wheel\platlib/lib/pkgconfig/llama.pc
+  -- Installing:
+C:/Users/ido96/AppData/Local/Temp/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/llama_cpp/lib/llama.lib
+  -- Installing:
+C:/Users/ido96/AppData/Local/Temp/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/llama_cpp/lib/llama.dll
+  -- Installing: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/wheel/platlib/llama_cpp/lib/llama.lib
+  -- Installing: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/wheel/platlib/llama_cpp/lib/llama.dll
+  -- Installing:
+C:/Users/ido96/AppData/Local/Temp/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/llama_cpp/lib/ggml.lib
+  -- Installing:
+C:/Users/ido96/AppData/Local/Temp/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/llama_cpp/lib/ggml.dll
+  -- Installing: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/wheel/platlib/llama_cpp/lib/ggml.lib
+  -- Installing: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/wheel/platlib/llama_cpp/lib/ggml.dll
+  -- Installing: C:/Users/ido96/AppData/Local/Temp/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/llama_cpp
+/lib/ggml-base.lib
+  -- Installing: C:/Users/ido96/AppData/Local/Temp/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/llama_cpp
+/lib/ggml-base.dll
+  -- Installing: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/wheel/platlib/llama_cpp/lib/ggml-base.lib
+  -- Installing: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/wheel/platlib/llama_cpp/lib/ggml-base.dll
+  -- Installing:
+C:/Users/ido96/AppData/Local/Temp/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/llama_cpp/lib/ggml-cpu.lib
+  -- Installing:
+C:/Users/ido96/AppData/Local/Temp/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/llama_cpp/lib/ggml-cpu.dll
+  -- Installing: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/wheel/platlib/llama_cpp/lib/ggml-cpu.lib
+  -- Installing: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/wheel/platlib/llama_cpp/lib/ggml-cpu.dll
+  -- Installing: C:/Users/ido96/AppData/Local/Temp/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/llama_cpp
+/lib/ggml-cuda.lib
+  -- Installing: C:/Users/ido96/AppData/Local/Temp/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/llama_cpp
+/lib/ggml-cuda.dll
+  -- Installing: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/wheel/platlib/llama_cpp/lib/ggml-cuda.lib
+  -- Installing: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/wheel/platlib/llama_cpp/lib/ggml-cuda.dll
+  -- Up-to-date:
+C:/Users/ido96/AppData/Local/Temp/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/llama_cpp/lib/ggml.dll
+  -- Up-to-date:
+C:/Users/ido96/AppData/Local/Temp/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/llama_cpp/lib/ggml-cpu.dll
+  -- Up-to-date: C:/Users/ido96/AppData/Local/Temp/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/llama_cpp
+/lib/ggml-cuda.dll
+  -- Up-to-date: C:/Users/ido96/AppData/Local/Temp/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/llama_cpp
+/lib/ggml-base.dll
+  -- Up-to-date: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/wheel/platlib/llama_cpp/lib/ggml.dll
+  -- Up-to-date: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/wheel/platlib/llama_cpp/lib/ggml-cpu.dll
+  -- Up-to-date: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/wheel/platlib/llama_cpp/lib/ggml-cuda.dll
+  -- Up-to-date: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/wheel/platlib/llama_cpp/lib/ggml-base.dll
+  -- Up-to-date:
+C:/Users/ido96/AppData/Local/Temp/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/llama_cpp/lib/ggml-cpu.dll
+  -- Up-to-date: C:/Users/ido96/AppData/Local/Temp/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/llama_cpp
+/lib/ggml-cuda.dll
+  -- Up-to-date: C:/Users/ido96/AppData/Local/Temp/pip-install-9ii949_k/llama-cpp-python_6d21e5462bed46a79a56e9a3cdabaf18/llama_cpp
+/lib/ggml-base.dll
+  -- Up-to-date: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/wheel/platlib/llama_cpp/lib/ggml-cpu.dll
+  -- Up-to-date: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/wheel/platlib/llama_cpp/lib/ggml-cuda.dll
+  -- Up-to-date: C:/Users/ido96/AppData/Local/Temp/tmpf7twbgp8/wheel/platlib/llama_cpp/lib/ggml-base.dll
+  *** Making wheel...
+  *** Created llama_cpp_python-0.3.2-cp311-cp311-win_amd64.whl
+  Building wheel for llama-cpp-python (pyproject.toml): finished with status 'done'
+  Created wheel for llama-cpp-python: filename=llama_cpp_python-0.3.2-cp311-cp311-win_amd64.whl size=96443778 sha256=485868e090a985b0956575c0e012fb3416c66c65ce052219e05c2eef3fee2939
+  Stored in directory: C:\Users\ido96\AppData\Local\Temp\pip-ephem-wheel-cache-sjqpl7c0\wheels\0e\23\53\f88ac1148db83642747c5989bb9d32cc2de2fa8e54c4c2eb7f
+Successfully built llama-cpp-python
+Installing collected packages: typing-extensions, numpy, MarkupSafe, diskcache, jinja2, llama-cpp-python
+  Attempting uninstall: typing-extensions
+    Found existing installation: typing_extensions 4.16.0
+    Uninstalling typing_extensions-4.16.0:
+      Removing file or directory c:\users\ido96\desktop\remixr\backend\.venv\lib\site-packages\__pycache__\typing_extensions.cpython-311.pyc
+      Removing file or directory c:\users\ido96\desktop\remixr\backend\.venv\lib\site-packages\typing_extensions-4.16.0.dist-info\
+      Removing file or directory c:\users\ido96\desktop\remixr\backend\.venv\lib\site-packages\typing_extensions.py
+      Successfully uninstalled typing_extensions-4.16.0
+  Attempting uninstall: numpy
+    Found existing installation: numpy 1.26.4
+    Uninstalling numpy-1.26.4:
+      Removing file or directory c:\users\ido96\desktop\remixr\backend\.venv\lib\site-packages\numpy-1.26.4-cp311-cp311-win_amd64.whl
+      Removing file or directory c:\users\ido96\desktop\remixr\backend\.venv\lib\site-packages\numpy-1.26.4.dist-info\
+      Removing file or directory c:\users\ido96\desktop\remixr\backend\.venv\lib\site-packages\numpy.libs\
+      Removing file or directory c:\users\ido96\desktop\remixr\backend\.venv\lib\site-packages\numpy\
+      Removing file or directory c:\users\ido96\desktop\remixr\backend\.venv\scripts\f2py.exe
+      Successfully uninstalled numpy-1.26.4
+  Attempting uninstall: MarkupSafe
+    Found existing installation: MarkupSafe 3.0.3
+    Uninstalling MarkupSafe-3.0.3:
+      Removing file or directory c:\users\ido96\desktop\remixr\backend\.venv\lib\site-packages\markupsafe-3.0.3.dist-info\
+      Removing file or directory c:\users\ido96\desktop\remixr\backend\.venv\lib\site-packages\markupsafe\
+      Successfully uninstalled MarkupSafe-3.0.3
+  Attempting uninstall: jinja2
+    Found existing installation: Jinja2 3.1.6
+    Uninstalling Jinja2-3.1.6:
+      Removing file or directory c:\users\ido96\desktop\remixr\backend\.venv\lib\site-packages\jinja2-3.1.6.dist-info\
+      Removing file or directory c:\users\ido96\desktop\remixr\backend\.venv\lib\site-packages\jinja2\
+      Successfully uninstalled Jinja2-3.1.6
+
+Successfully installed MarkupSafe-3.0.4 diskcache-5.6.3 jinja2-3.1.6 llama-cpp-python-0.3.2 numpy-2.4.6 typing-extensions-4.16.0
+
+pip exit code: 0  (durata: 2.5 min)
+
+--- verifica supporto GPU
+python.exe : ggml_cuda_init: GGML_CUDA_FORCE_MMQ:    no
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:300 car:12
++     $out = & $pyExe $f 2>&1 | Out-String
++            ~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ggml_cuda_init:...ORCE_MMQ:    no:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ggml_cuda_init: GGML_CUDA_FORCE_CUBLAS: no
+ggml_cuda_init: found 1 CUDA devices:
+  Device 0: NVIDIA GeForce RTX 4090 Laptop GPU, compute capability 8.9, VMM: yes
+version: 0.3.2
+gpu_offload: True
+   lib: ggml-base.dll
+   lib: ggml-base.lib
+   lib: ggml-cpu.dll
+   lib: ggml-cpu.lib
+   lib: ggml-cuda.dll
+   lib: ggml-cuda.lib
+   lib: ggml.dll
+   lib: ggml.lib
+   lib: llama.dll
+   lib: llama.lib
+
+==============================================================================
+== 5. Sommario
+==============================================================================
+
+Strategy                PipExit GpuOffload
+--------                ------- ----------
+ninja-allow-unsupported       0       True
+RIUSCITO con la strategia: ninja-allow-unsupported
+
+Per rendere permanenti le variabili CUDA (utile fuori da questo script):
+    .\tools\build-llama-cuda.ps1 -PersistCudaEnv -Strategy ninja-allow-unsupported -SkipDeps
+oppure a mano:  setx CUDA_PATH_V12_6 "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6"
+
+Prossimo passo: scarica il modello GGUF in backend\models (README Â§9).
+
+Log completo: C:\Users\ido96\Desktop\remixr\tools\logs\build-llama-20261009-183435.log
+Committalo:   git add tools/logs && git commit -m "build log" && git push
+**********************
+Fine trascrizione Windows PowerShell
+Ora di fine: 20261009183719
+**********************

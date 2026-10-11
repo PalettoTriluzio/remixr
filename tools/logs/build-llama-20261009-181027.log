@@ -35,3 +35,692 @@ CPU threads : 32
 ==============================================================================
 VS trovato  : C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools
 Importo l'ambiente da vcvars64.bat ...
+variabili importate: 103
+cl.exe      : C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\cl.exe
+cl.exe : Microsoft (R) C/C++ Optimizing Compiler versione 19.44.35217 per x64
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:114 car:14
++ $clBanner = (& cl 2>&1 | Select-Object -First 2 | Out-String).Trim()
++              ~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Microsoft (R) C...4.35217 per x64:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Copyright (C) Microsoft Corporation. Tutti i diritti  sono riservati.
+
+==============================================================================
+== 2. CUDA (toolkit + variabili d'ambiente)
+==============================================================================
+nvcc        : C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin\nvcc.exe
+nvcc: NVIDIA (R) Cuda compiler driver
+Copyright (c) 2005-2024 NVIDIA Corporation
+Built on Fri_Jun_14_16:44:19_Pacific_Daylight_Time_2024
+Cuda compilation tools, release 12.6, V12.6.20
+Build cuda_12.6.r12.6/compiler.34431801_0
+cuda root   : C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+versione    : 12.6
+
+--- variabili CUDA
+CUDA_PATH       = C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+CUDA_PATH_V12_6 =
+CudaToolkitDir  =
+MANCA CUDA_PATH_V12_6 -> la imposto per questa build: C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+
+name, driver_version, memory.total [MiB], compute_cap
+NVIDIA GeForce RTX 4090 Laptop GPU, 580.88, 16376 MiB, 8.9
+
+==============================================================================
+== 3. Python / venv
+==============================================================================
+python      : C:\Users\ido96\Desktop\remixr\backend\.venv\Scripts\python.exe
+3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]
+bits 64
+
+--- pip / setuptools / wheel
+Requirement already satisfied: pip in .\backend\.venv\Lib\site-packages (26.2.1)
+Requirement already satisfied: setuptools in .\backend\.venv\Lib\site-packages (84.0.0)
+Requirement already satisfied: wheel in .\backend\.venv\Lib\site-packages (0.48.0)
+Requirement already satisfied: packaging>=24.0 in .\backend\.venv\Lib\site-packages (from wheel) (26.3)
+
+--- cmake<4 + ninja nel venv
+    (se cmake e ninja sono gia' nel PATH, scikit-build-core non si scarica cmake 4.x da solo)
+Collecting cmake<4
+  Downloading cmake-3.31.10-py3-none-win_amd64.whl.metadata (6.3 kB)
+Collecting ninja
+  Downloading ninja-1.13.2-py3-none-win_amd64.whl.metadata (5.4 kB)
+Downloading cmake-3.31.10-py3-none-win_amd64.whl (36.6 MB)
+   ---------------------------------------- 36.6/36.6 MB 19.9 MB/s  0:00:01
+Downloading ninja-1.13.2-py3-none-win_amd64.whl (311 kB)
+Installing collected packages: ninja, cmake
+
+Successfully installed cmake-3.31.10 ninja-1.13.2
+cmake usato : C:\Users\ido96\Desktop\remixr\backend\.venv\Scripts\cmake.exe  -> cmake version 3.31.10
+ninja usato : C:\Users\ido96\Desktop\remixr\backend\.venv\Scripts\ninja.exe  -> 1.13.2.git.kitware.jobserver-pipe-1
+
+==============================================================================
+== 4. Build
+==============================================================================
+
+==============================================================================
+== Strategia: ninja
+==============================================================================
+Ninja puro (nvcc chiamato diretto, niente CUDA.targets di MSBuild)
+
+--- rimuovo installazioni precedenti (evita il riuso di una build CPU)
+python.exe : WARNING: Skipping llama-cpp-python as it is not installed.
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:301 car:5
++     & $py -m pip uninstall -y llama-cpp-python 2>&1 | Out-String | Wr ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: Skippi... not installed.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+CMAKE_ARGS      = -DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=89 -DLLAVA_BUILD=OFF -DGGML_CCACHE=OFF -DCUDAToolkit_ROOT=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6 -DCMAKE_CUDA_COMPILER=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6/bin/nvcc.exe
+CMAKE_GENERATOR = Ninja
+CudaToolkitDir  = C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+PARALLEL_LEVEL  = 32
+
+--- pip install (10-20 min, output verboso)
+Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+Collecting llama-cpp-python==0.3.2
+  Downloading llama_cpp_python-0.3.2.tar.gz (65.0 MB)
+     ---------------------------------------- 65.0/65.0 MB 20.0 MB/s  0:00:03
+  Installing build dependencies: started
+python.exe :   Running command installing build dependencies for llama-cpp-python
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:321 car:9
++         & $py -m pip install "llama-cpp-python==$Version" `
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (  Running comma...lama-cpp-python:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+  Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+  Collecting scikit-build-core>=0.9.2 (from scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for scikit-build-core>=0.9.2 from https://files.pythonhosted.org/packages/01/1b/83913d6d5c6a7f
+8ad5bf5d67b2d57ab09475f1bb9dd0c7a3f44067d59b90/scikit_build_core-1.1.1-py3-none-any.whl.metadata
+    Using cached scikit_build_core-1.1.1-py3-none-any.whl.metadata (19 kB)
+  Collecting packaging>=23.2 (from scikit-build-core>=0.9.2->scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for packaging>=23.2 from https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951
+fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl.metadata
+    Using cached packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+  Collecting pathspec>=0.12.0 (from scikit-build-core>=0.9.2->scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for pathspec>=0.12.0 from https://files.pythonhosted.org/packages/f1/d9/7fb5aa316bc299258e68c7
+3ba3bddbc499654a07f151cba08f6153988714/pathspec-1.1.1-py3-none-any.whl.metadata
+    Using cached pathspec-1.1.1-py3-none-any.whl.metadata (14 kB)
+  WARNING: scikit-build-core 1.1.1 does not provide the extra 'pyproject'
+  Using cached scikit_build_core-1.1.1-py3-none-any.whl (293 kB)
+  Using cached packaging-26.3-py3-none-any.whl (129 kB)
+  Using cached pathspec-1.1.1-py3-none-any.whl (57 kB)
+  Installing collected packages: pathspec, packaging, scikit-build-core
+    Creating C:\Users\ido96\AppData\Local\Temp\pip-build-env-vdv0r5bc\overlay\Scripts
+
+  Successfully installed packaging-26.3 pathspec-1.1.1 scikit-build-core-1.1.1
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Running command Getting requirements to build wheel
+  Could not determine CMake version via --version, got '' 'Traceback (most recent call last):\n  File "<frozen runpy>", line 198,
+in _run_module_as_main\n  File "<frozen runpy>", line 88, in _run_code\n  File
+"C:\\Users\\ido96\\Desktop\\remixr\\backend\\.venv\\Scripts\\cmake.EXE\\__main__.py", line 2, in <module>\nModuleNotFoundError: No
+module named \'cmake\'\n'
+  Getting requirements to build wheel: finished with status 'done'
+  Installing backend dependencies: started
+  Running command installing backend dependencies for llama-cpp-python
+  Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+  Collecting cmake>=3.21
+    Obtaining dependency information for cmake>=3.21 from https://files.pythonhosted.org/packages/87/9c/a7918eeeed09b34aa5dc1b76736
+7fb1a2dcbb56171be00be0fd1280fe752/cmake-4.4.4-py3-none-win_amd64.whl.metadata
+    Using cached cmake-4.4.4-py3-none-win_amd64.whl.metadata (7.0 kB)
+  Using cached cmake-4.4.4-py3-none-win_amd64.whl (42.3 MB)
+  Installing collected packages: cmake
+    Creating C:\Users\ido96\AppData\Local\Temp\pip-build-env-vdv0r5bc\normal\Scripts
+  Successfully installed cmake-4.4.4
+  Installing backend dependencies: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Running command Preparing metadata (pyproject.toml)
+  *** scikit-build-core 1.1.1 using CMake 4.4.4 (metadata_wheel)
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting typing-extensions>=4.5.0 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for typing-extensions>=4.5.0 from https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl.metadata
+  Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/3a/be/650f9c091ef71cb01d735775d554e068752d3ff63d7943b26316dc401749/numpy-1.21.2.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/5f/d6/ad58ded26556eaeaa8c971e08b6466f17c4ac4d786cd3d800e26ce59cc01/numpy-1.21.3.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/fb/48/b0708ebd7718a8933f0d3937513ef8ef2f4f04529f1f66ca86d873043921/numpy-1.21.4.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/c2/a8/a924a09492bdfee8c2ec3094d0a13f2799800b4fdc9c890738aeeb12c72e/numpy-1.21.5.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/45/b7/de7b8e67f2232c26af57c205aaad29fe17754f793404f59c8a730c7a191a/numpy-1.21.6.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/d3/e1/f2fe8f6113a657a1da83b358b16755e528a602c6976a43724a88f42b482a/numpy-2.5.0rc1.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/e7/05/3d27272d30698dc0ecb7fdfaa41ad70303b444f81722bb99bce1d818638a/numpy-2.5.0.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/22/fd/89965aa4ac08c74998539fcbf24fa3540f3e15237fbeb6bcf9c908f4aade/numpy-2.5.1.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/9a/80/db0b4559e57ec36362bedbb05530a87fafbcb6067708c946967a41d449e7/numpy-2.5.2.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/13/01/11703282db468b85f6f7b8c7f22d058de5970d5c7e60a3a8aaa313c3de36/numpy-2.5.3.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+Collecting numpy>=1.20.0 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for numpy>=1.20.0 from https://files.pythonhosted.org/packages/c5/31/7fc6239c12bce7e931463251cca4426c465e1876ba3cc785402ef4dd8f4e/numpy-2.4.6-cp311-cp311-win_amd64.whl.metadata
+  Downloading numpy-2.4.6-cp311-cp311-win_amd64.whl.metadata (6.6 kB)
+Collecting diskcache>=5.6.1 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for diskcache>=5.6.1 from https://files.pythonhosted.org/packages/3f/27/4570e78fc0bf5ea0ca45eb1de3818a23787af9b390c0b0a0033a1b8236f9/diskcache-5.6.3-py3-none-any.whl.metadata
+  Downloading diskcache-5.6.3-py3-none-any.whl.metadata (20 kB)
+Collecting jinja2>=2.11.3 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for jinja2>=2.11.3 from https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl.metadata
+  Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+Collecting MarkupSafe>=2.0 (from jinja2>=2.11.3->llama-cpp-python==0.3.2)
+  Obtaining dependency information for MarkupSafe>=2.0 from https://files.pythonhosted.org/packages/91/89/f2b509f7bf79352e40117824c1070dbeafd4df67031d3fa98165a3134228/markupsafe-3.0.4-cp311-cp311-win_amd64.whl.metadata
+  Downloading markupsafe-3.0.4-cp311-cp311-win_amd64.whl.metadata (2.8 kB)
+Downloading diskcache-5.6.3-py3-none-any.whl (45 kB)
+Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+Downloading markupsafe-3.0.4-cp311-cp311-win_amd64.whl (14 kB)
+Downloading numpy-2.4.6-cp311-cp311-win_amd64.whl (12.6 MB)
+   ---------------------------------------- 12.6/12.6 MB 21.9 MB/s  0:00:00
+Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Building wheels for collected packages: llama-cpp-python
+  Building wheel for llama-cpp-python (pyproject.toml): started
+  Running command Building wheel for llama-cpp-python (pyproject.toml)
+  *** scikit-build-core 1.1.1 using CMake 4.4.4 (wheel)
+  *** Configuring CMake...
+  CMake Warning:
+    Ignoring extra path from command line:
+
+     "Toolkit/CUDA/v12.6/bin/nvcc.exe"
+
+
+  loading initial cache file C:\Users\ido96\AppData\Local\Temp\tmp8c9gdt8m\build\CMakeInit.txt
+  -- Building for: Ninja
+  -- The C compiler identification is MSVC 19.44.35217.0
+  -- The CXX compiler identification is MSVC 19.44.35217.0
+  -- Detecting C compiler ABI info
+  -- Detecting C compiler ABI info - done
+  -- Check for working C compiler: C:/Program Files (x86)/Microsoft Visual
+Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+  -- Detecting C compile features
+  -- Detecting C compile features - done
+  -- Detecting CXX compiler ABI info
+  -- Detecting CXX compiler ABI info - done
+  -- Check for working CXX compiler: C:/Program Files (x86)/Microsoft Visual
+Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+  -- Detecting CXX compile features
+  -- Detecting CXX compile features - done
+  -- Found Git: C:/Program Files/Git/cmd/git.exe (found version "2.49.0.windows.1")
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+  -- Looking for pthread_create in pthreads
+  -- Looking for pthread_create in pthreads - not found
+  -- Looking for pthread_create in pthread
+  -- Looking for pthread_create in pthread - not found
+  -- Found Threads: TRUE
+  -- CMAKE_SYSTEM_PROCESSOR: AMD64
+  -- CMAKE_GENERATOR_PLATFORM:
+  -- Found OpenMP_C: -openmp (found version "2.0")
+  -- Found OpenMP_CXX: -openmp (found version "2.0")
+  -- Found OpenMP: TRUE (found version "2.0")
+  -- OpenMP found
+  -- Using llamafile
+  -- x86 detected
+  -- Performing Test HAS_AVX_1
+  -- Performing Test HAS_AVX_1 - Success
+  -- Performing Test HAS_AVX2_1
+  -- Performing Test HAS_AVX2_1 - Success
+  -- Performing Test HAS_FMA_1
+  -- Performing Test HAS_FMA_1 - Success
+  -- Performing Test HAS_AVX512_1
+  -- Performing Test HAS_AVX512_1 - Failed
+  -- Performing Test HAS_AVX512_2
+  -- Performing Test HAS_AVX512_2 - Failed
+  -- Using runtime weight conversion of Q4_0 to Q4_0_x_x to enable optimized GEMM/GEMV kernels
+  -- Including CPU backend
+  CMake Warning at vendor/llama.cpp/ggml/src/ggml-amx/CMakeLists.txt:106 (message):
+    AMX requires x86 and gcc version > 11.0.  Turning off GGML_AMX.
+
+
+  -- Could not find `nvcc` executable in path specified by variable CUDAToolkit_ROOT=C:/Program
+  CMake Error at vendor/llama.cpp/ggml/src/ggml-cuda/CMakeLists.txt:164 (message):
+    CUDA Toolkit not found
+
+
+  -- Configuring incomplete, errors occurred!
+
+  *** CMake configuration failed
+  error: subprocess-exited-with-error
+
+  Building wheel for llama-cpp-python (pyproject.toml) did not run successfully.
+  exit code: 1
+
+  No available output.
+
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+  full command: 'C:\Users\ido96\Desktop\remixr\backend\.venv\Scripts\python.exe'
+'C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip\_vendor\pyproject_hooks\_in_process\_in_process.py' build_wheel
+'C:\Users\ido96\AppData\Local\Temp\tmpetvuoojr'
+  cwd: C:\Users\ido96\AppData\Local\Temp\pip-install-jbjk5dva\llama-cpp-python_f548a33ec8cd476e91269f258d03b4ab
+  Building wheel for llama-cpp-python (pyproject.toml): finished with status 'error'
+  ERROR: Failed building wheel for llama-cpp-python
+Failed to build llama-cpp-python
+error: failed-wheel-build-for-install
+
+Failed to build installable wheels for some pyproject.toml based projects
+
+llama-cpp-python
+
+pip exit code: 1  (durata: 0.4 min)
+
+--- verifica supporto GPU
+pip ha fallito, salto la verifica.
+
+Strategia 'ninja' non riuscita. Proseguo con la successiva (se presente).
+
+==============================================================================
+== Strategia: ninja-allow-unsupported
+==============================================================================
+Ninja + -allow-unsupported-compiler (bypassa il check versione MSVC di nvcc)
+
+--- rimuovo installazioni precedenti (evita il riuso di una build CPU)
+python.exe : WARNING: Skipping llama-cpp-python as it is not installed.
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:301 car:5
++     & $py -m pip uninstall -y llama-cpp-python 2>&1 | Out-String | Wr ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: Skippi... not installed.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+CMAKE_ARGS      = -DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=89 -DLLAVA_BUILD=OFF -DGGML_CCACHE=OFF -DCUDAToolkit_ROOT=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6 -DCMAKE_CUDA_COMPILER=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6/bin/nvcc.exe -DCMAKE_CUDA_FLAGS=-allow-unsupported-compiler
+CMAKE_GENERATOR = Ninja
+CudaToolkitDir  = C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+PARALLEL_LEVEL  = 32
+
+--- pip install (10-20 min, output verboso)
+Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+Collecting llama-cpp-python==0.3.2
+  Downloading llama_cpp_python-0.3.2.tar.gz (65.0 MB)
+     ---------------------------------------- 65.0/65.0 MB 19.3 MB/s  0:00:03
+  Installing build dependencies: started
+python.exe :   Running command installing build dependencies for llama-cpp-python
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:321 car:9
++         & $py -m pip install "llama-cpp-python==$Version" `
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (  Running comma...lama-cpp-python:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+  Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+  Collecting scikit-build-core>=0.9.2 (from scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for scikit-build-core>=0.9.2 from https://files.pythonhosted.org/packages/01/1b/83913d6d5c6a7f
+8ad5bf5d67b2d57ab09475f1bb9dd0c7a3f44067d59b90/scikit_build_core-1.1.1-py3-none-any.whl.metadata
+    Using cached scikit_build_core-1.1.1-py3-none-any.whl.metadata (19 kB)
+  Collecting packaging>=23.2 (from scikit-build-core>=0.9.2->scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for packaging>=23.2 from https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951
+fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl.metadata
+    Using cached packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+  Collecting pathspec>=0.12.0 (from scikit-build-core>=0.9.2->scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for pathspec>=0.12.0 from https://files.pythonhosted.org/packages/f1/d9/7fb5aa316bc299258e68c7
+3ba3bddbc499654a07f151cba08f6153988714/pathspec-1.1.1-py3-none-any.whl.metadata
+    Using cached pathspec-1.1.1-py3-none-any.whl.metadata (14 kB)
+  WARNING: scikit-build-core 1.1.1 does not provide the extra 'pyproject'
+  Using cached scikit_build_core-1.1.1-py3-none-any.whl (293 kB)
+  Using cached packaging-26.3-py3-none-any.whl (129 kB)
+  Using cached pathspec-1.1.1-py3-none-any.whl (57 kB)
+  Installing collected packages: pathspec, packaging, scikit-build-core
+    Creating C:\Users\ido96\AppData\Local\Temp\pip-build-env-shnd1l5f\overlay\Scripts
+
+  Successfully installed packaging-26.3 pathspec-1.1.1 scikit-build-core-1.1.1
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Running command Getting requirements to build wheel
+  Could not determine CMake version via --version, got '' 'Traceback (most recent call last):\n  File "<frozen runpy>", line 198,
+in _run_module_as_main\n  File "<frozen runpy>", line 88, in _run_code\n  File
+"C:\\Users\\ido96\\Desktop\\remixr\\backend\\.venv\\Scripts\\cmake.EXE\\__main__.py", line 2, in <module>\nModuleNotFoundError: No
+module named \'cmake\'\n'
+  Getting requirements to build wheel: finished with status 'done'
+  Installing backend dependencies: started
+  Running command installing backend dependencies for llama-cpp-python
+  Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+  Collecting cmake>=3.21
+    Obtaining dependency information for cmake>=3.21 from https://files.pythonhosted.org/packages/87/9c/a7918eeeed09b34aa5dc1b76736
+7fb1a2dcbb56171be00be0fd1280fe752/cmake-4.4.4-py3-none-win_amd64.whl.metadata
+    Using cached cmake-4.4.4-py3-none-win_amd64.whl.metadata (7.0 kB)
+  Using cached cmake-4.4.4-py3-none-win_amd64.whl (42.3 MB)
+  Installing collected packages: cmake
+    Creating C:\Users\ido96\AppData\Local\Temp\pip-build-env-shnd1l5f\normal\Scripts
+  Successfully installed cmake-4.4.4
+  Installing backend dependencies: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Running command Preparing metadata (pyproject.toml)
+  *** scikit-build-core 1.1.1 using CMake 4.4.4 (metadata_wheel)
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting typing-extensions>=4.5.0 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for typing-extensions>=4.5.0 from https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl.metadata
+  Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/3a/be/650f9c091ef71cb01d735775d554e068752d3ff63d7943b26316dc401749/numpy-1.21.2.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/5f/d6/ad58ded26556eaeaa8c971e08b6466f17c4ac4d786cd3d800e26ce59cc01/numpy-1.21.3.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/fb/48/b0708ebd7718a8933f0d3937513ef8ef2f4f04529f1f66ca86d873043921/numpy-1.21.4.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/c2/a8/a924a09492bdfee8c2ec3094d0a13f2799800b4fdc9c890738aeeb12c72e/numpy-1.21.5.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/45/b7/de7b8e67f2232c26af57c205aaad29fe17754f793404f59c8a730c7a191a/numpy-1.21.6.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/d3/e1/f2fe8f6113a657a1da83b358b16755e528a602c6976a43724a88f42b482a/numpy-2.5.0rc1.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/e7/05/3d27272d30698dc0ecb7fdfaa41ad70303b444f81722bb99bce1d818638a/numpy-2.5.0.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/22/fd/89965aa4ac08c74998539fcbf24fa3540f3e15237fbeb6bcf9c908f4aade/numpy-2.5.1.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/9a/80/db0b4559e57ec36362bedbb05530a87fafbcb6067708c946967a41d449e7/numpy-2.5.2.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/13/01/11703282db468b85f6f7b8c7f22d058de5970d5c7e60a3a8aaa313c3de36/numpy-2.5.3.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+Collecting numpy>=1.20.0 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for numpy>=1.20.0 from https://files.pythonhosted.org/packages/c5/31/7fc6239c12bce7e931463251cca4426c465e1876ba3cc785402ef4dd8f4e/numpy-2.4.6-cp311-cp311-win_amd64.whl.metadata
+  Downloading numpy-2.4.6-cp311-cp311-win_amd64.whl.metadata (6.6 kB)
+Collecting diskcache>=5.6.1 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for diskcache>=5.6.1 from https://files.pythonhosted.org/packages/3f/27/4570e78fc0bf5ea0ca45eb1de3818a23787af9b390c0b0a0033a1b8236f9/diskcache-5.6.3-py3-none-any.whl.metadata
+  Downloading diskcache-5.6.3-py3-none-any.whl.metadata (20 kB)
+Collecting jinja2>=2.11.3 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for jinja2>=2.11.3 from https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl.metadata
+  Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+Collecting MarkupSafe>=2.0 (from jinja2>=2.11.3->llama-cpp-python==0.3.2)
+  Obtaining dependency information for MarkupSafe>=2.0 from https://files.pythonhosted.org/packages/91/89/f2b509f7bf79352e40117824c1070dbeafd4df67031d3fa98165a3134228/markupsafe-3.0.4-cp311-cp311-win_amd64.whl.metadata
+  Downloading markupsafe-3.0.4-cp311-cp311-win_amd64.whl.metadata (2.8 kB)
+Downloading diskcache-5.6.3-py3-none-any.whl (45 kB)
+Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+Downloading markupsafe-3.0.4-cp311-cp311-win_amd64.whl (14 kB)
+Downloading numpy-2.4.6-cp311-cp311-win_amd64.whl (12.6 MB)
+   ---------------------------------------- 12.6/12.6 MB 17.6 MB/s  0:00:00
+Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Building wheels for collected packages: llama-cpp-python
+  Building wheel for llama-cpp-python (pyproject.toml): started
+  Running command Building wheel for llama-cpp-python (pyproject.toml)
+  *** scikit-build-core 1.1.1 using CMake 4.4.4 (wheel)
+  *** Configuring CMake...
+  CMake Warning:
+    Ignoring extra path from command line:
+
+     "Toolkit/CUDA/v12.6/bin/nvcc.exe"
+
+
+  loading initial cache file C:\Users\ido96\AppData\Local\Temp\tmpp6dkycj7\build\CMakeInit.txt
+  -- Building for: Ninja
+  -- The C compiler identification is MSVC 19.44.35217.0
+  -- The CXX compiler identification is MSVC 19.44.35217.0
+  -- Detecting C compiler ABI info
+  -- Detecting C compiler ABI info - done
+  -- Check for working C compiler: C:/Program Files (x86)/Microsoft Visual
+Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+  -- Detecting C compile features
+  -- Detecting C compile features - done
+  -- Detecting CXX compiler ABI info
+  -- Detecting CXX compiler ABI info - done
+  -- Check for working CXX compiler: C:/Program Files (x86)/Microsoft Visual
+Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+  -- Detecting CXX compile features
+  -- Detecting CXX compile features - done
+  -- Found Git: C:/Program Files/Git/cmd/git.exe (found version "2.49.0.windows.1")
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+  -- Looking for pthread_create in pthreads
+  -- Looking for pthread_create in pthreads - not found
+  -- Looking for pthread_create in pthread
+  -- Looking for pthread_create in pthread - not found
+  -- Found Threads: TRUE
+  -- CMAKE_SYSTEM_PROCESSOR: AMD64
+  -- CMAKE_GENERATOR_PLATFORM:
+  -- Found OpenMP_C: -openmp (found version "2.0")
+  -- Found OpenMP_CXX: -openmp (found version "2.0")
+  -- Found OpenMP: TRUE (found version "2.0")
+  -- OpenMP found
+  -- Using llamafile
+  -- x86 detected
+  -- Performing Test HAS_AVX_1
+  -- Performing Test HAS_AVX_1 - Success
+  -- Performing Test HAS_AVX2_1
+  -- Performing Test HAS_AVX2_1 - Success
+  -- Performing Test HAS_FMA_1
+  -- Performing Test HAS_FMA_1 - Success
+  -- Performing Test HAS_AVX512_1
+  -- Performing Test HAS_AVX512_1 - Failed
+  -- Performing Test HAS_AVX512_2
+  -- Performing Test HAS_AVX512_2 - Failed
+  -- Using runtime weight conversion of Q4_0 to Q4_0_x_x to enable optimized GEMM/GEMV kernels
+  -- Including CPU backend
+  CMake Warning at vendor/llama.cpp/ggml/src/ggml-amx/CMakeLists.txt:106 (message):
+    AMX requires x86 and gcc version > 11.0.  Turning off GGML_AMX.
+
+
+  -- Could not find `nvcc` executable in path specified by variable CUDAToolkit_ROOT=C:/Program
+  CMake Error at vendor/llama.cpp/ggml/src/ggml-cuda/CMakeLists.txt:164 (message):
+    CUDA Toolkit not found
+
+
+  -- Configuring incomplete, errors occurred!
+
+  *** CMake configuration failed
+  error: subprocess-exited-with-error
+
+  Building wheel for llama-cpp-python (pyproject.toml) did not run successfully.
+  exit code: 1
+
+  No available output.
+
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+  full command: 'C:\Users\ido96\Desktop\remixr\backend\.venv\Scripts\python.exe'
+'C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip\_vendor\pyproject_hooks\_in_process\_in_process.py' build_wheel
+'C:\Users\ido96\AppData\Local\Temp\tmpmn8vgvpv'
+  cwd: C:\Users\ido96\AppData\Local\Temp\pip-install-9uilg9ik\llama-cpp-python_9a239af869364f44a928f1aec196a6d9
+  Building wheel for llama-cpp-python (pyproject.toml): finished with status 'error'
+  ERROR: Failed building wheel for llama-cpp-python
+Failed to build llama-cpp-python
+error: failed-wheel-build-for-install
+
+Failed to build installable wheels for some pyproject.toml based projects
+
+llama-cpp-python
+
+pip exit code: 1  (durata: 0.4 min)
+
+--- verifica supporto GPU
+pip ha fallito, salto la verifica.
+
+Strategia 'ninja-allow-unsupported' non riuscita. Proseguo con la successiva (se presente).
+
+==============================================================================
+== Strategia: msbuild
+==============================================================================
+generatore Visual Studio, con CUDA_PATH_V* e CudaToolkitDir riparati
+
+--- rimuovo installazioni precedenti (evita il riuso di una build CPU)
+python.exe : WARNING: Skipping llama-cpp-python as it is not installed.
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:301 car:5
++     & $py -m pip uninstall -y llama-cpp-python 2>&1 | Out-String | Wr ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: Skippi... not installed.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+CMAKE_ARGS      = -DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=89 -DLLAVA_BUILD=OFF -DGGML_CCACHE=OFF -DCUDAToolkit_ROOT=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6 -DCMAKE_CUDA_COMPILER=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6/bin/nvcc.exe
+CMAKE_GENERATOR =
+CudaToolkitDir  = C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+PARALLEL_LEVEL  = 32
+
+--- pip install (10-20 min, output verboso)
+Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+Collecting llama-cpp-python==0.3.2
+  Downloading llama_cpp_python-0.3.2.tar.gz (65.0 MB)
+     ---------------------------------------- 65.0/65.0 MB 19.8 MB/s  0:00:03
+  Installing build dependencies: started
+python.exe :   Running command installing build dependencies for llama-cpp-python
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:321 car:9
++         & $py -m pip install "llama-cpp-python==$Version" `
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (  Running comma...lama-cpp-python:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+  Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+  Collecting scikit-build-core>=0.9.2 (from scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for scikit-build-core>=0.9.2 from https://files.pythonhosted.org/packages/01/1b/83913d6d5c6a7f
+8ad5bf5d67b2d57ab09475f1bb9dd0c7a3f44067d59b90/scikit_build_core-1.1.1-py3-none-any.whl.metadata
+    Using cached scikit_build_core-1.1.1-py3-none-any.whl.metadata (19 kB)
+  Collecting packaging>=23.2 (from scikit-build-core>=0.9.2->scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for packaging>=23.2 from https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951
+fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl.metadata
+    Using cached packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+  Collecting pathspec>=0.12.0 (from scikit-build-core>=0.9.2->scikit-build-core[pyproject]>=0.9.2)
+    Obtaining dependency information for pathspec>=0.12.0 from https://files.pythonhosted.org/packages/f1/d9/7fb5aa316bc299258e68c7
+3ba3bddbc499654a07f151cba08f6153988714/pathspec-1.1.1-py3-none-any.whl.metadata
+    Using cached pathspec-1.1.1-py3-none-any.whl.metadata (14 kB)
+  WARNING: scikit-build-core 1.1.1 does not provide the extra 'pyproject'
+  Using cached scikit_build_core-1.1.1-py3-none-any.whl (293 kB)
+  Using cached packaging-26.3-py3-none-any.whl (129 kB)
+  Using cached pathspec-1.1.1-py3-none-any.whl (57 kB)
+  Installing collected packages: pathspec, packaging, scikit-build-core
+    Creating C:\Users\ido96\AppData\Local\Temp\pip-build-env-d0uwanqs\overlay\Scripts
+
+  Successfully installed packaging-26.3 pathspec-1.1.1 scikit-build-core-1.1.1
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Running command Getting requirements to build wheel
+  Could not determine CMake version via --version, got '' 'Traceback (most recent call last):\n  File "<frozen runpy>", line 198,
+in _run_module_as_main\n  File "<frozen runpy>", line 88, in _run_code\n  File
+"C:\\Users\\ido96\\Desktop\\remixr\\backend\\.venv\\Scripts\\cmake.EXE\\__main__.py", line 2, in <module>\nModuleNotFoundError: No
+module named \'cmake\'\n'
+  Getting requirements to build wheel: finished with status 'done'
+  Installing backend dependencies: started
+  Running command installing backend dependencies for llama-cpp-python
+  Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+  Collecting cmake>=3.21
+    Obtaining dependency information for cmake>=3.21 from https://files.pythonhosted.org/packages/87/9c/a7918eeeed09b34aa5dc1b76736
+7fb1a2dcbb56171be00be0fd1280fe752/cmake-4.4.4-py3-none-win_amd64.whl.metadata
+    Using cached cmake-4.4.4-py3-none-win_amd64.whl.metadata (7.0 kB)
+  Using cached cmake-4.4.4-py3-none-win_amd64.whl (42.3 MB)
+  Installing collected packages: cmake
+    Creating C:\Users\ido96\AppData\Local\Temp\pip-build-env-d0uwanqs\normal\Scripts
+  Successfully installed cmake-4.4.4
+  Installing backend dependencies: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Running command Preparing metadata (pyproject.toml)
+  *** scikit-build-core 1.1.1 using CMake 4.4.4 (metadata_wheel)
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting typing-extensions>=4.5.0 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for typing-extensions>=4.5.0 from https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl.metadata
+  Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/3a/be/650f9c091ef71cb01d735775d554e068752d3ff63d7943b26316dc401749/numpy-1.21.2.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/5f/d6/ad58ded26556eaeaa8c971e08b6466f17c4ac4d786cd3d800e26ce59cc01/numpy-1.21.3.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/fb/48/b0708ebd7718a8933f0d3937513ef8ef2f4f04529f1f66ca86d873043921/numpy-1.21.4.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/c2/a8/a924a09492bdfee8c2ec3094d0a13f2799800b4fdc9c890738aeeb12c72e/numpy-1.21.5.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/45/b7/de7b8e67f2232c26af57c205aaad29fe17754f793404f59c8a730c7a191a/numpy-1.21.6.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/d3/e1/f2fe8f6113a657a1da83b358b16755e528a602c6976a43724a88f42b482a/numpy-2.5.0rc1.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/e7/05/3d27272d30698dc0ecb7fdfaa41ad70303b444f81722bb99bce1d818638a/numpy-2.5.0.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/22/fd/89965aa4ac08c74998539fcbf24fa3540f3e15237fbeb6bcf9c908f4aade/numpy-2.5.1.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/9a/80/db0b4559e57ec36362bedbb05530a87fafbcb6067708c946967a41d449e7/numpy-2.5.2.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+  Link requires a different Python (3.11.9 not in: '>=3.12'): https://files.pythonhosted.org/packages/13/01/11703282db468b85f6f7b8c7f22d058de5970d5c7e60a3a8aaa313c3de36/numpy-2.5.3.tar.gz (from https://pypi.org/simple/numpy/) (requires-python:>=3.12)
+Collecting numpy>=1.20.0 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for numpy>=1.20.0 from https://files.pythonhosted.org/packages/c5/31/7fc6239c12bce7e931463251cca4426c465e1876ba3cc785402ef4dd8f4e/numpy-2.4.6-cp311-cp311-win_amd64.whl.metadata
+  Downloading numpy-2.4.6-cp311-cp311-win_amd64.whl.metadata (6.6 kB)
+Collecting diskcache>=5.6.1 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for diskcache>=5.6.1 from https://files.pythonhosted.org/packages/3f/27/4570e78fc0bf5ea0ca45eb1de3818a23787af9b390c0b0a0033a1b8236f9/diskcache-5.6.3-py3-none-any.whl.metadata
+  Downloading diskcache-5.6.3-py3-none-any.whl.metadata (20 kB)
+Collecting jinja2>=2.11.3 (from llama-cpp-python==0.3.2)
+  Obtaining dependency information for jinja2>=2.11.3 from https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl.metadata
+  Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+Collecting MarkupSafe>=2.0 (from jinja2>=2.11.3->llama-cpp-python==0.3.2)
+  Obtaining dependency information for MarkupSafe>=2.0 from https://files.pythonhosted.org/packages/91/89/f2b509f7bf79352e40117824c1070dbeafd4df67031d3fa98165a3134228/markupsafe-3.0.4-cp311-cp311-win_amd64.whl.metadata
+  Downloading markupsafe-3.0.4-cp311-cp311-win_amd64.whl.metadata (2.8 kB)
+Downloading diskcache-5.6.3-py3-none-any.whl (45 kB)
+Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+Downloading markupsafe-3.0.4-cp311-cp311-win_amd64.whl (14 kB)
+Downloading numpy-2.4.6-cp311-cp311-win_amd64.whl (12.6 MB)
+   ---------------------------------------- 12.6/12.6 MB 17.2 MB/s  0:00:00
+Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Building wheels for collected packages: llama-cpp-python
+  Building wheel for llama-cpp-python (pyproject.toml): started
+  Running command Building wheel for llama-cpp-python (pyproject.toml)
+  *** scikit-build-core 1.1.1 using CMake 4.4.4 (wheel)
+  *** Configuring CMake...
+  CMake Warning:
+    Ignoring extra path from command line:
+
+     "Toolkit/CUDA/v12.6/bin/nvcc.exe"
+
+
+  loading initial cache file C:\Users\ido96\AppData\Local\Temp\tmpmpx2h8mr\build\CMakeInit.txt
+  -- Building for: Visual Studio 17 2022
+  -- Selecting Windows SDK version 10.0.22621.0 to target Windows 10.0.26200.
+  -- The C compiler identification is MSVC 19.44.35217.0
+  -- The CXX compiler identification is MSVC 19.44.35217.0
+  -- Detecting C compiler ABI info
+  -- Detecting C compiler ABI info - done
+  -- Check for working C compiler: C:/Program Files (x86)/Microsoft Visual
+Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+  -- Detecting C compile features
+  -- Detecting C compile features - done
+  -- Detecting CXX compiler ABI info
+  -- Detecting CXX compiler ABI info - done
+  -- Check for working CXX compiler: C:/Program Files (x86)/Microsoft Visual
+Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+  -- Detecting CXX compile features
+  -- Detecting CXX compile features - done
+  -- Found Git: C:/Program Files/Git/cmd/git.exe (found version "2.49.0.windows.1")
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+  -- Looking for pthread_create in pthreads
+  -- Looking for pthread_create in pthreads - not found
+  -- Looking for pthread_create in pthread
+  -- Looking for pthread_create in pthread - not found
+  -- Found Threads: TRUE
+  -- CMAKE_SYSTEM_PROCESSOR: AMD64
+  -- CMAKE_GENERATOR_PLATFORM: x64
+  -- Found OpenMP_C: -openmp (found version "2.0")
+  -- Found OpenMP_CXX: -openmp (found version "2.0")
+  -- Found OpenMP: TRUE (found version "2.0")
+  -- OpenMP found
+  -- Using llamafile
+  -- x86 detected
+  -- Performing Test HAS_AVX_1
+  -- Performing Test HAS_AVX_1 - Success
+  -- Performing Test HAS_AVX2_1
+  -- Performing Test HAS_AVX2_1 - Success
+  -- Performing Test HAS_FMA_1
+  -- Performing Test HAS_FMA_1 - Success
+  -- Performing Test HAS_AVX512_1
+  -- Performing Test HAS_AVX512_1 - Failed
+  -- Performing Test HAS_AVX512_2
+  -- Performing Test HAS_AVX512_2 - Failed
+  -- Using runtime weight conversion of Q4_0 to Q4_0_x_x to enable optimized GEMM/GEMV kernels
+  -- Including CPU backend
+  -- Using AMX
+  -- Including AMX backend
+  -- Could not find `nvcc` executable in path specified by variable CUDAToolkit_ROOT=C:/Program
+  CMake Error at vendor/llama.cpp/ggml/src/ggml-cuda/CMakeLists.txt:164 (message):
+    CUDA Toolkit not found
+
+
+  -- Configuring incomplete, errors occurred!
+
+  *** CMake configuration failed
+  error: subprocess-exited-with-error
+
+  Building wheel for llama-cpp-python (pyproject.toml) did not run successfully.
+  exit code: 1
+
+  No available output.
+
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+  full command: 'C:\Users\ido96\Desktop\remixr\backend\.venv\Scripts\python.exe'
+'C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip\_vendor\pyproject_hooks\_in_process\_in_process.py' build_wheel
+'C:\Users\ido96\AppData\Local\Temp\tmpuyt4_hhf'
+  cwd: C:\Users\ido96\AppData\Local\Temp\pip-install-g5xqq20n\llama-cpp-python_46e2b871cc5e4097a47aa4938971d973
+  Building wheel for llama-cpp-python (pyproject.toml): finished with status 'error'
+  ERROR: Failed building wheel for llama-cpp-python
+Failed to build llama-cpp-python
+error: failed-wheel-build-for-install
+
+Failed to build installable wheels for some pyproject.toml based projects
+
+llama-cpp-python
+
+pip exit code: 1  (durata: 0.4 min)
+
+--- verifica supporto GPU
+pip ha fallito, salto la verifica.
+
+Strategia 'msbuild' non riuscita. Proseguo con la successiva (se presente).
+
+==============================================================================
+== Strategia: wheel
+==============================================================================
+wheel CUDA precompilata (nessuna compilazione locale)
+
+--- rimuovo installazioni precedenti (evita il riuso di una build CPU)
+python.exe : WARNING: Skipping llama-cpp-python as it is not installed.
+In C:\Users\ido96\Desktop\remixr\tools\build-llama-cuda.ps1:301 car:5
++     & $py -m pip uninstall -y llama-cpp-python 2>&1 | Out-String | Wr ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: Skippi... not installed.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+--- pip install da indice wheel precompilate: https://abetlen.github.io/llama-cpp-python/whl/cu124
+Using pip 26.2.1 from C:\Users\ido96\Desktop\remixr\backend\.venv\Lib\site-packages\pip (python 3.11)
+Looking in indexes: https://pypi.org/simple, https://abetlen.github.io/llama-cpp-python/whl/cu124
+Collecting llama-cpp-python==0.3.2
+  Downloading llama_cpp_python-0.3.2.tar.gz (65.0 MB)
+     ---------------------------------------- 65.0/65.0 MB 19.7 MB/s  0:00:03
+  Installing build dependencies: started
