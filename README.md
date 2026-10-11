@@ -238,7 +238,7 @@ Il codice attuale non contiene più quella scritta: se la vedi, ti sta risponden
 **1. Il codice è aggiornato?**
 ```powershell
 git pull
-git log --oneline -3     # tra le righe deve esserci "27366d4 F3 + F4: ..."
+git merge-base --is-ancestor 27366d4 HEAD; if ($?) { "F3+F4 presente" } else { "F3+F4 MANCANTE" }
 dir backend\app\llm      # devono esserci engine.py e interpret.py
 ```
 Se `backend\app\llm` non c'è, il pull non è andato: risolvi prima quello (vedi "Git / general").
