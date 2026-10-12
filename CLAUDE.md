@@ -103,10 +103,12 @@ remixr/
 │   │   │                      # SpectrumView (spettro live), EffectRack, EffectCard, Knob, PromptPanel,
 │   │   │                      # TransportBar, TopBar (undo/redo, preset, export)
 │   │   ├── hooks/             # usePreviewSync (debounce 300 ms → /render/preview + decode per la corsia B),
-│   │   │                      # useShortcuts (Space, B, L, Esc, Ctrl+Z/Y)
+│   │   │                      # useShortcuts (Space, B, L, Esc, Ctrl+Z/Y), useLevelMatch (volume pari A/B),
+│   │   │                      # useGlobalDrop (drop di un file ovunque)
 │   │   ├── lib/               # api, types, store (track + buffer originale), remixStore (params/undo/A-B/chat),
 │   │   │                      # effects (metadata knob + path helpers), player (motore A/B),
-│   │   │                      # peaks (decode 8 kHz, colonne peak/rms, livelli), analyser (AnalyserNode condiviso)
+│   │   │                      # peaks (decode 8 kHz, colonne peak/rms, livelli), analyser (AnalyserNode condiviso),
+│   │   │                      # morph (Intensità), looks (look istantanei), session (localStorage)
 │   │   ├── App.tsx
 │   │   └── main.tsx
 │   ├── package.json
@@ -122,12 +124,13 @@ remixr/
 - `GET  /api/health` → `{status, app, version}` ✅
 - `POST /api/upload` (multipart) → `{track_id, filename, duration_sec, sample_rate, channels}` ✅
 - `GET  /api/audio/{track_id}` → raw audio file stream (for wavesurfer) ✅
+- `GET  /api/track/{track_id}` → info dell'upload se esiste ancora (ripristino sessione) ✅
 - `GET  /api/analyze/{track_id}` → `{bpm, key, peaks[], spectrum[]}` ✅
 - `POST /api/stems/{track_id}` (async) → `{job_id, status}` / `GET /api/stems/{track_id}` → status+paths (F5)
 - `GET  /api/llm/status` → `{state: idle|loading|ready|error, model, gpu_offload, error, available[]}` ✅
 - `POST /api/llm/model` `{model}` → cambia GGUF a runtime (libera la VRAM, ricarica in background) ✅
 - `GET  /api/llm/styles` → artisti con tratti curati (suggerimenti UI) ✅
-- `POST /api/llm/interpret` `{prompt, current_params, genre?, bpm?, key?, reference_artist?}` → `{params, explanation, changed_fields[]}` ✅ (503 = LLM non disponibile, 502 = output non valido)
+- `POST /api/llm/interpret` `{prompt, current_params, genre?, bpm?, key?, reference_artist?, variation?}` → `{params, explanation, changed_fields[]}` ✅ (503 = LLM non disponibile, 502 = output non valido)
 - `POST /api/render/preview` `{track_id, params, region?}` → WAV 16-bit stream, max 30 s ✅
 - `POST /api/render/export` `{track_id, params, format}` → `{render_id, path, duration_sec}` ✅
 - `GET  /api/render/file/{render_id}` → download ✅
@@ -174,6 +177,14 @@ Ordine fisso in `app/dsp/chain.py`:
 - Spettro live: un `AudioContext` creato al **primo gesto** (play / cambio A-B), `createMediaElementSource` su `<audio>` di wavesurfer e sull'`<audio>` del remix → un solo `AnalyserNode` → destination. Prima del primo gesto nessun elemento è collegato (un context sospeso renderebbe muto l'audio). Senza analyser: spettro medio di `/analyze` in trasparenza.
 - Cambio lato = cambio colore di tutta l'interfaccia: ciano = A, viola/rosa = B (striscia in alto, play, badge, corsie, spettro, waveform A ingrigita su B).
 - Undo/redo in `remixStore` (max 100; i `setParam` sullo stesso controllo entro 800 ms = un solo passo).
+
+## Esperienza (2026-10-12, "pensa come Steve Jobs")
+- **Intensità** (0–150 %, `lib/morph.ts`): un'unica manopola sul remix. Ogni controllo "di quantità" scorre fra il suo valore neutro (dove non fa nulla: wet 0, ratio 1, tempo 1, hp 20 Hz, lp 20 kHz…) e il valore del rack; lineare o logaritmico come il knob, clamp ai range. I controlli "di forma" (freq/Q EQ, attack, tempo del delay, room) restano. 0 % = catena neutra → niente preview. Il rack mostra i valori **target**; preview, export e "salva preset" usano i valori **effettivi**. Look/preset/risposte AI riportano l'intensità a 100 %.
+- **Look istantanei** (`lib/looks.ts`, barra "LOOK" nel pannello AI): 8 catene pronte, senza LLM (Slowed+Reverb, Nightcore con pitch che segue il tempo come un vinile, Lo-fi, Underwater, Radio, Stadium/Club con delay a tempo sul BPM, Vinile '70).
+- **Varianti**: toggle "3 varianti" → 3 chiamate con `variation` 1..3 (temperature 0.8, seed casuale, hint "alternativa diversa"), tutte dallo stesso stato di partenza. La prima si applica, le altre hanno "ascolta questa". Il messaggio con i params in ascolto è segnato "● IN ASCOLTO". **Sorprendimi** = prompt creativo con lo stesso meccanismo.
+- **Volume pari** (bilancia nella transport bar, default on): trim = RMS(A) − RMS(B) sulla finestra; abbassa solo il lato più forte (mai boost). Solo ascolto, non export.
+- **Sessione**: params, intensità, chat, traccia + analisi in `localStorage` (`remixr.session.v1`, debounce 500 ms); al reload la traccia viene riaperta solo se `/api/track/{id}` la trova ancora.
+- **Drop ovunque**: un file audio trascinato in qualsiasi punto della finestra carica la traccia (overlay); la `Dropzone` gestisce solo il clic.
 
 ## LLM (F4)
 - Il modello **non** restituisce Params completi: `{explanation, changes}` con `changes` = EffectChain parziale. Grammar GBNF generata dallo schema (tutte le chiavi opzionali, **ordine delle chiavi = ordine dei campi** in `models.py`), fallback a JSON generico.

@@ -244,6 +244,11 @@ LLM status: http://127.0.0.1:8000/api/llm/status (`loading` for a few seconds af
 - AI panel (right): describe the remix, Enter to send. The answer shows each changed parameter `old → new`, the touched knobs turn pink in the rack, "annulla" reverts that answer.
   - **Stile di**: type an artist (suggestions for ~35 with curated traits, any name works) or just write "fammela come la farebbe <artista>". Only the production/mix is imitated (tone, space, density, grit, tempo): voice, melody and instruments can't change.
   - **Genre**: also sends the genre template's settings to the model as a starting point.
+- **LOOK** (top of the AI panel): one tap, no AI — Slowed + Reverb, Nightcore, Lo-fi, Underwater, Radio, Stadium, Club, Vinile '70.
+- **INTENSITÀ** (transport bar): one slider for the whole remix, 0 % = original, 100 % = the rack, 150 % = pushed further. Double-click = 100 %. Preview, export and saved presets use what you hear.
+- **3 varianti** / **Sorprendimi** (AI panel): the AI gives three different takes; the first plays, "ascolta questa" switches to another. The one playing is marked "● IN ASCOLTO".
+- **Volume pari** (scale icon, on by default): A and B play at the same average loudness, so you judge the sound, not the volume. Listening only.
+- The session (track, remix, intensity, chat) survives a page reload. Drop an audio file anywhere in the window to load it.
 - Top bar: undo/redo, **Preset** (genre templates + your presets: load, save, delete), **Export** (whole track, WAV 24-bit or MP3, downloaded as `<name>_remix.wav`).
 - Shortcuts: `Space` play/pause · `B` switch A/B · `L` loop · `Esc` clear region · `Ctrl+Z` / `Ctrl+Shift+Z` undo/redo.
 

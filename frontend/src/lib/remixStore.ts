@@ -23,6 +23,8 @@ export interface ChatMessage {
   before?: Params;
   after?: Params;
   changed?: string[];
+  /** One of several alternatives to the same prompt (1-based). */
+  variant?: number;
 }
 
 interface RemixState {
@@ -34,6 +36,10 @@ interface RemixState {
   resetEffect: (id: keyof EffectChain) => void;
   resetAll: () => void;
   applyParams: (params: Params, changed: string[]) => void;
+
+  /** "Intensità" macro, percent: 0 = original, 100 = rack as set, 150 = pushed. */
+  amount: number;
+  setAmount: (v: number) => void;
 
   // Undo / redo over params
   past: Params[];
@@ -48,6 +54,9 @@ interface RemixState {
   previewStatus: PreviewStatus;
   previewError: string | null;
   previewView: PreviewView | null;
+  /** Compensate the A/B loudness difference while comparing. */
+  levelMatch: boolean;
+  setLevelMatch: (v: boolean) => void;
   setAbMode: (m: AbMode) => void;
   setLoop: (v: boolean) => void;
   setRegion: (r: Region | null) => void;
@@ -62,6 +71,8 @@ interface RemixState {
 
   /** Called when the track changes or is removed. */
   resetSession: () => void;
+  /** Saved session (lib/session.ts). */
+  restore: (s: { params: Params; amount: number; messages: ChatMessage[]; levelMatch: boolean }) => void;
 }
 
 let nextId = 1;
@@ -110,6 +121,9 @@ export const useRemixStore = create<RemixState>((set) => ({
   applyParams: (params, changed) =>
     set((s) => ({ params, highlighted: new Set(changed), past: pushPast(s.past, s.params), future: [] })),
 
+  amount: 100,
+  setAmount: (amount) => set({ amount }),
+
   undo: () =>
     set((s) => {
       const prev = s.past[s.past.length - 1];
@@ -132,6 +146,8 @@ export const useRemixStore = create<RemixState>((set) => ({
   previewStatus: "idle",
   previewError: null,
   previewView: null,
+  levelMatch: true,
+  setLevelMatch: (levelMatch) => set({ levelMatch }),
   setAbMode: (abMode) => set({ abMode }),
   setLoop: (loop) => set({ loop }),
   setRegion: (region) => set({ region }),
@@ -147,4 +163,9 @@ export const useRemixStore = create<RemixState>((set) => ({
   // only the track-bound state is cleared.
   resetSession: () =>
     set({ abMode: "A", region: null, previewStatus: "idle", previewError: null, previewView: null }),
+
+  restore: ({ params, amount, messages, levelMatch }) => {
+    nextId = Math.max(nextId, ...messages.map((m) => m.id + 1));
+    set({ params, amount, messages, levelMatch });
+  },
 }));

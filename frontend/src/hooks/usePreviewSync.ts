@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { api } from "../lib/api";
 import { isNeutral, speedOf } from "../lib/effects";
+import { morphParams } from "../lib/morph";
 import { decodeForView } from "../lib/peaks";
 import { player } from "../lib/player";
 import { useRemixStore } from "../lib/remixStore";
@@ -12,19 +13,25 @@ const PREVIEW_MAX_SEC = 30; // backend/app/dsp/render.py
 /** Re-render the remix preview whenever params or the region change. */
 export function usePreviewSync() {
   const track = useTrackStore((s) => s.track);
-  const params = useRemixStore((s) => s.params);
+  const target = useRemixStore((s) => s.params);
+  const amount = useRemixStore((s) => s.amount);
   const region = useRemixStore((s) => s.region);
   const setStatus = useRemixStore((s) => s.setPreviewStatus);
   const setView = useRemixStore((s) => s.setPreviewView);
 
   // A params edit means "let me hear it": switch to B once the render lands.
   // Region moves alone keep the current A/B side.
-  const lastParams = useRef(params);
+  const lastParams = useRef(target);
+  const lastAmount = useRef(amount);
   const pendingB = useRef(false);
-  if (lastParams.current !== params) {
-    lastParams.current = params;
+  if (lastParams.current !== target || lastAmount.current !== amount) {
+    lastParams.current = target;
+    lastAmount.current = amount;
     pendingB.current = true;
   }
+
+  // What you hear = rack params dosed by "Intensità".
+  const params = useMemo(() => morphParams(target, amount), [target, amount]);
 
   useEffect(() => {
     if (!track) return;

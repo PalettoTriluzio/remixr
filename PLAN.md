@@ -83,6 +83,15 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 - ☐ Dark theme fine-tuning
 - ☐ Windows installer script (.bat che fa venv, pip install, npm install, build, run)
 
+## F8 — Esperienza ◐ (scritto, da provare)
+- ☑ Intensità 0–150 % (macro su tutta la catena)
+- ☑ 8 look istantanei senza AI
+- ☑ AI: 3 varianti a scelta + "Sorprendimi", marcatore "in ascolto"
+- ☑ Volume pari A/B (confronto onesto)
+- ☑ Sessione salvata e ripristinata al reload
+- ☑ Drag & drop di un file ovunque
+- ☐ Idee per dopo: stems (F5) con intensità per stem, export loudness-normalizzato (-14 LUFS), prompt vocale offline (whisper.cpp)
+
 ## Decisioni tecniche pendenti
 - Nome definitivo del progetto (placeholder: `remixr`)
 
@@ -111,3 +120,4 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 - 2026-10-11: README → Troubleshooting: nuova sezione "Not implemented (F4)" con i passi per l'utente (verifica pull, processi sulla porta 8000, kill, numpy 1.26.4, avvio backend con log in `tools/logs/`, tabella dei messaggi d'errore).
 - 2026-10-11: README, passo 1 della procedura F4: `git log -3` sostituito con `git merge-base --is-ancestor 27366d4 HEAD` (con commit successivi `27366d4` usciva dalle ultime 3 righe).
 - 2026-10-12: "rendilo definitivo". **A/B visivo**: corsia B (`CompareLane`: finestra di preview, originale sopra / remix sotto, stessa scala, peak/RMS/durata, clic = ascolta A o B da lì), riquadro della finestra sulla waveform A, spettro live (`SpectrumView` + `lib/analyser.ts`), colori dell'interfaccia per lato (ciano A, viola B). **Stile artista** (`app/llm/styles.py`, `reference_artist`, campo "Stile di"). **Modelli**: scelta automatica del più grande che sta in VRAM, cambio a runtime dalla UI, grammar in cache. **F6**: CRUD preset + 7 genre template + menu in top bar; template del genere passato all'LLM. **Export** in top bar. **Undo/redo** e **scorciatoie**. README: tabella modelli per 16 GB, tour aggiornato.
+- 2026-10-12: giro "esperienza" (F8): Intensità (`lib/morph.ts`), look istantanei (`lib/looks.ts`), varianti/Sorprendimi (`variation` in `/llm/interpret`, `seed` in `engine.chat_json`), volume pari A/B (`useLevelMatch`, trim in `player.ts`), sessione in localStorage (`lib/session.ts` + `GET /api/track/{id}`), drop ovunque (`useGlobalDrop`). Versione UI 0.3.0.

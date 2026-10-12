@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import clsx from "clsx";
 import { Disc3, Download, FolderOpen, Loader2, Redo2, Save, Trash2, Undo2 } from "lucide-react";
 import { api } from "../lib/api";
+import { morphParams } from "../lib/morph";
 import { useRemixStore } from "../lib/remixStore";
 import { useTrackStore } from "../lib/store";
 import type { Preset } from "../lib/types";
@@ -17,7 +18,7 @@ export function TopBar() {
       <div className="flex items-center gap-2">
         <Disc3 className="w-5 h-5 text-accent" />
         <span className="font-mono text-sm tracking-wider">REMIXR</span>
-        <span className="text-xs text-white/40 font-mono">v0.2.0</span>
+        <span className="text-xs text-white/40 font-mono">v0.3.0</span>
       </div>
       <div className="flex-1" />
       <div className="flex items-center gap-1">
@@ -48,6 +49,7 @@ function IconButton(props: { onClick: () => void; disabled?: boolean; title: str
 
 function PresetMenu() {
   const applyParams = useRemixStore((s) => s.applyParams);
+  const setAmount = useRemixStore((s) => s.setAmount);
   const [open, setOpen] = useState(false);
   const [mine, setMine] = useState<Preset[]>([]);
   const [genres, setGenres] = useState<Preset[]>([]);
@@ -78,6 +80,7 @@ function PresetMenu() {
 
   const load = (p: Preset) => {
     applyParams({ ...p.params, per_stem: null }, []);
+    setAmount(100);
     setOpen(false);
   };
 
@@ -85,7 +88,9 @@ function PresetMenu() {
     const n = name.trim();
     if (!n) return;
     try {
-      await api.createPreset({ name: n, params: useRemixStore.getState().params, genre: null, created_at: "" });
+      // What you hear (Intensità applied), so loading it sounds the same at 100 %.
+      const { params, amount } = useRemixStore.getState();
+      await api.createPreset({ name: n, params: morphParams(params, amount), genre: null, created_at: "" });
       setName("");
       await refresh();
     } catch (e) {
@@ -188,7 +193,8 @@ function ExportButton() {
     setError(null);
     try {
       // Whole track, current params (the region only limits the preview).
-      const res = await api.renderExport({ track_id: track.track_id, params: useRemixStore.getState().params, format });
+      const { params, amount } = useRemixStore.getState();
+      const res = await api.renderExport({ track_id: track.track_id, params: morphParams(params, amount), format });
       const a = document.createElement("a");
       a.href = api.renderFileUrl(res.render_id);
       a.download = `${track.filename.replace(/\.[^.]+$/, "")}_remix.${format}`;

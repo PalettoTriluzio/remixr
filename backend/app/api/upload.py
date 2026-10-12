@@ -66,3 +66,16 @@ def stream_audio(track_id: str):
         raise HTTPException(status_code=404, detail="Track not found")
     mime = MIME_BY_EXT.get(path.suffix.lower(), "application/octet-stream")
     return FileResponse(path, media_type=mime, filename=path.name)
+
+
+@router.get("/track/{track_id}", response_model=UploadResponse)
+def track_info(track_id: str):
+    """Is this upload still on disk? Used to restore the last session.
+    `filename` is the stored name: the client keeps the original one."""
+    path = find_upload(track_id)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Track not found")
+    duration, sr, channels = audio_info(path)
+    return UploadResponse(
+        track_id=track_id, filename=path.name, duration_sec=duration, sample_rate=sr, channels=channels,
+    )

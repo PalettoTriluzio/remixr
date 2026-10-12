@@ -1,4 +1,4 @@
-import { Play, Pause, Repeat, Volume2, X, Loader2, AlertCircle } from "lucide-react";
+import { Play, Pause, Repeat, Volume2, X, Loader2, AlertCircle, Scale } from "lucide-react";
 import { useEffect, useState } from "react";
 import clsx from "clsx";
 import { useTrackStore } from "../lib/store";
@@ -8,7 +8,7 @@ import { formatDuration } from "../lib/format";
 
 export function TransportBar() {
   const { track, wavesurfer, isPlaying, currentTime } = useTrackStore();
-  const { abMode, loop, region, setRegion, previewStatus, previewError } = useRemixStore();
+  const { abMode, loop, region, setRegion, previewStatus, previewError, amount, setAmount, levelMatch, setLevelMatch } = useRemixStore();
   const [volume, setVolume] = useState(80);
 
   const disabled = !wavesurfer;
@@ -69,7 +69,39 @@ export function TransportBar() {
         </button>
       </div>
 
-      <span className="text-xs font-mono text-white/40 flex items-center gap-1.5 min-w-0">
+      <button
+        disabled={disabled}
+        onClick={() => setLevelMatch(!levelMatch)}
+        title={"Volume pari: A e B suonano allo stesso volume medio, così confronti il carattere e non il volume" +
+          " (il più forte sembra sempre migliore). Agisce solo sull'ascolto, non sull'export."}
+        className={clsx(
+          "w-8 h-8 rounded hover:bg-bg-hover flex items-center justify-center disabled:opacity-40",
+          levelMatch ? "text-accent" : "text-white/40",
+        )}
+      >
+        <Scale className="w-4 h-4" />
+      </button>
+
+      {/* Intensità: one macro over the whole remix */}
+      <label
+        className="flex items-center gap-2 text-xs font-mono"
+        title="Intensità del remix: 0% = originale, 100% = come nel rack, 150% = spinto. Doppio clic = 100%."
+        onDoubleClick={() => setAmount(100)}
+      >
+        <span className="text-white/40">INTENSITÀ</span>
+        <input
+          type="range"
+          min={0}
+          max={150}
+          step={1}
+          value={amount}
+          onChange={(e) => setAmount(Number(e.target.value))}
+          className="w-32 accent-[#7c5cff]"
+        />
+        <span className={clsx("w-10 text-right", amount === 100 ? "text-white/60" : "text-accent")}>{amount}%</span>
+      </label>
+
+      <span className="text-xs font-mono text-white/40 flex items-center gap-1.5 min-w-0 truncate">
         {previewStatus === "rendering" && <><Loader2 className="w-3.5 h-3.5 animate-spin text-accent" /> rendering…</>}
         {previewStatus === "error" && (
           <span className="text-accent-hot flex items-center gap-1 truncate" title={previewError ?? ""}>

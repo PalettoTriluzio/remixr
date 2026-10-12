@@ -23,6 +23,8 @@ interface TrackState {
   setCurrentTime: (t: number) => void;
 
   uploadFile: (file: File) => Promise<void>;
+  /** Re-open a track already on the server (saved session). */
+  restoreTrack: (track: UploadResponse, analysis: AnalyzeResponse | null) => void;
   reset: () => void;
 }
 
@@ -70,6 +72,14 @@ export const useTrackStore = create<TrackState>((set, get) => ({
         error: `Upload failed: ${(uploadErr as Error).message}`,
       });
     }
+  },
+
+  restoreTrack: (track, analysis) => {
+    set({ track, analysis, error: null, isUploading: false, isAnalyzing: !analysis });
+    if (analysis) return;
+    api.analyze(track.track_id)
+      .then((a) => { if (get().track?.track_id === track.track_id) set({ analysis: a, isAnalyzing: false }); })
+      .catch(() => set({ isAnalyzing: false }));
   },
 
   reset: () => {

@@ -138,6 +138,9 @@ class LLMInterpretRequest(BaseModel):
     # "Do it like <artist>": production traits come from app/llm/styles.py
     # when the artist is known, otherwise from the model's own knowledge.
     reference_artist: Optional[str] = Field(None, max_length=100)
+    # Set = one of several alternative answers to the same prompt: sampled
+    # hotter, with its own seed and a hint to differ from the obvious take.
+    variation: Optional[int] = Field(None, ge=1, le=5)
 
 
 class LLMInterpretResponse(BaseModel):

@@ -21,6 +21,10 @@ remix.preload = "auto";
 registerMedia(remix);
 
 let preview: Preview | null = null;
+let volume = 0.8;
+// Level match: dB to add to B so it sounds as loud as A. Only ever
+// attenuates (the louder side goes down), never boosts past 1.0.
+let trimDb = 0;
 let loadToken = 0;
 let raf = 0;
 
@@ -74,6 +78,7 @@ remix.addEventListener("ended", stopTick);
 // ---- wavesurfer → stores ----
 
 export function bindWavesurfer(w: WaveSurfer) {
+  w.on("ready", applyVolume);
   w.on("play", () => { if (mode() === "A") setPlaying(true); });
   w.on("pause", () => { if (mode() === "A") setPlaying(false); });
   w.on("finish", () => {
@@ -95,6 +100,12 @@ export function bindWavesurfer(w: WaveSurfer) {
   w.on("interaction", (t) => {
     if (mode() === "B" && preview) remix.currentTime = toRemixTime(preview, t);
   });
+}
+
+function applyVolume() {
+  const g = (db: number) => Math.pow(10, Math.min(0, db) / 20);
+  remix.volume = volume * g(trimDb);
+  ws()?.setVolume(volume * g(-trimDb));
 }
 
 // ---- public API ----
@@ -204,7 +215,13 @@ export const player = {
   },
 
   setVolume(v: number) {
-    remix.volume = v;
-    ws()?.setVolume(v);
+    volume = v;
+    applyVolume();
+  },
+
+  /** Level match: `db` = gain for B relative to A (negative = B is louder). */
+  setTrim(db: number) {
+    trimDb = db;
+    applyVolume();
   },
 };

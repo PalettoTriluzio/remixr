@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import math
+import random
 import re
 from typing import Any
 
@@ -160,6 +161,12 @@ def build_messages(req: LLMInterpretRequest) -> list[dict]:
             else f"Reference artist: {name}. Not in the local table: use your own knowledge."
         )
 
+    if req.variation:
+        user.append(
+            f"This is alternative #{req.variation}: give a distinct, creative take "
+            "(different effects or a different character than the most obvious answer), still musical."
+        )
+
     user.append(f"Request: {req.prompt.strip()}")
 
     return [
@@ -242,7 +249,13 @@ def _parse(raw: str) -> dict:
 # --------------------------------------------------------------------- entry
 
 def interpret(req: LLMInterpretRequest) -> LLMInterpretResponse:
-    raw = engine.chat_json(build_messages(req), RESPONSE_SCHEMA)
+    if req.variation:
+        raw = engine.chat_json(
+            build_messages(req), RESPONSE_SCHEMA,
+            temperature=0.8, seed=random.randrange(2**31),
+        )
+    else:
+        raw = engine.chat_json(build_messages(req), RESPONSE_SCHEMA)
     data = _parse(raw)
 
     current = req.current_params.global_chain.model_dump()

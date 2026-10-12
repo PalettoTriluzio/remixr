@@ -198,6 +198,7 @@ def chat_json(
     *,
     max_tokens: int = 1024,
     temperature: float = 0.2,
+    seed: int | None = None,
 ) -> str:
     """Chat completion constrained to `schema` by a grammar. Returns the raw
     content string; the caller validates it."""
@@ -208,5 +209,6 @@ def chat_json(
             grammar=_grammar(json.dumps(schema)),
             temperature=temperature,
             max_tokens=max_tokens,
+            seed=seed,
         )
     return out["choices"][0]["message"]["content"] or ""

@@ -70,6 +70,7 @@ export interface LLMInterpretRequest {
   bpm?: number | null;
   key?: string | null;
   reference_artist?: string | null;
+  variation?: number | null;
 }
 
 export interface LLMStatus {

@@ -1,43 +1,20 @@
-import { useCallback, useRef, useState, type DragEvent } from "react";
+import { useRef } from "react";
 import { Upload, Loader2, AlertCircle } from "lucide-react";
 import { useTrackStore } from "../lib/store";
 
 const ACCEPTED = ".mp3,.wav,.flac,.m4a,.aac,.ogg";
 const ACCEPTED_LABEL = "MP3, WAV, FLAC, M4A, AAC, OGG";
 
+// Drag & drop is handled window-wide by hooks/useGlobalDrop (with its own
+// overlay): here only the click-to-browse.
 export function Dropzone() {
   const { uploadFile, isUploading, isAnalyzing, error } = useTrackStore();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging] = useState(false);
-
-  const onDrop = useCallback(
-    (e: DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      setDragging(false);
-      const file = e.dataTransfer.files?.[0];
-      if (file) uploadFile(file);
-    },
-    [uploadFile]
-  );
-
-  const onDragOver = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragging(true);
-  };
-
-  const onDragLeave = () => setDragging(false);
-
-  const openPicker = () => inputRef.current?.click();
 
   return (
     <div
-      onDrop={onDrop}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onClick={openPicker}
-      className={`h-full flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${
-        dragging ? "bg-accent/10 border-accent" : "text-white/40 hover:text-white/60"
-      }`}
+      onClick={() => inputRef.current?.click()}
+      className="h-full flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors text-white/40 hover:text-white/60"
     >
       <input
         ref={inputRef}
@@ -69,7 +46,7 @@ export function Dropzone() {
       ) : (
         <>
           <Upload className="w-8 h-8" />
-          <span className="text-sm">Drop audio file here or click to browse</span>
+          <span className="text-sm">Trascina un file audio ovunque, o clicca per sceglierlo</span>
           <span className="text-xs text-white/20">{ACCEPTED_LABEL} · max 200 MB</span>
         </>
       )}

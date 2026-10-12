@@ -37,6 +37,8 @@ export const api = {
     return res.json();
   },
 
+  trackInfo: (trackId: string) => request<UploadResponse>(`/track/${trackId}`),
+
   analyze: (trackId: string) =>
     request<AnalyzeResponse>(`/analyze/${trackId}`),
 
