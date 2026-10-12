@@ -135,6 +135,9 @@ class LLMInterpretRequest(BaseModel):
     # and compute tempo ratios toward a target BPM.
     bpm: Optional[float] = None
     key: Optional[str] = None
+    # "Do it like <artist>": production traits come from app/llm/styles.py
+    # when the artist is known, otherwise from the model's own knowledge.
+    reference_artist: Optional[str] = Field(None, max_length=100)
 
 
 class LLMInterpretResponse(BaseModel):
@@ -148,6 +151,11 @@ class LLMStatus(BaseModel):
     model: Optional[str] = None        # GGUF file name
     gpu_offload: Optional[bool] = None  # llama_supports_gpu_offload(), known after load
     error: Optional[str] = None
+    available: list[str] = []          # *.gguf in backend/models/ (part 1 of split files)
+
+
+class LLMSelectModel(BaseModel):
+    model: str  # file name from LLMStatus.available
 
 
 class RenderRequest(BaseModel):
@@ -168,7 +176,7 @@ class Preset(BaseModel):
     name: str
     params: Params
     genre: Optional[str] = None
-    created_at: str
+    created_at: str = ""  # set by the server on save
 
 
 class StemsJobResponse(BaseModel):

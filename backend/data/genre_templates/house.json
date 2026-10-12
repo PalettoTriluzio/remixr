@@ -1,0 +1,55 @@
+{
+  "name": "House",
+  "genre": "house",
+  "created_at": "",
+  "params": {
+    "global_chain": {
+      "hp": {
+        "enabled": true,
+        "freq": 30
+      },
+      "eq": {
+        "enabled": true,
+        "low": {
+          "freq": 60,
+          "gain_db": 2,
+          "q": 0.7
+        },
+        "high": {
+          "freq": 10000,
+          "gain_db": 1.5,
+          "q": 0.7
+        }
+      },
+      "comp": {
+        "enabled": true,
+        "threshold_db": -16,
+        "ratio": 4,
+        "attack_ms": 5,
+        "release_ms": 120,
+        "makeup_db": 3
+      },
+      "delay": {
+        "enabled": true,
+        "time_ms": 469,
+        "feedback": 0.25,
+        "mix": 0.12
+      },
+      "reverb": {
+        "enabled": true,
+        "room_size": 0.5,
+        "wet": 0.15,
+        "dry": 0.9
+      },
+      "stereo": {
+        "enabled": true,
+        "width": 1.2
+      },
+      "limiter": {
+        "enabled": true,
+        "threshold_db": -0.5
+      }
+    },
+    "per_stem": null
+  }
+}

@@ -69,6 +69,7 @@ export interface LLMInterpretRequest {
   genre?: string | null;
   bpm?: number | null;
   key?: string | null;
+  reference_artist?: string | null;
 }
 
 export interface LLMStatus {
@@ -76,6 +77,7 @@ export interface LLMStatus {
   model?: string | null;
   gpu_offload?: boolean | null;
   error?: string | null;
+  available?: string[];
 }
 
 export interface LLMInterpretResponse {

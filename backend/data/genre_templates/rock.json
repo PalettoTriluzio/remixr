@@ -1,0 +1,50 @@
+{
+  "name": "Rock",
+  "genre": "rock",
+  "created_at": "",
+  "params": {
+    "global_chain": {
+      "hp": {
+        "enabled": true,
+        "freq": 40
+      },
+      "eq": {
+        "enabled": true,
+        "mid": {
+          "freq": 1500,
+          "gain_db": 2.5,
+          "q": 0.9
+        },
+        "high": {
+          "freq": 6000,
+          "gain_db": 1.5,
+          "q": 0.7
+        }
+      },
+      "comp": {
+        "enabled": true,
+        "threshold_db": -16,
+        "ratio": 4,
+        "attack_ms": 15,
+        "release_ms": 120,
+        "makeup_db": 3
+      },
+      "distortion": {
+        "enabled": true,
+        "drive_db": 8
+      },
+      "reverb": {
+        "enabled": true,
+        "room_size": 0.35,
+        "damping": 0.5,
+        "wet": 0.12,
+        "dry": 0.9
+      },
+      "limiter": {
+        "enabled": true,
+        "threshold_db": -0.5
+      }
+    },
+    "per_stem": null
+  }
+}

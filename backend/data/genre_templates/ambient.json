@@ -1,0 +1,53 @@
+{
+  "name": "Ambient",
+  "genre": "ambient",
+  "created_at": "",
+  "params": {
+    "global_chain": {
+      "tempo": {
+        "enabled": true,
+        "ratio": 0.85
+      },
+      "lp": {
+        "enabled": true,
+        "freq": 9000
+      },
+      "eq": {
+        "enabled": true,
+        "low": {
+          "freq": 120,
+          "gain_db": 1.5,
+          "q": 0.7
+        },
+        "high": {
+          "freq": 8000,
+          "gain_db": -2,
+          "q": 0.7
+        }
+      },
+      "delay": {
+        "enabled": true,
+        "time_ms": 600,
+        "feedback": 0.5,
+        "mix": 0.25
+      },
+      "reverb": {
+        "enabled": true,
+        "room_size": 0.95,
+        "damping": 0.4,
+        "wet": 0.5,
+        "dry": 0.6,
+        "width": 1.0
+      },
+      "stereo": {
+        "enabled": true,
+        "width": 1.4
+      },
+      "limiter": {
+        "enabled": true,
+        "threshold_db": -1
+      }
+    },
+    "per_stem": null
+  }
+}

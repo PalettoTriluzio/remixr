@@ -47,6 +47,9 @@ export const api = {
     request<StemsJobResponse>(`/stems/${trackId}`),
 
   llmStatus: () => request<LLMStatus>("/llm/status"),
+  selectModel: (model: string) =>
+    request<LLMStatus>("/llm/model", { method: "POST", body: JSON.stringify({ model }) }),
+  llmStyles: () => request<string[]>("/llm/styles"),
 
   interpret: (req: LLMInterpretRequest) =>
     request<LLMInterpretResponse>("/llm/interpret", {

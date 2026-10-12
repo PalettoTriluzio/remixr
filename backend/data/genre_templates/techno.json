@@ -1,0 +1,56 @@
+{
+  "name": "Techno",
+  "genre": "techno",
+  "created_at": "",
+  "params": {
+    "global_chain": {
+      "hp": {
+        "enabled": true,
+        "freq": 30
+      },
+      "eq": {
+        "enabled": true,
+        "low": {
+          "freq": 55,
+          "gain_db": 3,
+          "q": 0.8
+        },
+        "mid": {
+          "freq": 400,
+          "gain_db": -2,
+          "q": 1.0
+        }
+      },
+      "comp": {
+        "enabled": true,
+        "threshold_db": -18,
+        "ratio": 6,
+        "attack_ms": 3,
+        "release_ms": 100,
+        "makeup_db": 4
+      },
+      "distortion": {
+        "enabled": true,
+        "drive_db": 6
+      },
+      "delay": {
+        "enabled": true,
+        "time_ms": 341,
+        "feedback": 0.35,
+        "mix": 0.15
+      },
+      "reverb": {
+        "enabled": true,
+        "room_size": 0.7,
+        "damping": 0.6,
+        "wet": 0.18,
+        "dry": 0.85
+      },
+      "limiter": {
+        "enabled": true,
+        "threshold_db": -0.5
+      }
+    },
+    "per_stem": null
+  }
+}

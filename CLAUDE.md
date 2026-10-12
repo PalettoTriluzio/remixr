@@ -86,8 +86,9 @@ remixr/
 │   │   │                      # render.py: decode cache → process → WAV/MP3
 │   │   ├── llm/               # engine.py: Llama singleton (lock, warm-up, grammar JSON)
 │   │   │                      # interpret.py: prompt → delta params → merge/clamp/diff
+│   │   │                      # styles.py: tabella artista → tratti di produzione
 │   │   ├── stems/             # (F5) demucs wrapper
-│   │   └── presets/           # (F6) I/O preset JSON + genre templates
+│   │   └── presets/           # store.py: preset utente + genre templates (JSON)
 │   ├── data/
 │   │   ├── uploads/           # audio caricati (gitignored)
 │   │   ├── renders/           # output (gitignored)
@@ -98,10 +99,14 @@ remixr/
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── components/        # WaveformView (+regions), EffectRack, EffectCard, Knob, PromptPanel, TransportBar
-│   │   ├── hooks/             # usePreviewSync (debounce 300 ms → /render/preview)
-│   │   ├── lib/               # api, types, store (track), remixStore (params/A-B/chat),
-│   │   │                      # effects (metadata knob + path helpers), player (motore A/B)
+│   │   ├── components/        # WaveformView (corsia A + regions), CompareLane (corsia B: A sopra/B sotto),
+│   │   │                      # SpectrumView (spettro live), EffectRack, EffectCard, Knob, PromptPanel,
+│   │   │                      # TransportBar, TopBar (undo/redo, preset, export)
+│   │   ├── hooks/             # usePreviewSync (debounce 300 ms → /render/preview + decode per la corsia B),
+│   │   │                      # useShortcuts (Space, B, L, Esc, Ctrl+Z/Y)
+│   │   ├── lib/               # api, types, store (track + buffer originale), remixStore (params/undo/A-B/chat),
+│   │   │                      # effects (metadata knob + path helpers), player (motore A/B),
+│   │   │                      # peaks (decode 8 kHz, colonne peak/rms, livelli), analyser (AnalyserNode condiviso)
 │   │   ├── App.tsx
 │   │   └── main.tsx
 │   ├── package.json
@@ -119,13 +124,15 @@ remixr/
 - `GET  /api/audio/{track_id}` → raw audio file stream (for wavesurfer) ✅
 - `GET  /api/analyze/{track_id}` → `{bpm, key, peaks[], spectrum[]}` ✅
 - `POST /api/stems/{track_id}` (async) → `{job_id, status}` / `GET /api/stems/{track_id}` → status+paths (F5)
-- `GET  /api/llm/status` → `{state: idle|loading|ready|error, model, gpu_offload, error}` ✅
-- `POST /api/llm/interpret` `{prompt, current_params, genre?, bpm?, key?}` → `{params, explanation, changed_fields[]}` ✅ (503 = LLM non disponibile, 502 = output non valido)
+- `GET  /api/llm/status` → `{state: idle|loading|ready|error, model, gpu_offload, error, available[]}` ✅
+- `POST /api/llm/model` `{model}` → cambia GGUF a runtime (libera la VRAM, ricarica in background) ✅
+- `GET  /api/llm/styles` → artisti con tratti curati (suggerimenti UI) ✅
+- `POST /api/llm/interpret` `{prompt, current_params, genre?, bpm?, key?, reference_artist?}` → `{params, explanation, changed_fields[]}` ✅ (503 = LLM non disponibile, 502 = output non valido)
 - `POST /api/render/preview` `{track_id, params, region?}` → WAV 16-bit stream, max 30 s ✅
 - `POST /api/render/export` `{track_id, params, format}` → `{render_id, path, duration_sec}` ✅
 - `GET  /api/render/file/{render_id}` → download ✅
-- `GET/POST/DELETE /api/presets` → CRUD (F6)
-- `GET  /api/genre-templates` → list (F6)
+- `GET/POST/DELETE /api/presets` → CRUD su `data/presets/<slug>.json` ✅
+- `GET  /api/genre-templates` → list da `data/genre_templates/*.json` (7 generi, effetti parziali + default Pydantic) ✅
 
 ## Param schema (single source of truth, condiviso py↔ts)
 Definito in `backend/app/models.py` come Pydantic → generato in `frontend/src/lib/types.ts`.
@@ -161,13 +168,23 @@ Ordine fisso in `app/dsp/chain.py`:
 - Ordine catena **fisso** → niente drag-to-reorder nel rack; le card seguono il flusso del segnale.
 - Knob: drag verticale (Shift = fine), doppio click = default, frecce = step. Range = bound Pydantic.
 
+## UI / A-B visiva (2026-10-12)
+- La waveform A resta l'originale (è la traccia intera). Il remix si **vede** nella corsia **B**: la finestra della preview disegnata due volte sullo stesso asse e sulla stessa scala assoluta (no normalize): A sopra, B sotto. Asse = max(durata finestra, durata remix) → il tempo si vede come lunghezza.
+- Entrambi i lati decodificati a **8 kHz** (wavesurfer `sampleRate: 8000` per A, `OfflineAudioContext` a 8 kHz per la preview) → peak/RMS confrontabili. Le statistiche ignorano il contenuto > 4 kHz (per quello c'è lo spettro).
+- Spettro live: un `AudioContext` creato al **primo gesto** (play / cambio A-B), `createMediaElementSource` su `<audio>` di wavesurfer e sull'`<audio>` del remix → un solo `AnalyserNode` → destination. Prima del primo gesto nessun elemento è collegato (un context sospeso renderebbe muto l'audio). Senza analyser: spettro medio di `/analyze` in trasparenza.
+- Cambio lato = cambio colore di tutta l'interfaccia: ciano = A, viola/rosa = B (striscia in alto, play, badge, corsie, spettro, waveform A ingrigita su B).
+- Undo/redo in `remixStore` (max 100; i `setParam` sullo stesso controllo entro 800 ms = un solo passo).
+
 ## LLM (F4)
 - Il modello **non** restituisce Params completi: `{explanation, changes}` con `changes` = EffectChain parziale. Grammar GBNF generata dallo schema (tutte le chiavi opzionali, **ordine delle chiavi = ordine dei campi** in `models.py`), fallback a JSON generico.
 - Il delta viene unito ai params correnti: chiavi sconosciute scartate, numeri clampati ai bound Pydantic, effetto toccato senza `enabled` → acceso. `changed_fields` = diff (`global_chain.reverb.wet`).
 - Schema grammar e tabella range nel system prompt derivano da `models.py` (single source of truth). `per_stem` passa invariato.
 - Spiegazione nella lingua del prompt. BPM/key dall'analisi vanno nel prompt (delay a tempo, ratio verso un BPM target).
-- Modello caricato da un thread di warm-up all'avvio; un lock serializza load e inferenza. Env: `REMIXR_LLM_MODEL` (default: primo `*.gguf` in `backend/models/`, 7B preferito), `REMIXR_LLM_CTX` (8192), `REMIXR_LLM_GPU_LAYERS` (-1), `REMIXR_LLM_PRELOAD` (1), `REMIXR_LLM_VERBOSE` (1).
-- UI: badge stato modello (poll `/llm/status`), chat con diff `vecchio → nuovo` per risposta + "annulla", knob/card toccati dall'AI evidenziati (rosa) finché non li modifichi.
+- Modello caricato da un thread di warm-up all'avvio; un lock serializza load e inferenza. Env: `REMIXR_LLM_MODEL` (default: il più grande che sta in VRAM, vedi sotto), `REMIXR_LLM_MAX_GB` (12), `REMIXR_LLM_CTX` (8192), `REMIXR_LLM_GPU_LAYERS` (-1), `REMIXR_LLM_PRELOAD` (1), `REMIXR_LLM_VERBOSE` (1).
+- UI: badge stato modello (poll `/llm/status`) con selettore del modello se ce n'è più di uno, chat con diff `vecchio → nuovo` per risposta + "annulla", knob/card toccati dall'AI evidenziati (rosa) finché non li modifichi.
+- **Modello di default** = il GGUF più grande che sta tutto in VRAM (≤ `REMIXR_LLM_MAX_GB`, default 12 → su 16 GB sceglie un 14B Q5_K_M). Grammar compilata una volta (`lru_cache`).
+- **Stile artista** ("fammela come la farebbe X"): `app/llm/styles.py` = ~35 artisti → tratti di produzione nel vocabolario della catena. Artista dal campo `reference_artist` (match esplicito) o trovato nel testo del prompt (nomi ambigui come "Ultimo" solo dal campo). Artista sconosciuto → il modello usa la sua conoscenza e deve dirlo se non lo conosce. Il system prompt impone onestà: si imita solo produzione/mix, non voce/melodia/strumenti.
+- **Genere**: se esiste `data/genre_templates/<genere>.json`, la sua catena (parziale) va nel prompt come punto di partenza.
 
 ## Progressione (vedi PLAN.md per dettaglio)
 MVP → DSP core → LLM integration → Stems → Preset & templates → Polish UI.

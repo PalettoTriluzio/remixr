@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { Sparkles, Send, Undo2, AlertCircle } from "lucide-react";
+import { Sparkles, Send, Undo2, AlertCircle, Mic2 } from "lucide-react";
 import { api } from "../lib/api";
 import { controlForPath, formatValue, getIn } from "../lib/effects";
 import { useRemixStore, type ChatMessage } from "../lib/remixStore";
@@ -14,7 +14,9 @@ export function PromptPanel() {
   const analysis = useTrackStore((s) => s.analysis);
   const [prompt, setPrompt] = useState("");
   const [genre, setGenre] = useState("");
-  const status = useLLMStatus();
+  const [artist, setArtist] = useState("");
+  const artists = useKnownArtists();
+  const { status, refresh } = useLLMStatus();
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -22,10 +24,11 @@ export function PromptPanel() {
   }, [messages.length, thinking]);
 
   const send = async () => {
-    const text = prompt.trim();
+    const style = artist.trim();
+    const text = prompt.trim() || (style ? `Fammela come la farebbe ${style}` : "");
     if (!text || thinking) return;
     setPrompt("");
-    pushMessage({ role: "user", text });
+    pushMessage({ role: "user", text: style ? `[stile: ${style}] ${text}` : text });
     setThinking(true);
     // Snapshot: the user may keep turning knobs while the model thinks.
     const before = useRemixStore.getState().params;
@@ -36,6 +39,7 @@ export function PromptPanel() {
         genre: genre || null,
         bpm: analysis?.bpm ?? null,
         key: analysis?.key ?? null,
+        reference_artist: style || null,
       });
       applyParams(res.params, res.changed_fields);
       pushMessage({
@@ -58,14 +62,18 @@ export function PromptPanel() {
         <span className="text-xs font-mono tracking-wider text-white/60 flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-accent" /> AI REMIX
         </span>
-        <StatusBadge status={status} />
+        <StatusBadge status={status} onSwitched={refresh} />
       </div>
 
       <div ref={listRef} className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 && !thinking && (
           <div className="text-white/30 text-sm italic">
-            Descrivi il remix che vuoi (es. "versione lo-fi chillhop, più calda e più lenta").
-            <br />Le modifiche ai parametri compaiono qui e sono evidenziate nel rack.
+            Descrivi il remix che vuoi, per esempio:
+            <br />· "versione lo-fi chillhop, più calda e più lenta"
+            <br />· "fammela come la farebbe Billie Eilish" (o scegli l'artista in "Stile di")
+            <br />· "portala a 128 BPM con un delay a tempo"
+            <br /><br />Le modifiche compaiono qui (vecchio → nuovo) e in rosa nel rack.
+            Ascolta con <b>B</b>, confronta con <b>A</b>: le onde sotto mostrano la differenza.
           </div>
         )}
         {messages.map((m) => <Message key={m.id} m={m} />)}
@@ -99,13 +107,13 @@ export function PromptPanel() {
           />
           <button
             onClick={() => void send()}
-            disabled={thinking || !prompt.trim()}
+            disabled={thinking || (!prompt.trim() && !artist.trim())}
             className="bg-accent hover:brightness-110 disabled:opacity-40 rounded-md px-4 flex items-center justify-center"
           >
             <Send className="w-4 h-4" />
           </button>
         </div>
-        <div className="flex items-center gap-2 mt-2">
+        <div className="flex flex-wrap items-center gap-2 mt-2">
           <span className="text-xs text-white/40">Genre:</span>
           <select
             value={genre}
@@ -115,6 +123,20 @@ export function PromptPanel() {
             <option value="">none</option>
             {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
           </select>
+          <span className="text-xs text-white/40 ml-2 flex items-center gap-1" title="Imita il sound (produzione/mix) di un artista">
+            <Mic2 className="w-3 h-3" /> Stile di:
+          </span>
+          <input
+            value={artist}
+            onChange={(e) => setArtist(e.target.value)}
+            list="remixr-artists"
+            placeholder="artista (opzionale)"
+            maxLength={100}
+            className="bg-bg-card border border-line rounded text-xs px-2 py-1 w-40 focus:outline-none focus:border-accent"
+          />
+          <datalist id="remixr-artists">
+            {artists.map((a) => <option key={a} value={a} />)}
+          </datalist>
           {analysis && (
             <span className="text-xs text-white/30 font-mono ml-auto">
               contesto: {analysis.bpm.toFixed(0)} BPM · {analysis.key}
@@ -190,9 +212,9 @@ function DiffRow({ path, before, after }: { path: string; before: unknown; after
   );
 }
 
-function StatusBadge({ status }: { status: LLMStatus | null }) {
+function StatusBadge({ status, onSwitched }: { status: LLMStatus | null; onSwitched: () => void }) {
   if (!status) return <span className="text-xs text-white/30">LLM: backend offline</span>;
-  const model = status.model?.replace(/\.gguf$/i, "") ?? "nessun modello";
+  const model = status.model ?? "";
   const dot = {
     idle: "bg-white/30",
     loading: "bg-yellow-400 animate-pulse",
@@ -205,18 +227,42 @@ function StatusBadge({ status }: { status: LLMStatus | null }) {
     ready: status.gpu_offload ? "GPU" : "CPU",
     error: "errore",
   }[status.state];
+  const available = status.available ?? [];
+  const pretty = (m: string) => m.replace(/\.gguf$/i, "");
+
+  const pick = async (m: string) => {
+    try {
+      await api.selectModel(m);
+    } finally {
+      onSwitched();
+    }
+  };
+
   return (
     <span className="text-xs text-white/40 flex items-center gap-1.5 min-w-0" title={status.error ?? model}>
       <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", dot)} />
-      <span className="truncate max-w-[220px]">{model}</span>
+      {available.length > 1 ? (
+        <select
+          value={model}
+          onChange={(e) => void pick(e.target.value)}
+          disabled={status.state === "loading"}
+          className="bg-transparent text-white/60 max-w-[240px] truncate focus:outline-none"
+          title="Cambia modello (si ricarica sulla GPU)"
+        >
+          {available.map((m) => <option key={m} value={m} className="bg-bg-panel">{pretty(m)}</option>)}
+        </select>
+      ) : (
+        <span className="truncate max-w-[220px]">{model ? pretty(model) : "nessun modello"}</span>
+      )}
       <span className="text-white/25">· {label}</span>
     </span>
   );
 }
 
 /** Poll /llm/status while the model is loading, then stop. */
-function useLLMStatus(): LLMStatus | null {
+function useLLMStatus(): { status: LLMStatus | null; refresh: () => void } {
   const [status, setStatus] = useState<LLMStatus | null>(null);
+  const [kick, setKick] = useState(0);
   const thinking = useRemixStore((s) => s.thinking);
 
   useEffect(() => {
@@ -239,7 +285,16 @@ function useLLMStatus(): LLMStatus | null {
       alive = false;
       clearTimeout(timer);
     };
-  }, [thinking]); // re-check after each request (first one may have loaded the model)
+  }, [thinking, kick]); // re-check after each request (first one may have loaded the model) and after a model switch
 
-  return status;
+  return { status, refresh: () => setKick((k) => k + 1) };
+}
+
+/** Artists with curated traits on the backend (suggestions only: any name works). */
+function useKnownArtists(): string[] {
+  const [names, setNames] = useState<string[]>([]);
+  useEffect(() => {
+    api.llmStyles().then(setNames).catch(() => setNames([]));
+  }, []);
+  return names;
 }

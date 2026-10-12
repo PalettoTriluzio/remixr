@@ -1,0 +1,62 @@
+{
+  "name": "Lo-fi",
+  "genre": "lofi",
+  "created_at": "",
+  "params": {
+    "global_chain": {
+      "tempo": {
+        "enabled": true,
+        "ratio": 0.9
+      },
+      "hp": {
+        "enabled": true,
+        "freq": 60
+      },
+      "lp": {
+        "enabled": true,
+        "freq": 5500
+      },
+      "eq": {
+        "enabled": true,
+        "low": {
+          "freq": 120,
+          "gain_db": 2.5,
+          "q": 0.7
+        },
+        "high": {
+          "freq": 8000,
+          "gain_db": -3,
+          "q": 0.7
+        }
+      },
+      "distortion": {
+        "enabled": true,
+        "drive_db": 5
+      },
+      "comp": {
+        "enabled": true,
+        "threshold_db": -20,
+        "ratio": 3,
+        "attack_ms": 20,
+        "release_ms": 200,
+        "makeup_db": 3
+      },
+      "reverb": {
+        "enabled": true,
+        "room_size": 0.45,
+        "damping": 0.7,
+        "wet": 0.2,
+        "dry": 0.85
+      },
+      "stereo": {
+        "enabled": true,
+        "width": 0.8
+      },
+      "limiter": {
+        "enabled": true,
+        "threshold_db": -1
+      }
+    },
+    "per_stem": null
+  }
+}

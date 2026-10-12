@@ -1,0 +1,49 @@
+{
+  "name": "Trap",
+  "genre": "trap",
+  "created_at": "",
+  "params": {
+    "global_chain": {
+      "eq": {
+        "enabled": true,
+        "low": {
+          "freq": 50,
+          "gain_db": 4,
+          "q": 0.8
+        },
+        "high": {
+          "freq": 9000,
+          "gain_db": 2,
+          "q": 0.7
+        }
+      },
+      "comp": {
+        "enabled": true,
+        "threshold_db": -14,
+        "ratio": 4,
+        "attack_ms": 10,
+        "release_ms": 150,
+        "makeup_db": 3
+      },
+      "distortion": {
+        "enabled": true,
+        "drive_db": 4
+      },
+      "reverb": {
+        "enabled": true,
+        "room_size": 0.6,
+        "wet": 0.2,
+        "dry": 0.85
+      },
+      "stereo": {
+        "enabled": true,
+        "width": 1.25
+      },
+      "limiter": {
+        "enabled": true,
+        "threshold_db": -0.3
+      }
+    },
+    "per_stem": null
+  }
+}

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { api } from "../lib/api";
 import { isNeutral, speedOf } from "../lib/effects";
+import { decodeForView } from "../lib/peaks";
 import { player } from "../lib/player";
 import { useRemixStore } from "../lib/remixStore";
 import { useTrackStore } from "../lib/store";
@@ -14,6 +15,7 @@ export function usePreviewSync() {
   const params = useRemixStore((s) => s.params);
   const region = useRemixStore((s) => s.region);
   const setStatus = useRemixStore((s) => s.setPreviewStatus);
+  const setView = useRemixStore((s) => s.setPreviewView);
 
   // A params edit means "let me hear it": switch to B once the render lands.
   // Region moves alone keep the current A/B side.
@@ -44,11 +46,12 @@ export function usePreviewSync() {
           { track_id: track.track_id, params, region_start_sec: start, region_end_sec: end },
           ctrl.signal,
         );
+        // Decoded copy for the A/B lane; a failure only leaves the lane empty.
+        const buffer = await decodeForView(blob).catch(() => null);
         if (ctrl.signal.aborted) return;
-        player.loadPreview(
-          { url: URL.createObjectURL(blob), start, end, speed: speedOf(chain) },
-          pendingB.current,
-        );
+        const speed = speedOf(chain);
+        player.loadPreview({ url: URL.createObjectURL(blob), start, end, speed }, pendingB.current);
+        setView(buffer && { buffer, start, end, speed });
         pendingB.current = false;
         setStatus("ready");
       } catch (e) {
@@ -61,7 +64,7 @@ export function usePreviewSync() {
       clearTimeout(timer);
       ctrl.abort();
     };
-  }, [track, params, region, setStatus]);
+  }, [track, params, region, setStatus, setView]);
 
   // Track removed or replaced: the old preview belongs to the old audio.
   useEffect(() => () => player.clearPreview(), [track?.track_id]);

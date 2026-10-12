@@ -60,17 +60,26 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 - ☐ Estensione schema params: `per_stem` (chain separata per vocals/drums/bass/other)
 - ☐ UI: toggle "Stems mode", tabs per stem nel rack
 
-## F6 — Preset & Genre Templates
-- ☐ CRUD preset JSON (`data/presets/*.json`)
-- ☐ Genre templates seed: `house.json`, `lofi.json`, `rock.json`, `trap.json`, `pop.json`, `techno.json`, `ambient.json`
-- ☐ Menu preset in top-bar (load/save/rename/delete)
-- ☐ LLM può ricevere template come base (`genre` param in `/llm/interpret`)
+## F6 — Preset & Genre Templates ◐ (scritto, da provare)
+- ☑ CRUD preset JSON (`data/presets/<slug>.json`, `app/presets/store.py`)
+- ☑ Genre templates seed: `house.json`, `lofi.json`, `rock.json`, `trap.json`, `pop.json`, `techno.json`, `ambient.json`
+- ☑ Menu preset in top-bar (load/save/delete; rename = salva con altro nome + elimina)
+- ☑ LLM riceve il template del genere come base (`genre` in `/llm/interpret`)
+
+## F4b — Stile artista + modelli ◐ (scritto, da provare)
+- ☑ `app/llm/styles.py`: ~35 artisti (internazionali + italiani) → tratti di produzione
+- ☑ `reference_artist` in `/llm/interpret` + match automatico nel testo del prompt; regole di onestà nel system prompt
+- ☑ UI: campo "Stile di" con suggerimenti (`GET /llm/styles`)
+- ☑ Default = GGUF più grande che sta in VRAM (`REMIXR_LLM_MAX_GB`), cambio modello a runtime (`POST /llm/model` + selettore UI)
+- ☐ (opzionale) aggiornare llama-cpp-python per Qwen3/Gemma 3 (rebuild con `-Version`)
 
 ## F7 — Polish
-- ☐ Spectrum analyzer real-time nel waveform
-- ☐ Export MP3 320 opzionale (via ffmpeg-python)
-- ☐ Undo/redo history sui params
-- ☐ Keyboard shortcuts (space=play, cmd+z=undo, cmd+s=save preset)
+- ☑ Spectrum analyzer real-time (colonna destra, colore per lato A/B)
+- ☑ Corsia B: confronto A sopra / B sotto della finestra di preview + peak/RMS/durata; UI che cambia colore con il lato
+- ☑ Export dalla top bar (traccia intera, WAV 24 / MP3 libsndfile, download `<nome>_remix.<ext>`)
+- ☐ Export MP3 320 CBR vero (via ffmpeg)
+- ☑ Undo/redo history sui params (Ctrl+Z / Ctrl+Shift+Z, bottoni in top bar)
+- ☑ Keyboard shortcuts (Space play, B A/B, L loop, Esc regione, Ctrl+Z/Y)
 - ☐ Dark theme fine-tuning
 - ☐ Windows installer script (.bat che fa venv, pip install, npm install, build, run)
 
@@ -81,7 +90,7 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 - **Ordine chain** (fisso, implementato in F2): `[time/pitch] → gain → HP → EQ → Comp → Distortion → LP → Delay → Reverb → Stereo → Limiter`.
 - **`tempo.ratio` = moltiplicatore di velocità** (2.0 = doppia velocità). Lo `stretch_factor` di pedalboard viene sondato a runtime perché la sua semantica cambia tra versioni.
 - **Preview**: WAV 16-bit, finestra max 30 s, non persistito. Export: WAV 24-bit. MP3 320 CBR vero → F7 (ffmpeg).
-- **LLM**: Qwen2.5-**7B**-Instruct Q4_K_M di default (~4.4 GB, full GPU offload su 16 GB VRAM). 14B Q4_K_M (~9 GB) come opzione se serve più affidabilità sul JSON.
+- **LLM** (aggiornato 2026-10-12): default = il GGUF più grande che sta tutto in VRAM (≤ 12 GB). Consigliato sulla 4090 Laptop: **Qwen2.5-14B-Instruct Q5_K_M** (~10.5 GB). 32B solo IQ3 (al limite) o con offload parziale (lento). Qwen3/Gemma 3 richiedono un llama-cpp-python più nuovo di 0.3.2.
 - **LLM → delta, non Params completi** (2026-10-10): meno token, niente rumore sui campi non toccati; merge+clamp lato backend.
 - **A/B**: A = originale intero, B = preview della finestra (regione o primi 30 s). Niente drag-to-reorder (catena fissa).
 - **llama-cpp-python**: build da sorgente con `-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=89`. Vedi CLAUDE.md e README §8.
@@ -101,3 +110,4 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 - 2026-10-11: "F4 not implemented" sul PC dell'utente: codice aggiornato ma risponde un uvicorn vecchio rimasto sulla porta 8000. Dal log build: numpy portato a 2.4.6 da pip (da riportare a 1.26.4). Dettagli in CLAUDE.md.
 - 2026-10-11: README → Troubleshooting: nuova sezione "Not implemented (F4)" con i passi per l'utente (verifica pull, processi sulla porta 8000, kill, numpy 1.26.4, avvio backend con log in `tools/logs/`, tabella dei messaggi d'errore).
 - 2026-10-11: README, passo 1 della procedura F4: `git log -3` sostituito con `git merge-base --is-ancestor 27366d4 HEAD` (con commit successivi `27366d4` usciva dalle ultime 3 righe).
+- 2026-10-12: "rendilo definitivo". **A/B visivo**: corsia B (`CompareLane`: finestra di preview, originale sopra / remix sotto, stessa scala, peak/RMS/durata, clic = ascolta A o B da lì), riquadro della finestra sulla waveform A, spettro live (`SpectrumView` + `lib/analyser.ts`), colori dell'interfaccia per lato (ciano A, viola B). **Stile artista** (`app/llm/styles.py`, `reference_artist`, campo "Stile di"). **Modelli**: scelta automatica del più grande che sta in VRAM, cambio a runtime dalla UI, grammar in cache. **F6**: CRUD preset + 7 genre template + menu in top bar; template del genere passato all'LLM. **Export** in top bar. **Undo/redo** e **scorciatoie**. README: tabella modelli per 16 GB, tour aggiornato.

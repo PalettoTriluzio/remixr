@@ -16,8 +16,9 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from app.llm import engine
+from app.llm import engine, styles
 from app.models import EffectChain, LLMInterpretRequest, LLMInterpretResponse
+from app.presets import store as presets
 
 
 class LLMOutputError(RuntimeError):
@@ -110,6 +111,16 @@ Rules:
 - "explanation": 1-3 short sentences on what you changed and why, in the SAME LANGUAGE as the user's request.
 - Answer with JSON only.
 
+Artist / producer references ("make it like <artist>", "alla <artist>"):
+- Imitate their PRODUCTION signature with this chain: tone (eq, hp/lp), density
+  (comp, limiter), grit (distortion), space (reverb, delay), width, and tempo/pitch
+  only if that artist's sound clearly calls for it (e.g. much slower or faster feel).
+- Use the "Known traits" line when given. Otherwise use what you know about the
+  artist; if you do not know them, say so in the explanation and make a neutral,
+  modest change.
+- This chain cannot change melody, lyrics, the singer's voice or the instruments:
+  in the explanation say in a few words which traits you are imitating.
+
 Example. Request: "more spacious and warmer"
 {{"explanation": "Gentle low boost with softer highs for warmth, plus a medium room reverb for space.", "changes": {{"eq": {{"enabled": true, "low": {{"gain_db": 2.5}}, "high": {{"gain_db": -2}}}}, "reverb": {{"enabled": true, "room_size": 0.6, "wet": 0.3}}}}}}
 """
@@ -130,6 +141,25 @@ def build_messages(req: LLMInterpretRequest) -> list[dict]:
         user.append(f"Track: {', '.join(ctx)}")
     if req.genre:
         user.append(f"Target genre: {req.genre}")
+        template = presets.genre_template_chain(req.genre)
+        if template:
+            user.append(
+                "Typical settings for this genre (a starting point, adapt them to the track): "
+                + json.dumps(template, separators=(",", ":"))
+            )
+
+    artists = []
+    if req.reference_artist and req.reference_artist.strip():
+        known = styles.match(req.reference_artist, explicit=True)
+        artists += known or [req.reference_artist.strip()]
+    artists += [a for a in styles.match(req.prompt) if a not in artists]
+    for name in artists[:3]:
+        t = styles.traits(name)
+        user.append(
+            f"Reference artist: {name}. Known traits: {t}" if t
+            else f"Reference artist: {name}. Not in the local table: use your own knowledge."
+        )
+
     user.append(f"Request: {req.prompt.strip()}")
 
     return [

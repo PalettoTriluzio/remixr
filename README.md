@@ -174,7 +174,18 @@ At runtime, Remixr loads the model with `n_gpu_layers=-1` (offload every layer).
 - Create the folder `backend\models\` if not present
 - Download a Qwen2.5-Instruct GGUF from Hugging Face:
   - **Default — [Qwen2.5-7B-Instruct-GGUF](https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF)** → `qwen2.5-7b-instruct-q4_k_m.gguf` (~4.4 GB). Fully GPU-resident on 16 GB VRAM, very fast.
-  - **Optional, smarter — [Qwen2.5-14B-Instruct-GGUF](https://huggingface.co/Qwen/Qwen2.5-14B-Instruct-GGUF)** → `qwen2.5-14b-instruct-q4_k_m.gguf` (~9 GB). Still fits fully in 16 GB with room for context; better at producing valid JSON on complex prompts.
+  - **Recommended on the RTX 4090 Laptop (16 GB) — [Qwen2.5-14B-Instruct-GGUF](https://huggingface.co/bartowski/Qwen2.5-14B-Instruct-GGUF)** → `Qwen2.5-14B-Instruct-Q5_K_M.gguf` (~10.5 GB). Fully on the GPU with 8k context; knows many more artists (feature "Stile di") and gets the JSON right more often. Q4_K_M (~9 GB) if you want more headroom.
+  - **What fits in 16 GB** (llama-cpp-python 0.3.2, fully on GPU, 8k context):
+
+    | Model | File | Size | Verdict |
+    |---|---|---|---|
+    | Qwen2.5-7B Q4_K_M | single | 4.7 GB | fast, weak on artist styles |
+    | **Qwen2.5-14B Q5_K_M** | single | 10.5 GB | **sweet spot** |
+    | Qwen2.5-14B Q6_K | single | 12.1 GB | fits, little gain over Q5 |
+    | Qwen2.5-32B IQ3_XS | single | ~13.7 GB | at the limit (lower `REMIXR_LLM_CTX` to 4096), 3-bit loses quality |
+    | Qwen2.5-32B Q4_K_M | single | ~19.9 GB | does **not** fit: partial offload (`REMIXR_LLM_GPU_LAYERS≈48`), several times slower |
+
+    Newer families (Qwen3, Gemma 3, Mistral Small 3) need a newer llama-cpp-python: rebuild with `tools\build-llama-cuda.ps1 -Version <x.y.z>`.
 - Put the file in `backend\models\`
 
 Note: in the official Qwen repo the Q4_K_M is **split** into `-00001-of-0000N.gguf` parts (llama.cpp loads them if you point at part 1, all parts in the same folder). A single file is simpler — from the command line:
@@ -183,6 +194,7 @@ cd backend
 .venv\Scripts\activate
 pip install -U "huggingface_hub[cli]"
 hf download bartowski/Qwen2.5-7B-Instruct-GGUF Qwen2.5-7B-Instruct-Q4_K_M.gguf --local-dir models
+hf download bartowski/Qwen2.5-14B-Instruct-GGUF Qwen2.5-14B-Instruct-Q5_K_M.gguf --local-dir models
 ```
 
 **Check that the model loads on the GPU:**
@@ -191,11 +203,11 @@ python -c "from llama_cpp import Llama; m=Llama('models/Qwen2.5-7B-Instruct-Q4_K
 ```
 In the output look for `offloaded 29/29 layers to GPU`, then the reply.
 
-**Which model Remixr loads**: the first `*.gguf` in `backend\models\` (a 7B is preferred if there are several). To pick another one (e.g. the 14B), set it before starting the backend:
+**Which model Remixr loads**: the **biggest** `*.gguf` in `backend\models\` that fits fully in VRAM (≤ `REMIXR_LLM_MAX_GB`, default 12 GB). You can switch model at runtime from the selector in the AI panel header (it frees the GPU and reloads). To force one at startup:
 ```powershell
 $env:REMIXR_LLM_MODEL = "Qwen2.5-14B-Instruct-Q4_K_M.gguf"   # name in backend\models\ or absolute path
 ```
-Other knobs: `REMIXR_LLM_CTX` (default 8192), `REMIXR_LLM_GPU_LAYERS` (default -1 = all), `REMIXR_LLM_PRELOAD=0` (load on the first prompt instead of at startup), `REMIXR_LLM_VERBOSE=0` (silence the llama.cpp log).
+Other knobs: `REMIXR_LLM_MAX_GB` (default 12), `REMIXR_LLM_CTX` (default 8192), `REMIXR_LLM_GPU_LAYERS` (default -1 = all), `REMIXR_LLM_PRELOAD=0` (load on the first prompt instead of at startup), `REMIXR_LLM_VERBOSE=0` (silence the llama.cpp log).
 
 ---
 
@@ -225,7 +237,15 @@ LLM status: http://127.0.0.1:8000/api/llm/status (`loading` for a few seconds af
 **Quick tour**
 - Drop a track → the effect rack (left) is live: power button = bypass, drag a knob vertically (Shift = fine), double-click = default.
 - Every change renders a preview (first 30 s, or the region you drag on the waveform, max 30 s) and switches to **B** (remix). **A** = original. Loop button loops the region.
+- **Seeing A vs B** (top panel):
+  - lane **A · ORIGINALE** = the whole track; the dashed box is the window B was rendered from.
+  - lane **B · REMIX** = that window drawn twice on the same scale: original on top, remix below. Louder/quieter, longer/shorter (tempo), more compressed is visible at a glance; top right: duration, peak and RMS `A → B`. Click the top half to hear A from there, the bottom half for B.
+  - right column: live spectrum of what is playing (cyan = A, violet/pink = B); the whole UI (strip, play button, badge, lanes) switches colour with the side.
 - AI panel (right): describe the remix, Enter to send. The answer shows each changed parameter `old → new`, the touched knobs turn pink in the rack, "annulla" reverts that answer.
+  - **Stile di**: type an artist (suggestions for ~35 with curated traits, any name works) or just write "fammela come la farebbe <artista>". Only the production/mix is imitated (tone, space, density, grit, tempo): voice, melody and instruments can't change.
+  - **Genre**: also sends the genre template's settings to the model as a starting point.
+- Top bar: undo/redo, **Preset** (genre templates + your presets: load, save, delete), **Export** (whole track, WAV 24-bit or MP3, downloaded as `<name>_remix.wav`).
+- Shortcuts: `Space` play/pause · `B` switch A/B · `L` loop · `Esc` clear region · `Ctrl+Z` / `Ctrl+Shift+Z` undo/redo.
 
 ---
 

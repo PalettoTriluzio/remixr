@@ -23,14 +23,18 @@ export function TransportBar() {
       <button
         disabled={disabled}
         onClick={() => player.togglePlay()}
-        className="w-9 h-9 rounded-full bg-accent hover:brightness-110 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+        title="Play/pausa (Spazio)"
+        className={clsx(
+          "w-9 h-9 rounded-full hover:brightness-110 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-300",
+          abMode === "B" ? "bg-accent" : "bg-accent-cool text-bg",
+        )}
       >
         {isPlaying ? <Pause className="w-4 h-4" fill="currentColor" /> : <Play className="w-4 h-4 ml-0.5" fill="currentColor" />}
       </button>
       <button
         disabled={disabled}
         onClick={() => player.setLoop(!loop)}
-        title="Loop sulla regione (o sulla finestra di preview)"
+        title="Loop sulla regione o sulla finestra di preview (L)"
         className={clsx(
           "w-8 h-8 rounded hover:bg-bg-hover flex items-center justify-center disabled:opacity-40",
           loop ? "text-accent" : "text-white/60",
@@ -40,22 +44,28 @@ export function TransportBar() {
       </button>
 
       {/* A/B: original vs remix preview */}
-      <div className="flex rounded overflow-hidden border border-line text-xs font-mono">
+      <div className="flex rounded overflow-hidden border border-line text-xs font-mono" title="Cambia A/B (B)">
         <button
           disabled={disabled}
           onClick={() => player.setMode("A")}
-          title="A = originale"
-          className={clsx("px-2.5 h-7 disabled:opacity-40", abMode === "A" ? "bg-accent-cool/20 text-accent-cool" : "text-white/50 hover:bg-bg-hover")}
+          title="A = originale (B per cambiare)"
+          className={clsx(
+            "px-3 h-7 disabled:opacity-40 transition-colors",
+            abMode === "A" ? "bg-accent-cool/25 text-accent-cool font-semibold" : "text-white/50 hover:bg-bg-hover",
+          )}
         >
-          A
+          A · originale
         </button>
         <button
           disabled={disabled || !canB}
           onClick={() => player.setMode("B")}
-          title={canB ? "B = remix" : "Nessun effetto attivo: B = A"}
-          className={clsx("px-2.5 h-7 disabled:opacity-40", abMode === "B" ? "bg-accent/30 text-white" : "text-white/50 hover:bg-bg-hover")}
+          title={canB ? "B = remix (B per cambiare)" : "Nessun effetto attivo: B = A"}
+          className={clsx(
+            "px-3 h-7 disabled:opacity-40 transition-colors",
+            abMode === "B" ? "bg-accent/40 text-white font-semibold" : "text-white/50 hover:bg-bg-hover",
+          )}
         >
-          B
+          B · remix
         </button>
       </div>
 
@@ -70,12 +80,12 @@ export function TransportBar() {
           region ? (
             <span className="flex items-center gap-1">
               region {formatDuration(region.start)}–{formatDuration(region.end)}
-              <button onClick={() => setRegion(null)} title="Rimuovi regione" className="hover:text-white">
+              <button onClick={() => setRegion(null)} title="Rimuovi regione (Esc)" className="hover:text-white">
                 <X className="w-3 h-3" />
               </button>
             </span>
           ) : (
-            previewStatus !== "rendering" && <span className="text-white/25">trascina sulla waveform per una regione (max 30 s)</span>
+            previewStatus !== "rendering" && <span className="text-white/25">trascina sulla waveform A per scegliere la regione (max 30 s) · Spazio play · B cambia A/B</span>
           )
         )}
       </span>

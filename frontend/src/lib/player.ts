@@ -7,6 +7,7 @@
 import type WaveSurfer from "wavesurfer.js";
 import { useTrackStore } from "./store";
 import { useRemixStore, type AbMode } from "./remixStore";
+import { activateAudio, registerMedia } from "./analyser";
 
 export interface Preview {
   url: string;   // blob URL
@@ -17,6 +18,7 @@ export interface Preview {
 
 const remix = new Audio();
 remix.preload = "auto";
+registerMedia(remix);
 
 let preview: Preview | null = null;
 let loadToken = 0;
@@ -99,8 +101,11 @@ export function bindWavesurfer(w: WaveSurfer) {
 
 export const player = {
   hasPreview: () => preview !== null,
+  /** Position inside the preview WAV (seconds of remix audio). */
+  remixTime: () => remix.currentTime,
 
   togglePlay() {
+    activateAudio();
     if (mode() === "A") {
       void ws()?.playPause();
     } else if (preview) {
@@ -110,6 +115,7 @@ export const player = {
   },
 
   setMode(m: AbMode) {
+    activateAudio();
     const store = useRemixStore.getState();
     if (store.abMode === m || (m === "B" && !preview)) return;
     const playing = useTrackStore.getState().isPlaying;
@@ -129,6 +135,24 @@ export const player = {
       w?.setTime(t);
       if (playing) void w?.play();
     }
+  },
+
+  toggleMode() {
+    player.setMode(mode() === "A" ? "B" : "A");
+  },
+
+  /** Listen to the original from `t` (original-track seconds). */
+  seekA(t: number) {
+    player.setMode("A");
+    ws()?.setTime(t);
+  },
+
+  /** Listen to the remix from `t` (seconds inside the preview). */
+  seekB(t: number) {
+    if (!preview) return;
+    player.setMode("B");
+    remix.currentTime = clamp(t, 0, remix.duration || t);
+    syncCursor();
   },
 
   /** Swap in a freshly rendered preview, keeping the listening position. */
@@ -171,6 +195,7 @@ export const player = {
     remix.load();
     URL.revokeObjectURL(preview.url);
     preview = null;
+    useRemixStore.getState().setPreviewView(null);
   },
 
   setLoop(v: boolean) {

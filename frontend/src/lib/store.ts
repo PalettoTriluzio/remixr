@@ -13,9 +13,12 @@ interface TrackState {
 
   // Playback (wavesurfer instance is set by WaveformView on mount)
   wavesurfer: WaveSurfer | null;
+  /** Original track as decoded by wavesurfer (8 kHz): drawn in the A/B lane. */
+  originalBuffer: AudioBuffer | null;
   isPlaying: boolean;
   currentTime: number;
   setWavesurfer: (ws: WaveSurfer | null) => void;
+  setOriginalBuffer: (b: AudioBuffer | null) => void;
   setPlaying: (v: boolean) => void;
   setCurrentTime: (t: number) => void;
 
@@ -31,9 +34,11 @@ export const useTrackStore = create<TrackState>((set, get) => ({
   error: null,
 
   wavesurfer: null,
+  originalBuffer: null,
   isPlaying: false,
   currentTime: 0,
-  setWavesurfer: (ws) => set({ wavesurfer: ws, isPlaying: false, currentTime: 0 }),
+  setWavesurfer: (ws) => set({ wavesurfer: ws, originalBuffer: null, isPlaying: false, currentTime: 0 }),
+  setOriginalBuffer: (originalBuffer) => set({ originalBuffer }),
   setPlaying: (v) => set({ isPlaying: v }),
   setCurrentTime: (t) => set({ currentTime: t }),
   // Play/pause goes through lib/player.ts (A/B aware).
@@ -72,7 +77,7 @@ export const useTrackStore = create<TrackState>((set, get) => ({
     set({
       track: null, analysis: null, error: null,
       isUploading: false, isAnalyzing: false,
-      wavesurfer: null, isPlaying: false, currentTime: 0,
+      wavesurfer: null, originalBuffer: null, isPlaying: false, currentTime: 0,
     });
   },
 }));

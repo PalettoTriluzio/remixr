@@ -1,0 +1,54 @@
+{
+  "name": "Pop",
+  "genre": "pop",
+  "created_at": "",
+  "params": {
+    "global_chain": {
+      "hp": {
+        "enabled": true,
+        "freq": 35
+      },
+      "eq": {
+        "enabled": true,
+        "low": {
+          "freq": 90,
+          "gain_db": 1.5,
+          "q": 0.7
+        },
+        "mid": {
+          "freq": 300,
+          "gain_db": -1.5,
+          "q": 1.0
+        },
+        "high": {
+          "freq": 10000,
+          "gain_db": 2.5,
+          "q": 0.7
+        }
+      },
+      "comp": {
+        "enabled": true,
+        "threshold_db": -18,
+        "ratio": 3,
+        "attack_ms": 10,
+        "release_ms": 100,
+        "makeup_db": 3
+      },
+      "reverb": {
+        "enabled": true,
+        "room_size": 0.45,
+        "wet": 0.15,
+        "dry": 0.9
+      },
+      "stereo": {
+        "enabled": true,
+        "width": 1.15
+      },
+      "limiter": {
+        "enabled": true,
+        "threshold_db": -0.3
+      }
+    },
+    "per_stem": null
+  }
+}
