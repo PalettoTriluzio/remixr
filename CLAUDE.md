@@ -46,6 +46,7 @@ pip install llama-cpp-python==0.3.2 --no-cache-dir
 - `tools/install-torch-cuda.ps1` — torch/torchaudio 2.5.1 **cu124** al posto della wheel CPU, ripristina `numpy==1.26.4`, scarica i pesi demucs (`htdemucs_ft`, `htdemucs`), prova una separazione sulla GPU.
 - `diag`/`build-llama` caricano `vcvars64.bat` da soli (niente "x64 Native Tools Prompt"); tutti scrivono in `tools/logs/`, che **non è gitignorata**: i log si committano e si leggono dall'altra macchina.
 - Dettagli in `tools/README.md`.
+- `UltimoMessagio.md` (root) = istruzioni per l'utente sull'ultimo passo consegnato (cosa fare / cosa provare): va riscritto a ogni consegna.
 
 ### Stato ambiente macchina utente (2026-10-09)
 Rilevato dal log `errors.txt`: Python 3.11, CUDA **12.6** (`v12.6`), MSVC **19.44** (VS BuildTools 17.14), driver ok, tutte le dipendenze di `requirements.txt` installate nel venv.
