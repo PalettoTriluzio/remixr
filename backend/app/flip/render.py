@@ -22,8 +22,9 @@ from pedalboard import HighpassFilter, LowpassFilter, Pedalboard
 
 from app.dsp.chain import EPS, process, time_pitch
 from app.dsp.render import EXPORT_SUBTYPE, PREVIEW_SUBTYPE, decode, write_audio
+from app.flip.instruments import render_drums, render_notes
 from app.flip.tune import retune
-from app.models import EffectChain, FlipClip, FlipProject, FlipTrack
+from app.models import EffectChain, FlipClip, FlipProject, FlipTrack, PatternClip
 from app.storage import RENDERS_DIR, find_stems, find_upload
 
 PREVIEW_MAX_SEC = 120.0
@@ -133,6 +134,41 @@ def clip_audio(track_id: str, clip: FlipClip, project: FlipProject, follow_key: 
     return y
 
 
+def pattern_audio(clip: PatternClip, track: FlipTrack, project: FlipProject, sr: int) -> np.ndarray:
+    """A generated clip (drums / notes) rendered to its full length, cached."""
+    transpose = project.transpose if track.follow_key else 0.0
+    raw = (f"{clip.model_dump_json(exclude={'id', 'at_beat', 'gain_db'})}|{track.kind}|"
+           f"{track.instrument.model_dump_json()}|{project.bpm}|{transpose}|{sr}")
+    key = "p" + hashlib.sha1(raw.encode()).hexdigest()
+    cached = _clip_cache.get(key)
+    if cached is not None:
+        _clip_cache.move_to_end(key)
+        return cached
+    if track.kind == "drums":
+        y = render_drums(clip, track.instrument, project.bpm, sr)
+    else:
+        y = render_notes(clip, track.instrument, project.bpm, sr, transpose)
+    y = np.ascontiguousarray(y, dtype=np.float32)
+    _clip_cache[key] = y
+    while len(_clip_cache) > _CLIP_CACHE_MAX:
+        _clip_cache.popitem(last=False)
+    return y
+
+
+def _place(buf: np.ndarray, audio: np.ndarray, c0: float, c1: float, b0: float, beat_sec: float, sr: int) -> bool:
+    """Add a clip spanning project beats [c0, c1) to a window buffer starting at b0."""
+    n = buf.shape[1]
+    off = round((c0 - b0) * beat_sec * sr)  # may be negative: clip starts before the window
+    end_in_clip = round((c1 - c0) * beat_sec * sr)
+    src_from = max(0, -off)
+    dst_from = max(0, off)
+    length = min(end_in_clip - src_from, n - dst_from, audio.shape[1] - src_from)
+    if length <= 0:
+        return False
+    buf[:, dst_from:dst_from + length] += audio[:, src_from:src_from + length]
+    return True
+
+
 def _envelope(clip: FlipClip, n: int, sr: int, bpm: float) -> np.ndarray | None:
     """Gate (on the project grid) × fades × gain, or None if all neutral."""
     env = None
@@ -200,23 +236,25 @@ def render_project(
     for track in _audible(project.tracks):
         buf = np.zeros((2, n), dtype=np.float32)
         used = False
-        for clip in track.clips:
-            c0, c1 = clip.at_beat, min(clip.at_beat + clip.length_beats, total_beats)
-            if c1 <= b0 or c0 >= b1:
-                continue
-            audio = clip_audio(track_id, clip, project, track.follow_key, sr)
-            env = _envelope(clip, audio.shape[1], sr, project.bpm)
-            if env is not None:
-                audio = audio * env
-            # Clip start relative to the window, in samples (may be negative).
-            off = round((c0 - b0) * beat_sec * sr)
-            end_in_clip = round((c1 - c0) * beat_sec * sr)
-            src_from = max(0, -off)
-            dst_from = max(0, off)
-            length = min(end_in_clip - src_from, n - dst_from, audio.shape[1] - src_from)
-            if length > 0:
-                buf[:, dst_from:dst_from + length] += audio[:, src_from:src_from + length]
-                used = True
+        if track.kind == "audio":
+            for clip in track.clips:
+                c0, c1 = clip.at_beat, min(clip.at_beat + clip.length_beats, total_beats)
+                if c1 <= b0 or c0 >= b1:
+                    continue
+                audio = clip_audio(track_id, clip, project, track.follow_key, sr)
+                env = _envelope(clip, audio.shape[1], sr, project.bpm)
+                if env is not None:
+                    audio = audio * env
+                used |= _place(buf, audio, c0, c1, b0, beat_sec, sr)
+        else:
+            for pat in track.patterns:
+                c0, c1 = pat.at_beat, min(pat.at_beat + pat.length_beats, total_beats)
+                if c1 <= b0 or c0 >= b1:
+                    continue
+                audio = pattern_audio(pat, track, project, sr)
+                if abs(pat.gain_db) > EPS:
+                    audio = audio * np.float32(10 ** (pat.gain_db / 20))
+                used |= _place(buf, audio, c0, c1, b0, beat_sec, sr)
         if not used:
             continue
         chain = track.chain.model_copy(update={"tempo": track.chain.tempo.model_copy(update={"enabled": False})})

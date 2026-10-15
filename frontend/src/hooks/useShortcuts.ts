@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { flipPlayer } from "../lib/flipPlayer";
-import { findClip, ops, useFlipStore } from "../lib/flipStore";
+import { findClip, findPattern, ops, useFlipStore } from "../lib/flipStore";
 import { player } from "../lib/player";
 import { useRemixStore } from "../lib/remixStore";
 import { useTrackStore } from "../lib/store";
@@ -41,7 +41,9 @@ export function useShortcuts() {
       if (inFlip && mod && e.key.toLowerCase() === "d") {
         e.preventDefault();
         const found = findClip(flip.project, flip.selection);
+        const pat = findPattern(flip.project, flip.selection);
         if (found) flip.edit(ops.duplicateClip(found.track.id, found.clip.id));
+        else if (pat) flip.edit(ops.duplicatePattern(pat.track.id, pat.clip.id));
         return;
       }
       if (mod || e.altKey || !hasTrack) return;
@@ -61,10 +63,10 @@ export function useShortcuts() {
           if (flip.loop) flip.setLoopOn(!flip.loopOn);
         } else if (e.key === "Delete" || e.key === "Backspace") {
           const found = findClip(flip.project, flip.selection);
-          if (found) {
-            flip.edit(ops.removeClip(found.track.id, found.clip.id));
-            flip.select(null);
-          }
+          const pat = findPattern(flip.project, flip.selection);
+          if (found) flip.edit(ops.removeClip(found.track.id, found.clip.id));
+          else if (pat) flip.edit(ops.removePattern(pat.track.id, pat.clip.id));
+          if (found || pat) flip.select(null);
         } else if (e.key === "Escape") {
           if (flip.selection) flip.select(null);
           else if (remix.region) remix.setRegion(null);

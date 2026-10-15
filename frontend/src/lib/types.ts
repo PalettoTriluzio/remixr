@@ -211,9 +211,55 @@ export interface FlipClip {
   harmony: number;     // diatonic steps, 0 = off
 }
 
+export type DrumVoice = "kick" | "snare" | "clap" | "hat" | "open_hat" | "rim" | "perc";
+export const DRUM_VOICES: DrumVoice[] = ["kick", "snare", "clap", "hat", "open_hat", "rim", "perc"];
+export type TrackKind = "audio" | "drums" | "bass" | "keys";
+
+export interface Note {
+  start: number;  // beats from the pattern start
+  length: number; // beats
+  pitch: number;  // MIDI, key of the original (transpose added at render)
+  vel: number;
+}
+
+/** Generated material: one cycle of pattern_beats repeated over length_beats. */
+export interface PatternClip {
+  id: string;
+  at_beat: number;
+  length_beats: number;
+  pattern_beats: number;
+  steps_per_beat: number;
+  lanes: Partial<Record<DrumVoice, number[]>>; // velocity per step, 0 = off
+  rolls: Partial<Record<DrumVoice, number[]>>; // 2..6 = roll inside the step
+  notes: Note[];
+  swing: number;
+  gain_db: number;
+}
+
+export type Kit = "trap" | "boombap" | "house" | "lofi" | "afro";
+export type SynthPreset = "808" | "sub" | "reese" | "pluck_bass" | "pad" | "keys" | "pluck" | "bell" | "lead";
+
+export interface Instrument {
+  kit: Kit;
+  preset: SynthPreset;
+  tune: number;
+  decay: number;
+  attack_ms: number;
+  release_ms: number;
+  cutoff: number;
+  glide_ms: number;
+  drive_db: number;
+  detune: number;
+}
+
+export interface ChordMark { start: number; end: number; name: string; }
+
 export interface FlipTrack {
   id: string;
   name: string;
+  kind: TrackKind;
+  instrument: Instrument;
+  patterns: PatternClip[];
   gain_db: number;
   pan: number;
   mute: boolean;
@@ -230,7 +276,35 @@ export interface FlipProject {
   source_key: string;
   transpose: number;
   tracks: FlipTrack[];
+  chords: ChordMark[];
 }
+
+export type GenStyle = "trap" | "drill" | "boombap" | "house" | "lofi" | "reggaeton" | "afro" | "pop";
+export type GenPart = "drums" | "bass" | "chords" | "arp";
+export type Mood = "dark" | "sad" | "epic" | "happy" | "dreamy";
+
+export interface GenerateRequest {
+  track_id: string;
+  project: FlipProject;
+  style: GenStyle;
+  harmony: "song" | "new";
+  mood: Mood;
+  parts: GenPart[];
+  start_bar: number;
+  bars: number;
+  seed: number;
+}
+
+export interface GenerateResponse {
+  tracks: FlipTrack[];
+  chords: ChordMark[];
+  explanation: string;
+}
+
+export const defaultInstrument = (): Instrument => ({
+  kit: "trap", preset: "808", tune: 0, decay: 1, attack_ms: 5, release_ms: 150,
+  cutoff: 6000, glide_ms: 0, drive_db: 0, detune: 0.3,
+});
 
 export interface FlipRenderRequest {
   track_id: string;

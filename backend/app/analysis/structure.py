@@ -269,3 +269,32 @@ def analyze_structure(upload: Path, stems: dict[str, Path] | None) -> dict:
         "sections": sections,
         "chords": chords,
     }
+
+
+# ---- cached access (API + flip generator) ----
+
+# Bump when the analysis changes: old cached results are recomputed.
+VERSION = 1
+
+
+def structure_for(track_id: str):
+    """StructureResponse for an upload (from the stems when they exist), cached
+    per track and source in data/analysis/. None if the upload is gone."""
+    import json
+
+    from app.models import StructureResponse
+    from app.storage import ANALYSIS_DIR, find_stems, find_upload
+
+    path = find_upload(track_id)
+    if path is None:
+        return None
+    stems = find_stems(track_id)
+    cache = ANALYSIS_DIR / f"{track_id}.{'stems' if stems else 'mix'}.v{VERSION}.json"
+    if cache.exists():
+        try:
+            return StructureResponse(**json.loads(cache.read_text(encoding="utf-8")))
+        except (OSError, ValueError):
+            cache.unlink(missing_ok=True)
+    result = StructureResponse(track_id=track_id, **analyze_structure(path, stems))
+    cache.write_text(result.model_dump_json(), encoding="utf-8")
+    return result

@@ -4,6 +4,7 @@ import { api } from "./api";
 import { useRemixStore, type ChatMessage } from "./remixStore";
 import { useTrackStore } from "./store";
 import { useFlipStore } from "./flipStore";
+import { normalizeProject } from "./flip";
 import type { AnalyzeResponse, FlipProject, Params, UploadResponse } from "./types";
 
 const KEY = "remixr.session.v1";
@@ -63,7 +64,7 @@ export function startSession(): () => void {
         });
       }
       if (s.flip?.project && s.flip.trackId && s.track?.track_id === s.flip.trackId) {
-        useFlipStore.getState().setProject(s.flip.trackId, s.flip.project);
+        useFlipStore.getState().setProject(s.flip.trackId, normalizeProject(s.flip.project));
       }
       // The upload may have been deleted meanwhile: check before reopening.
       if (s.track) {

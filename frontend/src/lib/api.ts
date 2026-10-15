@@ -1,5 +1,5 @@
 import type {
-  AnalyzeResponse, FlipRenderRequest, FlipSource, LLMInterpretRequest, LLMInterpretResponse, LLMStatus,
+  AnalyzeResponse, FlipRenderRequest, FlipSource, GenerateRequest, GenerateResponse, LLMInterpretRequest, LLMInterpretResponse, LLMStatus,
   Preset, RenderRequest, RenderResponse, StemName, StemsJobResponse, StructureResponse, UploadResponse,
 } from "./types";
 
@@ -99,6 +99,10 @@ export const api = {
 
   flipExport: (req: FlipRenderRequest) =>
     request<RenderResponse>("/flip/export", { method: "POST", body: JSON.stringify(req) }),
+
+  /** New drums / bass / chords / arpeggio tracks (patterns, not audio). */
+  flipGenerate: (req: GenerateRequest) =>
+    request<GenerateResponse>("/flip/generate", { method: "POST", body: JSON.stringify(req) }),
 
   /** Transients inside a slice of the original (seconds). */
   flipOnsets: (trackId: string, source: FlipSource, start: number, end: number) =>

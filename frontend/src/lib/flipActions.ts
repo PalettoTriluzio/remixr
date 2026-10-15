@@ -3,10 +3,10 @@ import { api } from "./api";
 import {
   SOURCE_STYLE, beatsBetween, chopAtTimes, chopEvery, clipEnd, newProject, sourceGrid, trackFor, uid,
 } from "./flip";
-import { findClip, ops, snapBeat, useFlipStore } from "./flipStore";
+import { findClip, findPattern, ops, snapBeat, useFlipStore } from "./flipStore";
 import { useStemsStore } from "./stemsStore";
 import { useTrackStore } from "./store";
-import { defaultClip, type FlipSource } from "./types";
+import { defaultClip, type FlipSource, type FlipTrack, type GenPart } from "./types";
 
 const flip = () => useFlipStore.getState();
 
@@ -108,4 +108,64 @@ export async function chopSelected(mode: ChopMode): Promise<string | null> {
   flip().edit(ops.replaceClip(found.track.id, clip.id, pieces));
   flip().select({ kind: "clip", trackId: found.track.id, clipId: pieces[0].id });
   return null;
+}
+
+// ---- F10: generated instrumental ----
+
+function requestParts(startBar: number, bars: number, parts: GenPart[], seed: number) {
+  const s = flip();
+  const track = useTrackStore.getState().track;
+  if (!s.project || !track) throw new Error("Nessun progetto");
+  const g = s.gen;
+  return api.flipGenerate({
+    track_id: track.track_id, project: s.project, style: g.style, harmony: g.harmony, mood: g.mood,
+    parts, start_bar: startBar, bars, seed,
+  });
+}
+
+/** Generate tracks with the panel's settings over [startBar, startBar+bars). */
+export async function generateParts(startBar: number, bars: number): Promise<string> {
+  const g = flip().gen;
+  const res = await requestParts(startBar, bars, g.parts, g.seed);
+  flip().edit(ops.mergeGenerated(res.tracks, res.chords));
+
+  // The new beat replaces the original's drums / bass, if asked.
+  if (g.muteOriginal) {
+    for (const t of flip().project!.tracks) {
+      if (t.kind !== "audio" || t.clips.length === 0 || t.mute) continue;
+      const only = (src: FlipSource) => t.clips.every((c) => c.source === src);
+      if ((g.parts.includes("drums") && only("drums")) || (g.parts.includes("bass") && only("bass"))) {
+        flip().edit(ops.setTrack(t.id, { mute: true }));
+      }
+    }
+  }
+  return res.explanation;
+}
+
+export function partOf(track: FlipTrack): GenPart | null {
+  if (track.kind === "drums") return "drums";
+  if (track.kind === "bass") return "bass";
+  if (track.kind === "keys") return track.name === "Arpeggio" ? "arp" : "chords";
+  return null;
+}
+
+/** New take of the selected pattern only (next seed): same place, same
+ * length, same sound; the rest of the track is untouched. */
+export async function regenerateSelected(): Promise<string> {
+  const s = flip();
+  const found = findPattern(s.project, s.selection);
+  if (!found || !s.project) throw new Error("Seleziona una clip generata");
+  const part = partOf(found.track);
+  if (!part) throw new Error("Traccia non generata");
+  const bpb = s.project.beats_per_bar;
+  const seed = s.gen.seed + 1;
+  s.setGen({ seed });
+  const startBar = Math.floor(found.clip.at_beat / bpb) + 1;
+  const bars = Math.max(1, Math.ceil(found.clip.length_beats / bpb));
+  const res = await requestParts(startBar, bars, [part], seed);
+  const fresh = res.tracks[0]?.patterns[0];
+  if (!fresh) throw new Error("Niente da generare");
+  const { lanes, rolls, notes, pattern_beats, steps_per_beat, swing } = fresh;
+  flip().edit(ops.setPattern(found.track.id, found.clip.id, { lanes, rolls, notes, pattern_beats, steps_per_beat, swing }));
+  return res.explanation;
 }

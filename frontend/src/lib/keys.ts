@@ -10,3 +10,10 @@ export function transposeKey(key: string, semitones: number): string {
   const j = (((i + Math.round(semitones)) % 12) + 12) % 12;
   return mode ? `${PCS[j]} ${mode}` : PCS[j];
 }
+
+/** "Am" + 2 → "Bm" (chord names as written by the backend: root + optional "m"). */
+export function transposeChord(name: string, semitones: number): string {
+  const minor = name.endsWith("m");
+  const root = minor ? name.slice(0, -1) : name;
+  return transposeKey(root, semitones) + (minor ? "m" : "");
+}

@@ -2,13 +2,13 @@
 // (volume, pan, effect chain), master (= the remix rack, as heard).
 import { useEffect, useState, type ReactNode } from "react";
 import clsx from "clsx";
-import { Copy, Loader2, Mic2, Scissors, Trash2 } from "lucide-react";
+import { Copy, Loader2, Mic2, Scissors, Trash2, Wand2 } from "lucide-react";
 import { setIn, type ControlDef } from "../lib/effects";
-import { SOURCE_STYLE, uid } from "../lib/flip";
-import { chopSelected, type ChopMode } from "../lib/flipActions";
-import { findClip, findTrack, ops, useFlipStore } from "../lib/flipStore";
+import { KIND_STYLE, SOURCE_STYLE, uid } from "../lib/flip";
+import { chopSelected, regenerateSelected, type ChopMode } from "../lib/flipActions";
+import { findClip, findPattern, findTrack, ops, useFlipStore } from "../lib/flipStore";
 import { transposeKey } from "../lib/keys";
-import { defaultChain, type FlipClip, type FlipTrack, type GateRate } from "../lib/types";
+import { defaultChain, type FlipClip, type FlipTrack, type GateRate, type Instrument, type Kit, type PatternClip, type SynthPreset } from "../lib/types";
 import { ChainRack } from "./ChainRack";
 import { useRemixBinding } from "./EffectRack";
 import { Knob } from "./Knob";
@@ -20,11 +20,12 @@ export function FlipSidebar() {
   const selection = useFlipStore((s) => s.selection);
   const [tab, setTab] = useState<Tab>("clip");
   const found = findClip(project, selection);
+  const pattern = findPattern(project, selection);
   const track = findTrack(project, selection);
 
   // Follow the selection.
   useEffect(() => {
-    if (selection?.kind === "clip") setTab("clip");
+    if (selection?.kind === "clip" || selection?.kind === "pattern") setTab("clip");
     else if (selection?.kind === "track") setTab("track");
   }, [selection]);
 
@@ -36,7 +37,11 @@ export function FlipSidebar() {
         <TabButton active={tab === "master"} onClick={() => setTab("master")}>MASTER</TabButton>
       </div>
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
-        {tab === "clip" && (found ? <ClipInspector track={found.track} clip={found.clip} /> : <Hint>Seleziona una clip sulla timeline.</Hint>)}
+        {tab === "clip" && (
+          found ? <ClipInspector track={found.track} clip={found.clip} />
+            : pattern ? <PatternInspector track={pattern.track} clip={pattern.clip} />
+            : <Hint>Seleziona una clip sulla timeline.</Hint>
+        )}
         {tab === "track" && (track ? <TrackInspector track={track} /> : <Hint>Seleziona una traccia (clic sul nome o su uno spazio vuoto della corsia).</Hint>)}
         {tab === "master" && <MasterRack />}
       </div>
@@ -222,6 +227,115 @@ function ClipInspector({ track, clip }: { track: FlipTrack; clip: FlipClip }) {
   );
 }
 
+// ---------------------------------------------------------------- generated clip
+
+const PK = {
+  gain: { key: "gain_db", label: "Gain", min: -60, max: 12, step: 0.5, unit: "dB" },
+  swing: { key: "swing", label: "Swing", min: 0, max: 0.5, step: 0.01 },
+} satisfies Record<string, ControlDef>;
+
+function PatternInspector({ track, clip }: { track: FlipTrack; clip: PatternClip }) {
+  const edit = useFlipStore((s) => s.edit);
+  const select = useFlipStore((s) => s.select);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  useEffect(() => setMsg(null), [clip.id]);
+  const set = (patch: Partial<PatternClip>, gesture?: string) => edit(ops.setPattern(track.id, clip.id, patch), gesture);
+
+  const regenerate = async () => {
+    setBusy(true);
+    try {
+      setMsg({ ok: true, text: await regenerateSelected() });
+    } catch (e) {
+      setMsg({ ok: false, text: (e as Error).message });
+    }
+    setBusy(false);
+  };
+
+  return (
+    <>
+      <div className="flex items-center gap-2 px-1">
+        <span className="w-2.5 h-2.5 rounded-full" style={{ background: KIND_STYLE[track.kind].color }} />
+        <span className="text-sm font-medium flex-1 truncate">{track.name}</span>
+        <IconBtn title="Duplica dopo di sé (Ctrl+D)" onClick={() => edit(ops.duplicatePattern(track.id, clip.id))}><Copy className="w-3.5 h-3.5" /></IconBtn>
+        <IconBtn title="Elimina (Canc)" onClick={() => { edit(ops.removePattern(track.id, clip.id)); select(null); }}><Trash2 className="w-3.5 h-3.5" /></IconBtn>
+      </div>
+
+      <Card title="Variante" right={busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3 text-white/30" />}>
+        <Chip onClick={() => void regenerate()} disabled={busy} title="Stesso stile e stessi accordi, scelte nuove: solo questa clip">rigenera questa parte</Chip>
+        {msg && <p className={clsx("text-[10px] mt-1", msg.ok ? "text-white/45" : "text-accent-hot")}>{msg.text}</p>}
+        <p className="text-[10px] text-white/35 mt-1">Le note e i colpi si modificano nell'editor sotto la timeline.</p>
+      </Card>
+
+      <Card title="Clip">
+        <div className="flex items-center gap-1 text-xs mb-2">
+          <span className="text-white/40 w-16">lunghezza</span>
+          <Chip onClick={() => set({ length_beats: Math.max(0.25, clip.length_beats / 2) })}>÷2</Chip>
+          <span className="w-16 text-center font-mono">{+clip.length_beats.toFixed(2)} beat</span>
+          <Chip onClick={() => set({ length_beats: Math.min(1024, clip.length_beats * 2) })}>×2</Chip>
+          <Chip onClick={() => set({ length_beats: clip.pattern_beats })} title="Un solo ciclo">1 ciclo</Chip>
+        </div>
+        <div className="flex gap-1">
+          <Knob def={PK.gain} value={clip.gain_db} defaultValue={0} onChange={(v) => set({ gain_db: v }, `pg-${clip.id}`)} />
+          {track.kind === "drums" && <Knob def={PK.swing} value={clip.swing} defaultValue={0} onChange={(v) => set({ swing: v }, `ps-${clip.id}`)} />}
+        </div>
+      </Card>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------- instruments
+
+const KITS: Array<[Kit, string]> = [["trap", "trap"], ["boombap", "boom bap"], ["house", "house"], ["lofi", "lo-fi"], ["afro", "afro"]];
+const BASS_PRESETS: Array<[SynthPreset, string]> = [["808", "808"], ["sub", "sub"], ["reese", "reese"], ["pluck_bass", "pluck"]];
+const KEY_PRESETS: Array<[SynthPreset, string]> = [["pad", "pad"], ["keys", "piano el."], ["pluck", "pluck"], ["bell", "campana"], ["lead", "lead"]];
+
+const IK = {
+  tune: { key: "tune", label: "Tune", min: -12, max: 12, step: 0.5, unit: "st" },
+  decay: { key: "decay", label: "Decay", min: 0.05, max: 4, step: 0.01, log: true },
+  attack: { key: "attack_ms", label: "Attack", min: 0, max: 2000, step: 1, unit: "ms" },
+  release: { key: "release_ms", label: "Release", min: 5, max: 4000, step: 1, unit: "ms", log: true },
+  cutoff: { key: "cutoff", label: "Filtro", min: 100, max: 20000, step: 1, unit: "Hz", log: true },
+  glide: { key: "glide_ms", label: "Glide", min: 0, max: 500, step: 1, unit: "ms" },
+  drive: { key: "drive_db", label: "Drive", min: 0, max: 36, step: 0.5, unit: "dB" },
+  detune: { key: "detune", label: "Detune", min: 0, max: 1, step: 0.01 },
+} satisfies Record<string, ControlDef>;
+
+const DEFAULT_INST: Partial<Instrument> = {
+  tune: 0, decay: 1, attack_ms: 5, release_ms: 150, cutoff: 6000, glide_ms: 0, drive_db: 0, detune: 0.3,
+};
+
+function InstrumentPanel({ track, onSet }: { track: FlipTrack; onSet: (patch: Partial<Instrument>, gesture?: string) => void }) {
+  const inst = track.instrument;
+  const knob = (c: ControlDef) => (
+    <Knob
+      key={c.key}
+      def={c}
+      value={inst[c.key as keyof Instrument] as number}
+      defaultValue={DEFAULT_INST[c.key as keyof Instrument] as number}
+      onChange={(v) => onSet({ [c.key]: v } as Partial<Instrument>, `inst-${track.id}-${c.key}`)}
+    />
+  );
+  return (
+    <Card title={`Suono · ${KIND_STYLE[track.kind].label}`}>
+      <div className="flex flex-wrap gap-1 mb-2">
+        {track.kind === "drums"
+          ? KITS.map(([k, l]) => <Chip key={k} active={inst.kit === k} onClick={() => onSet({ kit: k })}>{l}</Chip>)
+          : (track.kind === "bass" ? BASS_PRESETS : KEY_PRESETS).map(([p, l]) => (
+            <Chip key={p} active={inst.preset === p} onClick={() => onSet({ preset: p })}>{l}</Chip>
+          ))}
+      </div>
+      <div className="flex flex-wrap gap-x-1 gap-y-2">
+        {track.kind === "drums" && [IK.tune, IK.decay].map(knob)}
+        {track.kind === "bass" && (inst.preset === "808"
+          ? [IK.decay, IK.glide, IK.drive].map(knob)
+          : [IK.cutoff, IK.release, IK.drive, IK.detune].map(knob))}
+        {track.kind === "keys" && [IK.attack, IK.release, IK.cutoff, IK.detune].map(knob)}
+      </div>
+    </Card>
+  );
+}
+
 // ---------------------------------------------------------------- track / master
 
 const TRACK_K = {
@@ -243,6 +357,9 @@ function TrackInspector({ track }: { track: FlipTrack }) {
         />
         <Chip active={track.follow_key} onClick={() => set({ follow_key: !track.follow_key })} title="Trasposta con la tonalità del progetto">♪ tonalità</Chip>
       </div>
+      {track.kind !== "audio" && (
+        <InstrumentPanel track={track} onSet={(patch, gesture) => set({ instrument: { ...track.instrument, ...patch } }, gesture)} />
+      )}
       <div className="flex gap-2 px-1">
         <Knob def={TRACK_K.gain} value={track.gain_db} defaultValue={0} onChange={(v) => set({ gain_db: v }, `g-${track.id}`)} />
         <Knob def={TRACK_K.pan} value={track.pan} defaultValue={0} onChange={(v) => set({ pan: v }, `p-${track.id}`)} />

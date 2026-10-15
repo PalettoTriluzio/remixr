@@ -7,29 +7,34 @@ import clsx from "clsx";
 import {
   AlertCircle, Loader2, Minus, Music, Plus, Repeat, Sparkles, Trash2, ZoomIn, ZoomOut,
 } from "lucide-react";
-import { SOURCE_STYLE, projectBeats, uid } from "../lib/flip";
+import { KIND_STYLE, SOURCE_STYLE, projectBeats, uid } from "../lib/flip";
 import { starterFromChorus } from "../lib/flipActions";
 import { flipPlayer } from "../lib/flipPlayer";
 import { SNAPS, ops, snapBeat, snapStep, useFlipStore } from "../lib/flipStore";
 import { useTrackStore } from "../lib/store";
-import { transposeKey } from "../lib/keys";
-import type { FlipClip, FlipProject, FlipTrack } from "../lib/types";
+import { transposeChord, transposeKey } from "../lib/keys";
+import { DRUM_VOICES, type FlipClip, type FlipProject, type FlipTrack, type PatternClip } from "../lib/types";
 import { ClipWave } from "./ClipWave";
+import { GenerateButton } from "./GeneratePanel";
+import { PatternEditor } from "./PatternEditor";
 
 const HEADER = 176; // px, track header column
 const ROW_H = 64;
 const RULER_H = 24;
+const CHORD_H = 18;
 
 export function FlipTimeline() {
   const project = useFlipStore((s) => s.project);
   const zoom = useFlipStore((s) => s.zoom);
   const setZoom = useFlipStore((s) => s.setZoom);
+  const editing = useFlipStore((s) => s.selection?.kind === "pattern");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   if (!project) return <section className="flex-1 bg-bg" />;
 
   const total = projectBeats(project);
-  const empty = project.tracks.every((t) => t.clips.length === 0);
+  const empty = project.tracks.every((t) => t.clips.length === 0 && t.patterns.length === 0);
+  const headH = RULER_H + (project.chords.length ? CHORD_H : 0);
 
   const onWheel = (e: WheelEvent) => {
     if (!e.ctrlKey && !e.metaKey) return;
@@ -44,11 +49,12 @@ export function FlipTimeline() {
         <div className="relative" style={{ width: HEADER + total * zoom, minWidth: "100%" }}>
           <Ruler project={project} />
           {project.tracks.map((t, i) => <TrackRow key={t.id} project={project} track={t} index={i} />)}
-          <LoopShade project={project} />
-          <Playhead scrollRef={scrollRef} rows={project.tracks.length} />
-          {empty && <EmptyHint />}
+          <LoopShade project={project} headH={headH} />
+          <Playhead scrollRef={scrollRef} height={headH + project.tracks.length * ROW_H} />
+          {empty && <EmptyHint top={headH} />}
         </div>
       </div>
+      {editing && <PatternEditor />}
     </section>
   );
 }
@@ -107,6 +113,7 @@ function Toolbar({ project }: { project: FlipProject }) {
       >
         <Plus className="w-3 h-3" /> traccia
       </button>
+      <GenerateButton />
 
       <div className="flex-1" />
       {status === "rendering" && <span className="flex items-center gap-1 text-white/40"><Loader2 className="w-3.5 h-3.5 animate-spin text-accent" /> rendering…</span>}
@@ -178,22 +185,42 @@ function Ruler({ project }: { project: FlipProject }) {
   };
 
   return (
-    <div className="sticky top-0 z-20 flex bg-bg-panel border-b border-line" style={{ height: RULER_H }}>
-      <div className="sticky left-0 z-10 shrink-0 bg-bg-panel border-r border-line text-[9px] font-mono text-white/30 flex items-center px-2" style={{ width: HEADER }}>
-        clic = posizione · trascina = loop
+    <div className="sticky top-0 z-20 bg-bg-panel border-b border-line">
+      <div className="flex" style={{ height: RULER_H }}>
+        <div className="sticky left-0 z-10 shrink-0 bg-bg-panel border-r border-line text-[9px] font-mono text-white/30 flex items-center px-2" style={{ width: HEADER }}>
+          clic = posizione · trascina = loop
+        </div>
+        <div className="relative flex-1 cursor-pointer" onPointerDown={onPointerDown}>
+          {Array.from({ length: project.bars }, (_, i) => i).filter((i) => i % every === 0).map((i) => (
+            <span key={i} className="absolute top-0 bottom-0 border-l border-white/15 pl-1 text-[10px] font-mono text-white/45 leading-6" style={{ left: i * bpb * zoom }}>
+              {i + 1}
+            </span>
+          ))}
+        </div>
       </div>
-      <div className="relative flex-1 cursor-pointer" onPointerDown={onPointerDown}>
-        {Array.from({ length: project.bars }, (_, i) => i).filter((i) => i % every === 0).map((i) => (
-          <span key={i} className="absolute top-0 bottom-0 border-l border-white/15 pl-1 text-[10px] font-mono text-white/45 leading-6" style={{ left: i * bpb * zoom }}>
-            {i + 1}
-          </span>
-        ))}
-      </div>
+      {project.chords.length > 0 && (
+        <div className="flex border-t border-line/60" style={{ height: CHORD_H }}>
+          <div className="sticky left-0 z-10 shrink-0 bg-bg-panel border-r border-line text-[9px] font-mono text-white/30 flex items-center px-2" style={{ width: HEADER }}>
+            ACCORDI {project.transpose !== 0 && `(${project.transpose > 0 ? "+" : ""}${project.transpose})`}
+          </div>
+          <div className="relative flex-1">
+            {project.chords.map((c, i) => (
+              <span
+                key={i}
+                className="absolute top-0 bottom-0 border-l border-accent/40 pl-1 text-[10px] font-mono text-accent/90 overflow-hidden whitespace-nowrap"
+                style={{ left: c.start * zoom, width: (c.end - c.start) * zoom, lineHeight: `${CHORD_H}px` }}
+              >
+                {transposeChord(c.name, project.transpose)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function LoopShade({ project }: { project: FlipProject }) {
+function LoopShade({ project, headH }: { project: FlipProject; headH: number }) {
   const loop = useFlipStore((s) => s.loop);
   const loopOn = useFlipStore((s) => s.loopOn);
   const zoom = useFlipStore((s) => s.zoom);
@@ -201,14 +228,14 @@ function LoopShade({ project }: { project: FlipProject }) {
   return (
     <div
       className={clsx("absolute top-0 pointer-events-none border-x", loopOn ? "bg-accent/10 border-accent/60" : "bg-white/[0.03] border-white/20")}
-      style={{ left: HEADER + loop.start * zoom, width: (loop.end - loop.start) * zoom, height: RULER_H + project.tracks.length * ROW_H }}
+      style={{ left: HEADER + loop.start * zoom, width: (loop.end - loop.start) * zoom, height: headH + project.tracks.length * ROW_H }}
     >
       <Repeat className={clsx("w-3 h-3 m-1", loopOn ? "text-accent" : "text-white/30")} />
     </div>
   );
 }
 
-function Playhead({ scrollRef, rows }: { scrollRef: RefObject<HTMLDivElement>; rows: number }) {
+function Playhead({ scrollRef, height }: { scrollRef: RefObject<HTMLDivElement>; height: number }) {
   const playhead = useFlipStore((s) => s.playhead);
   const zoom = useFlipStore((s) => s.zoom);
   const x = HEADER + playhead * zoom;
@@ -223,15 +250,15 @@ function Playhead({ scrollRef, rows }: { scrollRef: RefObject<HTMLDivElement>; r
   return (
     <div
       className="absolute top-0 w-px bg-white z-30 pointer-events-none shadow-[0_0_6px_rgba(255,255,255,0.6)]"
-      style={{ left: x, height: RULER_H + rows * ROW_H }}
+      style={{ left: x, height }}
     />
   );
 }
 
-function EmptyHint() {
+function EmptyHint({ top }: { top: number }) {
   const [msg, setMsg] = useState<string | null>(null);
   return (
-    <div className="absolute left-0 right-0 flex justify-center pointer-events-none" style={{ top: RULER_H + 24, paddingLeft: HEADER }}>
+    <div className="absolute left-0 right-0 flex justify-center pointer-events-none" style={{ top: top + 24, paddingLeft: HEADER }}>
       <div className="pointer-events-auto max-w-md text-center bg-bg-panel/95 border border-line rounded-lg px-5 py-4 space-y-2">
         <p className="text-sm text-white/80">Costruisci il flip con pezzi della canzone</p>
         <p className="text-xs text-white/45">
@@ -274,9 +301,9 @@ function TrackRow({ project, track, index }: { project: FlipProject; track: Flip
         }}
         onPointerDown={(e) => { if (e.target === e.currentTarget) select({ kind: "track", trackId: track.id }); }}
       >
-        {track.clips.map((c) => (
-          <ClipBlock key={c.id} project={project} track={track} index={index} clip={c} />
-        ))}
+        {track.kind === "audio"
+          ? track.clips.map((c) => <ClipBlock key={c.id} project={project} track={track} index={index} clip={c} />)
+          : track.patterns.map((c) => <PatternBlock key={c.id} project={project} track={track} index={index} clip={c} />)}
       </div>
     </div>
   );
@@ -297,6 +324,9 @@ function TrackHeader({ track, selected }: { track: FlipTrack; selected: boolean 
       onPointerDown={() => select({ kind: "track", trackId: track.id })}
     >
       <div className="flex items-center gap-1">
+        {track.kind !== "audio" && (
+          <span className="w-1.5 h-4 rounded-sm shrink-0" style={{ background: KIND_STYLE[track.kind].color }} title={`Generata: ${KIND_STYLE[track.kind].label}`} />
+        )}
         <input
           value={track.name}
           onChange={(e) => set({ name: e.target.value.slice(0, 40) }, `name-${track.id}`)}
@@ -360,6 +390,27 @@ function Small(props: { on: boolean; onClick: () => void; title: string; cls: st
 
 // ---------------------------------------------------------------- clips
 
+/** Pointer drag in beats/rows from the press point. */
+function beginDrag(e: RPointerEvent<HTMLElement>, zoom: number, onMove: (dBeats: number, dRows: number) => void) {
+  const el = e.currentTarget;
+  el.setPointerCapture(e.pointerId);
+  const x0 = e.clientX;
+  const y0 = e.clientY;
+  const move = (ev: PointerEvent) => onMove((ev.clientX - x0) / zoom, Math.round((ev.clientY - y0) / ROW_H));
+  const up = () => {
+    el.removeEventListener("pointermove", move);
+    el.removeEventListener("pointerup", up);
+  };
+  el.addEventListener("pointermove", move);
+  el.addEventListener("pointerup", up);
+}
+
+/** Row index → track, only if it has the given kind; otherwise stay. */
+function targetTrack(p: FlipProject, index: number, dRows: number, current: string, kind: FlipTrack["kind"]): string {
+  const t = p.tracks[Math.min(p.tracks.length - 1, Math.max(0, index + dRows))];
+  return t && t.kind === kind ? t.id : current;
+}
+
 function ClipBlock({ project, track, index, clip }: { project: FlipProject; track: FlipTrack; index: number; clip: FlipClip }) {
   const zoom = useFlipStore((s) => s.zoom);
   const snap = useFlipStore((s) => s.snap);
@@ -374,40 +425,24 @@ function ClipBlock({ project, track, index, clip }: { project: FlipProject; trac
     const s = useFlipStore.getState();
     s.select({ kind: "clip", trackId: track.id, clipId: clip.id });
     if (mode === "move" && e.altKey) s.edit(ops.addClip(track.id, { ...clip, id: uid() }));
-
-    const el = e.currentTarget;
-    el.setPointerCapture(e.pointerId);
-    const x0 = e.clientX;
-    const y0 = e.clientY;
     const step = snapStep(project, snap);
-    let currentTrack = track.id;
+    let current = track.id;
     const gesture = `${mode}-${clip.id}-${Date.now()}`;
-
-    const move = (ev: PointerEvent) => {
+    beginDrag(e, zoom, (dBeats, dRows) => {
       const st = useFlipStore.getState();
-      const p = st.project;
-      if (!p) return;
-      const dBeats = (ev.clientX - x0) / zoom;
+      if (!st.project) return;
       if (mode === "resize") {
         const min = step > 0 ? step : 0.25;
-        st.edit(ops.setClip(currentTrack, clip.id, { length_beats: Math.max(min, snapBeat(clip.length_beats + dBeats, step)) }), gesture);
+        st.edit(ops.setClip(current, clip.id, { length_beats: Math.max(min, snapBeat(clip.length_beats + dBeats, step)) }), gesture);
         return;
       }
-      const rowIdx = Math.min(p.tracks.length - 1, Math.max(0, index + Math.round((ev.clientY - y0) / ROW_H)));
-      const toTrack = p.tracks[rowIdx].id;
-      const at = Math.max(0, snapBeat(clip.at_beat + dBeats, step));
-      st.edit(ops.moveClip(currentTrack, clip.id, toTrack, at), gesture);
-      if (toTrack !== currentTrack) {
-        currentTrack = toTrack;
-        st.select({ kind: "clip", trackId: toTrack, clipId: clip.id });
+      const to = targetTrack(st.project, index, dRows, current, "audio");
+      st.edit(ops.moveClip(current, clip.id, to, Math.max(0, snapBeat(clip.at_beat + dBeats, step))), gesture);
+      if (to !== current) {
+        current = to;
+        st.select({ kind: "clip", trackId: to, clipId: clip.id });
       }
-    };
-    const up = () => {
-      el.removeEventListener("pointermove", move);
-      el.removeEventListener("pointerup", up);
-    };
-    el.addEventListener("pointermove", move);
-    el.addEventListener("pointerup", up);
+    });
   };
 
   const flags = [
@@ -426,18 +461,11 @@ function ClipBlock({ project, track, index, clip }: { project: FlipProject; trac
         "absolute top-1 bottom-1 rounded-sm border overflow-hidden cursor-grab active:cursor-grabbing select-none",
         selected ? "ring-1 ring-white z-10" : "",
       )}
-      style={{
-        left: clip.at_beat * zoom,
-        width,
-        background: `${color}26`,
-        borderColor: `${color}${selected ? "ff" : "99"}`,
-      }}
+      style={{ left: clip.at_beat * zoom, width, background: `${color}26`, borderColor: `${color}${selected ? "ff" : "99"}` }}
       onPointerDown={(e) => start(e, "move")}
       title={`${SOURCE_STYLE[clip.source].label} · ${clip.src_start.toFixed(2)}–${clip.src_end.toFixed(2)} s · ${clip.length_beats} beat\nAlt+trascina = copia`}
     >
-      {buffer && (
-        <ClipWave buffer={buffer} clip={clip} zoom={zoom} color={color} />
-      )}
+      {buffer && <ClipWave buffer={buffer} clip={clip} zoom={zoom} color={color} />}
       <div className="absolute top-0 left-0 right-2 px-1 text-[9px] font-mono whitespace-nowrap overflow-hidden text-white/85 pointer-events-none">
         <span style={{ color }}>{SOURCE_STYLE[clip.source].label}</span> {flags}
       </div>
@@ -448,4 +476,113 @@ function ClipBlock({ project, track, index, clip }: { project: FlipProject; trac
       />
     </div>
   );
+}
+
+function PatternBlock({ project, track, index, clip }: { project: FlipProject; track: FlipTrack; index: number; clip: PatternClip }) {
+  const zoom = useFlipStore((s) => s.zoom);
+  const snap = useFlipStore((s) => s.snap);
+  const selection = useFlipStore((s) => s.selection);
+  const selected = selection?.kind === "pattern" && selection.clipId === clip.id;
+  const color = KIND_STYLE[track.kind].color;
+
+  const start = (e: RPointerEvent<HTMLDivElement>, mode: "move" | "resize") => {
+    e.stopPropagation();
+    const s = useFlipStore.getState();
+    s.select({ kind: "pattern", trackId: track.id, clipId: clip.id });
+    if (mode === "move" && e.altKey) s.edit(ops.addPattern(track.id, { ...clip, id: uid() }));
+    const step = snapStep(project, snap);
+    let current = track.id;
+    const gesture = `${mode}-${clip.id}-${Date.now()}`;
+    beginDrag(e, zoom, (dBeats, dRows) => {
+      const st = useFlipStore.getState();
+      if (!st.project) return;
+      if (mode === "resize") {
+        const min = step > 0 ? step : 0.25;
+        st.edit(ops.setPattern(current, clip.id, { length_beats: Math.max(min, snapBeat(clip.length_beats + dBeats, step)) }), gesture);
+        return;
+      }
+      const to = targetTrack(st.project, index, dRows, current, track.kind);
+      st.edit(ops.movePattern(current, clip.id, to, Math.max(0, snapBeat(clip.at_beat + dBeats, step))), gesture);
+      if (to !== current) {
+        current = to;
+        st.select({ kind: "pattern", trackId: to, clipId: clip.id });
+      }
+    });
+  };
+
+  return (
+    <div
+      className={clsx(
+        "absolute top-1 bottom-1 rounded-sm border overflow-hidden cursor-grab active:cursor-grabbing select-none",
+        selected ? "ring-1 ring-white z-10" : "",
+      )}
+      style={{ left: clip.at_beat * zoom, width: Math.max(4, clip.length_beats * zoom), background: `${color}1f`, borderColor: `${color}${selected ? "ff" : "88"}` }}
+      onPointerDown={(e) => start(e, "move")}
+      title={`${track.name} · ciclo di ${clip.pattern_beats} beat · selezionala per l'editor sotto\nAlt+trascina = copia`}
+    >
+      <PatternThumb clip={clip} kind={track.kind} zoom={zoom} color={color} />
+      <div className="absolute top-0 left-0 right-2 px-1 text-[9px] font-mono whitespace-nowrap overflow-hidden pointer-events-none" style={{ color }}>
+        {track.name}
+      </div>
+      <div
+        className="absolute top-0 bottom-0 right-0 w-2 cursor-ew-resize hover:bg-white/30"
+        onPointerDown={(e) => start(e, "resize")}
+        title="Trascina = lunghezza (il pattern si ripete)"
+      />
+    </div>
+  );
+}
+
+/** Drums: one dot per hit (kick low … hats high). Notes: mini piano roll. */
+function PatternThumb({ clip, kind, zoom, color }: { clip: PatternClip; kind: FlipTrack["kind"]; zoom: number; color: string }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const width = Math.max(4, Math.round(clip.length_beats * zoom));
+  useEffect(() => {
+    const c = ref.current;
+    if (!c) return;
+    const h = c.clientHeight || 48;
+    const dpr = window.devicePixelRatio || 1;
+    c.width = Math.round(width * dpr);
+    c.height = Math.round(h * dpr);
+    const g = c.getContext("2d");
+    if (!g) return;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, width, h);
+    g.fillStyle = color;
+    const top = 12;
+    const area = h - top - 2;
+    const cycles = Math.ceil(clip.length_beats / clip.pattern_beats);
+    if (kind === "drums") {
+      const rows = DRUM_VOICES.filter((v) => clip.lanes[v]?.some((x) => x > 0));
+      rows.forEach((v, r) => {
+        const y = top + area - ((r + 0.5) / rows.length) * area;
+        for (let k = 0; k < cycles; k++) {
+          clip.lanes[v]!.forEach((vel, s) => {
+            if (vel <= 0) return;
+            const x = (k * clip.pattern_beats + s / clip.steps_per_beat) * zoom;
+            if (x >= width) return;
+            g.globalAlpha = 0.35 + 0.6 * vel;
+            g.fillRect(x, y - 1.5, Math.max(1.5, zoom / clip.steps_per_beat - 1), 3);
+          });
+        }
+      });
+    } else if (clip.notes.length) {
+      const lo = Math.min(...clip.notes.map((n) => n.pitch));
+      const hi = Math.max(...clip.notes.map((n) => n.pitch));
+      const span = Math.max(12, hi - lo + 1);
+      for (let k = 0; k < cycles; k++) {
+        for (const n of clip.notes) {
+          const x = (k * clip.pattern_beats + n.start) * zoom;
+          if (x >= width) continue;
+          const y = top + area - ((n.pitch - lo + 1) / span) * area;
+          g.globalAlpha = 0.4 + 0.5 * n.vel;
+          g.fillRect(x, y, Math.max(1.5, n.length * zoom - 1), Math.max(2, area / span));
+        }
+      }
+    }
+    g.globalAlpha = 0.3;
+    g.fillStyle = "#ffffff";
+    for (let x = clip.pattern_beats * zoom; x < width; x += clip.pattern_beats * zoom) g.fillRect(x, 0, 1, h);
+  }, [clip, kind, zoom, color, width]);
+  return <canvas ref={ref} className="absolute inset-0 w-full h-full pointer-events-none" />;
 }

@@ -3,14 +3,25 @@
 // session with its track_id and dropped when another song is loaded.
 import { create } from "zustand";
 import { clipEnd, newTrack, projectBeats, uid } from "./flip";
-import type { FlipClip, FlipProject, FlipTrack } from "./types";
+import type { ChordMark, FlipClip, FlipProject, FlipTrack, GenPart, GenStyle, Mood, PatternClip } from "./types";
 
 export type View = "remix" | "flip";
 export type Selection =
   | { kind: "clip"; trackId: string; clipId: string }
+  | { kind: "pattern"; trackId: string; clipId: string }
   | { kind: "track"; trackId: string }
   | null;
 export type FlipStatus = "idle" | "rendering" | "ready" | "error";
+
+/** Last settings of the "Genera strumentale" panel (reused by "rigenera"). */
+export interface GenOptions {
+  style: GenStyle;
+  harmony: "song" | "new";
+  mood: Mood;
+  parts: GenPart[];
+  seed: number;
+  muteOriginal: boolean;
+}
 
 /** Snap of moves/resizes on the timeline, in beats. */
 export const SNAPS = [
@@ -37,6 +48,8 @@ interface FlipState {
   loopOn: boolean;
   status: FlipStatus;
   error: string | null;
+  gen: GenOptions;
+  setGen: (patch: Partial<GenOptions>) => void;
 
   setView: (v: View) => void;
   setProject: (trackId: string, p: FlipProject) => void;
@@ -74,6 +87,8 @@ export const useFlipStore = create<FlipState>((set) => ({
   loopOn: false,
   status: "idle",
   error: null,
+  gen: { style: "trap", harmony: "song", mood: "dark", parts: ["drums", "bass", "chords"], seed: 1, muteOriginal: true },
+  setGen: (patch) => set((s) => ({ gen: { ...s.gen, ...patch } })),
 
   setView: (view) => set({ view }),
   setProject: (trackId, project) =>
@@ -178,7 +193,65 @@ export const ops = {
 
   replaceClip: (trackId: string, clipId: string, pieces: FlipClip[]) => (p: FlipProject) =>
     mapTrack(p, trackId, (t) => ({ ...t, clips: t.clips.flatMap((c) => (c.id === clipId ? pieces : [c])) })),
+
+  // ---- generated material (patterns on drums/bass/keys tracks) ----
+
+  setPattern: (trackId: string, clipId: string, patch: Partial<PatternClip>) => (p: FlipProject) => {
+    let end = 0;
+    const out = mapTrack(p, trackId, (t) => ({
+      ...t,
+      patterns: t.patterns.map((c) => {
+        if (c.id !== clipId) return c;
+        const n = { ...c, ...patch };
+        end = n.at_beat + n.length_beats;
+        return n;
+      }),
+    }));
+    return fit(out, end);
+  },
+
+  addPattern: (trackId: string, clip: PatternClip) => (p: FlipProject) =>
+    fit(mapTrack(p, trackId, (t) => ({ ...t, patterns: [...t.patterns, clip] })), clip.at_beat + clip.length_beats),
+
+  removePattern: (trackId: string, clipId: string) => (p: FlipProject) =>
+    mapTrack(p, trackId, (t) => ({ ...t, patterns: t.patterns.filter((c) => c.id !== clipId) })),
+
+  /** Only between tracks of the same kind (a beat stays on a drum track). */
+  movePattern: (fromTrack: string, clipId: string, toTrack: string, atBeat: number) => (p: FlipProject) => {
+    const from = p.tracks.find((t) => t.id === fromTrack);
+    const to = p.tracks.find((t) => t.id === toTrack);
+    const clip = from?.patterns.find((c) => c.id === clipId);
+    if (!from || !to || !clip) return p;
+    const at = Math.max(0, atBeat);
+    if (fromTrack === toTrack || to.kind !== from.kind) return ops.setPattern(fromTrack, clipId, { at_beat: at })(p);
+    return ops.addPattern(toTrack, { ...clip, at_beat: at })(ops.removePattern(fromTrack, clipId)(p));
+  },
+
+  duplicatePattern: (trackId: string, clipId: string) => (p: FlipProject) => {
+    const clip = p.tracks.find((t) => t.id === trackId)?.patterns.find((c) => c.id === clipId);
+    if (!clip) return p;
+    return ops.addPattern(trackId, { ...clip, id: uid(), at_beat: clip.at_beat + clip.length_beats })(p);
+  },
+
+  /** Add generated tracks. Same-name generated tracks are replaced in place. */
+  mergeGenerated: (tracks: FlipTrack[], chords: ChordMark[]) => (p: FlipProject) => {
+    let list = [...p.tracks];
+    for (const t of tracks) {
+      const i = list.findIndex((o) => o.kind !== "audio" && o.kind === t.kind && o.name === t.name);
+      if (i >= 0) list[i] = { ...t, chain: list[i].chain, gain_db: list[i].gain_db, pan: list[i].pan };
+      else if (list.length < 16) list = [...list, t];
+    }
+    const end = Math.max(0, ...tracks.flatMap((t) => t.patterns.map((c) => c.at_beat + c.length_beats)));
+    return fit({ ...p, tracks: list, chords }, end);
+  },
 };
+
+export function findPattern(p: FlipProject | null, sel: Selection): { track: FlipTrack; clip: PatternClip } | null {
+  if (!p || sel?.kind !== "pattern") return null;
+  const track = p.tracks.find((t) => t.id === sel.trackId);
+  const clip = track?.patterns.find((c) => c.id === sel.clipId);
+  return track && clip ? { track, clip } : null;
+}
 
 export function findClip(p: FlipProject | null, sel: Selection): { track: FlipTrack; clip: FlipClip } | null {
   if (!p || sel?.kind !== "clip") return null;

@@ -1,18 +1,29 @@
-# Ultimo passo — Flip F9: timeline + campionatore (2026-10-15)
+# Ultimo passo — Flip F10: strumentale generato (2026-10-15)
 
 Il codice non è stato eseguito: va provato su Windows.
-Non servono nuove dipendenze: niente da installare.
+Non servono nuove dipendenze: niente da installare. scipy c'è già, arriva con librosa.
 
 ## Cosa c'è di nuovo
-In alto, accanto al logo, ci sono due tasti: **REMIX | FLIP**.
-- **REMIX**: tutto come prima.
-- **FLIP**: ricostruisci la canzone dai suoi pezzi.
-  - **In alto** c'è la canzone originale con battute e sezioni: è la *sorgente*.
-  - **Sotto**, una timeline con tracce e clip, al **BPM e nella tonalità che scegli tu**.
-  - **A sinistra**:
-    - **CLIP** = il campionatore sulla clip selezionata;
-    - **TRACCIA** = volume, pan ed effetti della traccia;
-    - **MASTER** = il rack del remix, dove valgono anche look, preset, AI e intensità.
+Nella vista **FLIP**, barra della timeline: **genera strumentale**.
+- **Stile**: trap, drill, boom bap, lo-fi, house, reggaeton, afro, pop.
+- **Armonia**:
+  - **dalla canzone** = gli accordi originali che suonano sotto le clip che hai messo, quindi il beat sta bene con la voce;
+  - **nuova** = una progressione nuova nella tonalità della canzone, scelta per **mood** (scuro, malinconico, epico, solare, sognante).
+- **Parti**: batteria, basso, accordi, arpeggio.
+- **Battute**: da dove a dove.
+- **variante**: stesse impostazioni, scelte diverse.
+- **silenzia batteria e basso originali** (attivo di default).
+
+Tutto è **sintetizzato**: nessun sample, nessuna licenza.
+
+Nascono le tracce **Beat**, **Basso synth**, **Accordi**, **Arpeggio**. Sotto il righello compare la riga **ACCORDI**.
+
+Clicca una clip generata:
+- **sotto la timeline** si apre l'editor:
+  - batteria = griglia a step: clic on/off, Shift+clic intensità, tasto destro roll;
+  - note = piano roll: clic aggiunge o toglie una nota;
+- **scheda CLIP**: **rigenera questa parte**, lunghezza, gain, swing;
+- **scheda TRACCIA**: kit o suono (808, sub, reese, pad, piano elettrico, campana…) e manopole (decay, glide, drive, filtro…).
 
 ## Cosa fare
 1. `git pull`
@@ -22,48 +33,31 @@ In alto, accanto al logo, ci sono due tasti: **REMIX | FLIP**.
    .venv\Scripts\activate
    uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
    ```
-3. Avvia il frontend:
-   ```powershell
-   cd frontend
-   npm run dev
-   ```
-   Apri http://localhost:5173
+3. Avvia il frontend: `cd frontend` poi `npm run dev`, e apri http://localhost:5173
 
 ## Cosa provare
-1. Carica una canzone e separa gli stems (pannello Stems in vista REMIX, o dal link nella barra della vista FLIP).
-2. Premi **FLIP**. Il progetto parte al BPM e nella tonalità della canzone, con le tracce Voce / Batteria / Basso / Altro.
-3. Premi **Parti dal ritornello**: voce e batteria del ritornello in loop. Premi **Spazio** per ascoltare.
-4. Cambia il **BPM** nella barra della timeline (es. da 90 a 140): tutto va al nuovo tempo e la voce resta intonata.
-5. Usa **TONALITÀ − / +**: le tracce con ♪ cambiano tonalità, la batteria no.
-6. Costruisci a mano:
-   - seleziona un pezzo sulla waveform in alto (trascina, o clicca una sezione);
-   - premi **Voce** nella barra sotto la waveform: diventa una clip al playhead.
-   - Ripeti: i pezzi si mettono in fila.
-7. Prova il campionatore su una clip di voce, nella scheda **CLIP**:
-   - **Taglia → beat** (o *transienti*), poi sposta i pezzi trascinandoli; **Alt+trascina** = copia;
-   - **loop**, **÷2 / ×2**, **◀ reverse**, **vinile** (velocità e pitch insieme);
-   - **Gate ritmico 1/16**: effetto stutter a tempo;
-   - **Intona** al 100%: ogni nota va sulla scala;
-   - **+ seconda voce**: una terza sopra, su una traccia nuova.
-8. Righello della timeline: **clic** = sposta il playhead, **trascina** = range di loop (**L** lo accende e lo spegne).
-9. Scheda **TRACCIA**: effetti solo su quella traccia (es. riverbero solo sulla voce).
-10. **Export** dalla top bar: salva il flip come `<nome>_flip.wav`.
-11. **Ctrl+Z** annulla le modifiche al flip. **Canc** elimina la clip, **Ctrl+D** la duplica.
-12. Ricarica la pagina: il progetto deve tornare (ripremi FLIP).
+1. Vista FLIP: **Parti dal ritornello**, oppure metti tu qualche clip di voce.
+2. **genera strumentale** → stile **Trap**, armonia **dalla canzone**, parti batteria + basso + accordi → **Genera**.
+   - Il messaggio sotto il pulsante dice quali accordi ha usato.
+   - Premi Spazio.
+3. Se il BPM è lontano da quello dello stile, il pannello propone **Usa N BPM**: provalo.
+4. Premi **variante** e rigenera: le tracce generate vengono sostituite, la voce resta.
+5. Prova **House** con l'arpeggio, poi **Lo-fi** con armonia **nuova** e mood **sognante**.
+6. Clicca la clip **Beat**:
+   - accendi e spegni qualche step;
+   - con il tasto destro su un hi-hat fai un roll;
+   - nella scheda CLIP alza lo **swing**.
+7. Clicca la clip **Basso synth**: nel piano roll aggiungi e togli note. Nella scheda TRACCIA cambia da **808** a **reese**.
+8. **TONALITÀ +2** nella barra della timeline: voce, basso e accordi salgono, la batteria no.
+9. Export dalla top bar.
 
 ## Da sapere
-- La forma d'onda dentro le clip è sempre quella del mix, anche per le clip di stems. Il suono invece è quello giusto.
-- L'intonazione funziona bene su voci soliste pulite. Su cori o parti molto effettate può fare artefatti.
-- Il pannello AI non c'è in vista FLIP: arriva con il passo 4 (ricetta AI).
-- L'anteprima suona al massimo 120 s alla volta. Oltre, parte dalla battuta del playhead (o usa il loop). L'export è sempre completo.
+- Con armonia **dalla canzone** servono clip audio (voce/altro/mix) nel range. Se non ce ne sono, usa una progressione nuova e lo dice nel messaggio.
+- Gli accordi della canzone vengono dall'analisi automatica: su brani armonicamente complessi possono essere imprecisi. In quel caso prova **nuova** con il mood giusto.
+- I suoni sono sintetizzati: puliti e "da producer", non realistici.
 
 ## Se qualcosa non va
-Copia il messaggio d'errore che compare in alto a destra nella barra della timeline. Se c'è, aggiungi l'errore del terminale del backend.
+Copia il messaggio d'errore: sotto il pulsante **Genera**, oppure in alto a destra nella barra della timeline. Aggiungi l'errore del terminale del backend.
 
 ## Prossimo passo
-**F10 — strumentale generato**:
-- batteria a step con kit CC0;
-- 808 e synth che seguono gli accordi;
-- nuova progressione armonica.
-
-Così il flip avrà un beat tutto nuovo sotto la voce.
+**F11 — ricetta AI**: scrivi "rifalla drill a 142, tieni solo il ritornello, intro con voce filtrata" e l'AI costruisce l'intero flip (clip, tagli, tempo, tonalità, strumentale). Tutto resta modificabile a mano.

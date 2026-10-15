@@ -1,6 +1,6 @@
 // Flip helpers (pure): beat grid of the original, project factory, chopping.
 import type { AnalyzeResponse, FlipClip, FlipProject, FlipSource, FlipTrack, StructureResponse } from "./types";
-import { defaultChain } from "./types";
+import { defaultChain, defaultInstrument } from "./types";
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -71,8 +71,24 @@ export function beatsBetween(a: number, b: number, beats: number[]): number {
 // ---- project ----
 
 const track = (name: string, follow_key = true): FlipTrack => ({
-  id: uid(), name, gain_db: 0, pan: 0, mute: false, solo: false, follow_key, chain: defaultChain(), clips: [],
+  id: uid(), name, kind: "audio", instrument: defaultInstrument(), patterns: [],
+  gain_db: 0, pan: 0, mute: false, solo: false, follow_key, chain: defaultChain(), clips: [],
 });
+
+/** Projects saved before F10 lack the generated-track fields. */
+export function normalizeProject(p: FlipProject): FlipProject {
+  return {
+    ...p,
+    chords: p.chords ?? [],
+    tracks: p.tracks.map((t) => ({
+      ...t,
+      kind: t.kind ?? "audio",
+      instrument: { ...defaultInstrument(), ...(t.instrument ?? {}) },
+      patterns: t.patterns ?? [],
+      clips: t.clips ?? [],
+    })),
+  };
+}
 
 export function newProject(structure: StructureResponse | null, analysis: AnalyzeResponse | null, hasStems: boolean): FlipProject {
   return {
@@ -81,6 +97,7 @@ export function newProject(structure: StructureResponse | null, analysis: Analyz
     beats_per_bar: structure?.beats_per_bar ?? 4,
     source_key: structure?.key || analysis?.key || "C major",
     transpose: 0,
+    chords: [],
     tracks: hasStems
       ? [track("Voce"), track("Batteria", false), track("Basso"), track("Altro")]
       : [track("Campione")],
@@ -93,17 +110,28 @@ export function newTrack(name: string, followKey = true): FlipTrack {
 
 /** Track a new clip of `source` goes to: the one already holding that source, else by name. */
 export function trackFor(project: FlipProject, source: FlipSource): FlipTrack | undefined {
-  return project.tracks.find((t) => t.clips.some((c) => c.source === source))
-    ?? project.tracks.find((t) => t.name === SOURCE_STYLE[source].label && t.clips.length === 0);
+  const audio = project.tracks.filter((t) => t.kind === "audio");
+  return audio.find((t) => t.clips.some((c) => c.source === source))
+    ?? audio.find((t) => t.name === SOURCE_STYLE[source].label && t.clips.length === 0);
 }
 
 export const clipEnd = (c: FlipClip) => c.at_beat + c.length_beats;
 
 export const projectBeats = (p: FlipProject) => p.bars * p.beats_per_bar;
 
-/** Last beat used by any clip. */
+/** Last beat used by any clip or pattern. */
 export const contentEnd = (p: FlipProject) =>
-  Math.max(0, ...p.tracks.flatMap((t) => t.clips.map(clipEnd)));
+  Math.max(0, ...p.tracks.flatMap((t) => [...t.clips.map(clipEnd), ...t.patterns.map((c) => c.at_beat + c.length_beats)]));
+
+export const KIND_STYLE: Record<FlipTrack["kind"], { label: string; color: string }> = {
+  audio: { label: "Audio", color: "#b9a6ff" },
+  drums: { label: "Beat", color: "#ffd25c" },
+  bass: { label: "Basso", color: "#3fe0a0" },
+  keys: { label: "Synth", color: "#5c9dff" },
+};
+
+const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+export const noteName = (m: number) => `${NOTE_NAMES[((m % 12) + 12) % 12]}${Math.floor(m / 12) - 1}`;
 
 // ---- chopping ----
 

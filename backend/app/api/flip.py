@@ -2,7 +2,8 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
 
 from app.flip import render as flip
-from app.models import FlipRenderRequest, OnsetsResponse, RenderResponse
+from app.flip.generate import generate as generate_parts
+from app.models import FlipRenderRequest, GenerateRequest, GenerateResponse, OnsetsResponse, RenderResponse
 
 router = APIRouter()
 
@@ -50,3 +51,13 @@ def onsets(
         return OnsetsResponse(times=flip.onsets(track_id, source, start, end))
     except Exception as e:  # noqa: BLE001
         raise _errors(e, "Onset detection") from e
+
+
+@router.post("/flip/generate", response_model=GenerateResponse)
+def generate(req: GenerateRequest):
+    """New drums / bass / chords / arpeggio tracks for the project (patterns,
+    editable). Nothing is rendered here: the tracks are returned to the UI."""
+    try:
+        return generate_parts(req)
+    except Exception as e:  # noqa: BLE001
+        raise _errors(e, "Generation") from e
