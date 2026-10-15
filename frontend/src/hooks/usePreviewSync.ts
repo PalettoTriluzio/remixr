@@ -5,6 +5,7 @@ import { morphParams } from "../lib/morph";
 import { decodeForView } from "../lib/peaks";
 import { player } from "../lib/player";
 import { useRemixStore } from "../lib/remixStore";
+import { activeStemMix, useStemsStore } from "../lib/stemsStore";
 import { useTrackStore } from "../lib/store";
 
 const DEBOUNCE_MS = 300;
@@ -18,15 +19,20 @@ export function usePreviewSync() {
   const region = useRemixStore((s) => s.region);
   const setStatus = useRemixStore((s) => s.setPreviewStatus);
   const setView = useRemixStore((s) => s.setPreviewView);
+  const job = useStemsStore((s) => s.job);
+  const mix = useStemsStore((s) => s.mix);
+  const stemMix = useMemo(() => activeStemMix({ job, mix }), [job, mix]);
 
   // A params edit means "let me hear it": switch to B once the render lands.
   // Region moves alone keep the current A/B side.
   const lastParams = useRef(target);
   const lastAmount = useRef(amount);
   const pendingB = useRef(false);
-  if (lastParams.current !== target || lastAmount.current !== amount) {
+  const lastMix = useRef(stemMix);
+  if (lastParams.current !== target || lastAmount.current !== amount || lastMix.current !== stemMix) {
     lastParams.current = target;
     lastAmount.current = amount;
+    lastMix.current = stemMix;
     pendingB.current = true;
   }
 
@@ -36,7 +42,7 @@ export function usePreviewSync() {
   useEffect(() => {
     if (!track) return;
     const chain = params.global_chain;
-    if (isNeutral(chain)) {
+    if (isNeutral(chain) && !stemMix) {
       player.clearPreview();
       setStatus("idle");
       pendingB.current = false;
@@ -50,7 +56,7 @@ export function usePreviewSync() {
       setStatus("rendering");
       try {
         const blob = await api.renderPreview(
-          { track_id: track.track_id, params, region_start_sec: start, region_end_sec: end },
+          { track_id: track.track_id, params, stem_mix: stemMix, region_start_sec: start, region_end_sec: end },
           ctrl.signal,
         );
         // Decoded copy for the A/B lane; a failure only leaves the lane empty.
@@ -71,7 +77,7 @@ export function usePreviewSync() {
       clearTimeout(timer);
       ctrl.abort();
     };
-  }, [track, params, region, setStatus, setView]);
+  }, [track, params, stemMix, region, setStatus, setView]);
 
   // Track removed or replaced: the old preview belongs to the old audio.
   useEffect(() => () => player.clearPreview(), [track?.track_id]);

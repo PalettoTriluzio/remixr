@@ -250,6 +250,8 @@ LLM status: http://127.0.0.1:8000/api/llm/status (`loading` for a few seconds af
 - **Volume pari** (scale icon, on by default): A and B play at the same average loudness, so you judge the sound, not the volume. Listening only.
 - The session (track, remix, intensity, chat) survives a page reload. Drop an audio file anywhere in the window to load it.
 - Top bar: undo/redo, **Preset** (genre templates + your presets: load, save, delete), **Export** (whole track, WAV 24-bit or MP3, downloaded as `<name>_remix.wav`).
+- **Struttura** (lane under the A waveform, automatic): bar lines with numbers over the waveform, the sections (same letter = same material, best-guess name: intro / strofa / ritornello / bridge / break / outro — click one to use it as the region) and the chords. Transport bar: `bar.beat` of the playhead, magnet = the region snaps to whole bars. Recomputed from the stems once they exist (beats from the drums, chords without the vocals): more accurate.
+- **Stems** (top of the left column): "Separa voce · batteria · basso · altro" runs demucs in the background (GPU: ~10–40 s per song, CPU: minutes — see `tools/install-torch-cuda.ps1`). Then a mixer: M = mute, S = solo, fader −∞…+12 dB (double-click = 0), **acapella** / **strumentale** in one click, download icon = the stem as WAV. The stem mix feeds preview and export; untouched mixer = the original file. Stems are kept in `backend/data/stems/` and survive restarts.
 - Shortcuts: `Space` play/pause · `B` switch A/B · `L` loop · `Esc` clear region · `Ctrl+Z` / `Ctrl+Shift+Z` undo/redo.
 
 ---
@@ -407,11 +409,18 @@ pip install llama-cpp-python --only-binary llama-cpp-python --extra-index-url ht
 git config --global --add safe.directory C:/Users/<you>/Desktop/remixr
 ```
 
-**`torch.cuda.is_available()` is `False`**
-→ The default PyPI wheel for Windows is CPU-only. Harmless for now (nothing imports torch until F5), but demucs stem separation will be slow. When you get to F5:
+**`torch.cuda.is_available()` is `False`** / stems separati su "CPU"
+→ The default PyPI wheel for Windows is CPU-only: demucs works but takes minutes instead of seconds. Install the CUDA build (also re-pins numpy, downloads the demucs weights and runs a test separation on the GPU):
 ```powershell
-pip install --force-reinstall torch torchaudio --index-url https://download.pytorch.org/whl/cu124
+powershell -ExecutionPolicy Bypass -File .\tools\install-torch-cuda.ps1
 ```
+Then restart the backend. The stems panel shows `CUDA` / `CPU` next to the progress.
+
+**Stems: `ModuleNotFoundError: No module named 'demucs'` / `torch`**
+→ `pip install -r requirements.txt` in the venv, then the script above.
+
+**Stems: separation falls back to CPU halfway**
+→ CUDA out of memory: the LLM occupies most of the VRAM. The job finishes on CPU anyway. To keep it on the GPU pick a smaller GGUF in the AI panel, or set `REMIXR_STEMS_MODEL=htdemucs` (1 pass instead of 4).
 
 ### Audio / general
 

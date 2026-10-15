@@ -4,6 +4,7 @@ import { Disc3, Download, FolderOpen, Loader2, Redo2, Save, Trash2, Undo2 } from
 import { api } from "../lib/api";
 import { morphParams } from "../lib/morph";
 import { useRemixStore } from "../lib/remixStore";
+import { activeStemMix, useStemsStore } from "../lib/stemsStore";
 import { useTrackStore } from "../lib/store";
 import type { Preset } from "../lib/types";
 
@@ -194,7 +195,12 @@ function ExportButton() {
     try {
       // Whole track, current params (the region only limits the preview).
       const { params, amount } = useRemixStore.getState();
-      const res = await api.renderExport({ track_id: track.track_id, params: morphParams(params, amount), format });
+      const res = await api.renderExport({
+        track_id: track.track_id,
+        params: morphParams(params, amount),
+        stem_mix: activeStemMix(useStemsStore.getState()),
+        format,
+      });
       const a = document.createElement("a");
       a.href = api.renderFileUrl(res.render_id);
       a.download = `${track.filename.replace(/\.[^.]+$/, "")}_remix.${format}`;

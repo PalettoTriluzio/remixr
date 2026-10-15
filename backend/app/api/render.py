@@ -5,28 +5,33 @@ from fastapi.responses import FileResponse, Response
 
 from app.dsp import render as dsp
 from app.models import EffectChain, RenderRequest, RenderResponse
-from app.storage import find_render, find_upload
+from app.storage import find_render, find_stems, find_upload
 
 router = APIRouter()
 
 MIME_BY_EXT = {".wav": "audio/wav", ".mp3": "audio/mpeg"}
 
 
-def _resolve(req: RenderRequest) -> tuple[Path, EffectChain]:
+def _resolve(req: RenderRequest) -> tuple[Path, EffectChain, dict[str, Path] | None]:
     path = find_upload(req.track_id)
     if path is None:
         raise HTTPException(status_code=404, detail="Track not found")
     if req.params.per_stem is not None:
-        raise HTTPException(status_code=501, detail="Per-stem rendering not implemented (F5)")
-    return path, req.params.global_chain
+        raise HTTPException(status_code=501, detail="Per-stem effect chains not implemented")
+    stems = None
+    if req.stem_mix is not None:
+        stems = find_stems(req.track_id)
+        if stems is None:
+            raise HTTPException(status_code=409, detail="Stems not separated for this track")
+    return path, req.params.global_chain, stems
 
 
 @router.post("/render/export", response_model=RenderResponse)
 def export(req: RenderRequest):
-    path, chain = _resolve(req)
+    path, chain, stems = _resolve(req)
     try:
         render_id, out, duration = dsp.export(
-            path, chain, req.format, req.region_start_sec, req.region_end_sec
+            path, chain, req.format, req.region_start_sec, req.region_end_sec, stems, req.stem_mix
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
@@ -39,9 +44,11 @@ def export(req: RenderRequest):
 @router.post("/render/preview")
 def preview(req: RenderRequest):
     """Short 16-bit WAV streamed back for audition. Not persisted."""
-    path, chain = _resolve(req)
+    path, chain, stems = _resolve(req)
     try:
-        wav = dsp.preview_wav(path, chain, req.region_start_sec, req.region_end_sec)
+        wav = dsp.preview_wav(
+            path, chain, req.region_start_sec, req.region_end_sec, stems, req.stem_mix
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:  # noqa: BLE001

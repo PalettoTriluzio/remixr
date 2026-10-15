@@ -21,6 +21,7 @@ dist/
 backend/data/uploads/*
 backend/data/renders/*
 backend/data/stems/*
+backend/data/analysis/*
 !backend/data/uploads/.gitkeep
 !backend/data/renders/.gitkeep
 !backend/data/stems/.gitkeep

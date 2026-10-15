@@ -161,9 +161,27 @@ class LLMSelectModel(BaseModel):
     model: str  # file name from LLMStatus.available
 
 
+class StemLevel(BaseModel):
+    gain_db: float = Field(0.0, ge=-60.0, le=12.0)
+    mute: bool = False
+    solo: bool = False
+
+
+class StemMix(BaseModel):
+    """Volume of each separated stem. Track-bound (stems exist per track), so
+    it travels next to Params in the render request, not inside it."""
+    vocals: StemLevel = Field(default_factory=StemLevel)
+    drums: StemLevel = Field(default_factory=StemLevel)
+    bass: StemLevel = Field(default_factory=StemLevel)
+    other: StemLevel = Field(default_factory=StemLevel)
+
+
 class RenderRequest(BaseModel):
     track_id: str
     params: Params
+    # Set = render from the stems (data/stems/<track_id>/) mixed with these
+    # levels instead of the original file. 409 if the track has no stems.
+    stem_mix: Optional[StemMix] = None
     format: Literal["wav", "mp3"] = "wav"
     region_start_sec: Optional[float] = None
     region_end_sec: Optional[float] = None
@@ -183,7 +201,41 @@ class Preset(BaseModel):
 
 
 class StemsJobResponse(BaseModel):
-    job_id: str
-    status: Literal["pending", "running", "done", "error"]
-    stems: Optional[dict[str, str]] = None  # {"vocals": path, ...} when done
+    job_id: str  # = track_id: one separation per track
+    status: Literal["none", "pending", "running", "done", "error"]
+    progress: float = 0.0                   # 0..1
+    stems: Optional[dict[str, str]] = None  # {"vocals": "/api/stems/<id>/vocals", ...} when done
+    model: Optional[str] = None             # demucs model name
+    device: Optional[str] = None            # "cuda" | "cpu"
+    elapsed_sec: Optional[float] = None
     error: Optional[str] = None
+
+
+# ---- Structure (grid, sections, chords) ----
+
+class Section(BaseModel):
+    start: float
+    end: float
+    bar_start: int  # 1-based, inclusive
+    bar_end: int    # 1-based, exclusive
+    label: str      # "A", "B"…: same letter = same material
+    name: str       # best guess: intro / strofa / ritornello / bridge / break / outro
+    energy: float   # 0..1, relative to the loudest section
+
+
+class ChordSpan(BaseModel):
+    start: float
+    end: float
+    chord: str  # "C", "F#m", "N" = no chord
+
+
+class StructureResponse(BaseModel):
+    track_id: str
+    source: Literal["mix", "stems"]  # stems = beats from the drum stem, chords from bass+other
+    bpm: float
+    key: str
+    beats_per_bar: int = 4
+    beats: list[float]
+    downbeats: list[float]  # downbeats[i] = start of bar i+1
+    sections: list[Section]
+    chords: list[ChordSpan]

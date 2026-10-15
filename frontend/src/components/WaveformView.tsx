@@ -13,6 +13,8 @@ import { Dropzone } from "./Dropzone";
 import { CompareLane } from "./CompareLane";
 import { SpectrumView } from "./SpectrumView";
 import { LaneLabel } from "./LaneLabel";
+import { GridOverlay, StructureLane } from "./StructureLane";
+import { snapToBar, useStemsStore } from "../lib/stemsStore";
 
 const PREVIEW_MAX_SEC = 30;
 
@@ -51,8 +53,19 @@ export function WaveformView() {
     const regions = ws.registerPlugin(RegionsPlugin.create());
     regions.enableDragSelection({ color: "rgba(124, 92, 255, 0.18)" });
     const commit = (r: Region) => {
-      if (r.end - r.start > PREVIEW_MAX_SEC) r.setOptions({ end: r.start + PREVIEW_MAX_SEC });
-      setRegion({ start: r.start, end: r.end });
+      let { start, end } = r;
+      const { snap, structure } = useStemsStore.getState();
+      const bars = snap ? structure?.downbeats ?? [] : [];
+      if (bars.length > 1) {
+        // Whole bars: start on the nearest bar line, end on the nearest one
+        // after it, within the 30 s cap.
+        start = snapToBar(start, bars);
+        const ends = bars.filter((b) => b > start + 0.05 && b - start <= PREVIEW_MAX_SEC);
+        if (ends.length) end = snapToBar(end, ends);
+      }
+      if (end - start > PREVIEW_MAX_SEC) end = start + PREVIEW_MAX_SEC;
+      if (Math.abs(start - r.start) > 1e-3 || Math.abs(end - r.end) > 1e-3) r.setOptions({ start, end });
+      setRegion({ start, end });
     };
     regions.on("region-created", (r) => {
       regions.getRegions().forEach((o) => { if (o !== r) o.remove(); });
@@ -76,10 +89,20 @@ export function WaveformView() {
     };
   }, [track?.track_id, setWavesurfer, setOriginalBuffer, setRegion]);
 
-  // Region cleared from the transport bar.
+  // Region cleared from the transport bar, or set from outside (click on a
+  // section): mirror it on the waveform.
   useEffect(() => {
-    if (!region) regionsRef.current?.clearRegions();
-  }, [region]);
+    const regions = regionsRef.current;
+    if (!regions) return;
+    if (!region) {
+      regions.clearRegions();
+      return;
+    }
+    const shown = regions.getRegions()[0];
+    if (shown && Math.abs(shown.start - region.start) < 1e-3 && Math.abs(shown.end - region.end) < 1e-3) return;
+    regions.clearRegions();
+    regions.addRegion({ start: region.start, end: region.end, color: "rgba(124, 92, 255, 0.18)" });
+  }, [region, wavesurfer]);
 
   useEffect(() => {
     wavesurfer?.setOptions(abMode === "A" ? A_ACTIVE : A_IDLE);
@@ -111,6 +134,7 @@ export function WaveformView() {
           <div className="absolute inset-0 px-4 pt-5 pb-2">
             <div className="relative w-full h-full">
               <div ref={containerRef} className="absolute inset-0" />
+              <GridOverlay />
               {win && (
                 <div
                   className="absolute inset-y-0 border border-dashed border-accent/60 bg-accent/5 rounded-sm pointer-events-none"
@@ -121,6 +145,7 @@ export function WaveformView() {
             </div>
           </div>
         </div>
+        <StructureLane />
         <CompareLane />
       </div>
 

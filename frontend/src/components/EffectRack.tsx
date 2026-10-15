@@ -4,6 +4,7 @@ import { useRemixStore } from "../lib/remixStore";
 import { defaultChain } from "../lib/types";
 import { EffectCard } from "./EffectCard";
 import { Knob } from "./Knob";
+import { StemsPanel } from "./StemsPanel";
 
 // Chain order is fixed in the backend (CLAUDE.md §DSP chain): cards follow it,
 // no reordering.
@@ -29,6 +30,7 @@ export function EffectRack() {
         </button>
       </div>
       <div className="p-2 space-y-2">
+        <StemsPanel />
         {TIME_PITCH.map((e) => <EffectCard key={e.id} def={e} />)}
 
         <div className="bg-bg-card border border-line rounded-md px-2 py-1.5 flex items-center gap-3">

@@ -6,6 +6,7 @@ Script di diagnostica e build per la macchina Windows. **Li lanci tu**, non veng
 |---|---|---|
 | `diag.ps1` | fotografia dell'ambiente (GPU, CUDA + variabili `CUDA_PATH_V*`, MSVC, Python, pacchetti, ffmpeg, node, git) | **no**, sola lettura |
 | `build-llama-cuda.ps1` | compila `llama-cpp-python` con CUDA provando 4 strategie in cascata | sì, installa nel venv |
+| `install-torch-cuda.ps1` | torch + torchaudio CUDA (cu124) per demucs, ripristina `numpy==1.26.4`, scarica i pesi demucs, prova una separazione sulla GPU | sì, installa nel venv (~2.5 GB) |
 
 ## Ordine d'uso
 
@@ -17,6 +18,9 @@ powershell -ExecutionPolicy Bypass -File .\tools\diag.ps1
 
 # 2. build llama-cpp con CUDA (10-20 min per tentativo)
 powershell -ExecutionPolicy Bypass -File .\tools\build-llama-cuda.ps1
+
+# 3. torch CUDA per gli stems (demucs sulla GPU)
+powershell -ExecutionPolicy Bypass -File .\tools\install-torch-cuda.ps1
 ```
 
 Entrambi scrivono in `tools/logs/`. Quei log **vanno committati** (la cartella non è in `.gitignore`):

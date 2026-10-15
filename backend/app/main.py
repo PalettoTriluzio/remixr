@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import upload, analyze, stems, llm, render, presets
+from app.api import upload, analyze, structure, stems, llm, render, presets
 from app.llm import engine
 
 
@@ -35,6 +35,7 @@ def health():
 
 app.include_router(upload.router, prefix="/api", tags=["upload"])
 app.include_router(analyze.router, prefix="/api", tags=["analyze"])
+app.include_router(structure.router, prefix="/api", tags=["structure"])
 app.include_router(stems.router, prefix="/api", tags=["stems"])
 app.include_router(llm.router, prefix="/api", tags=["llm"])
 app.include_router(render.router, prefix="/api", tags=["render"])

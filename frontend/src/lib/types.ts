@@ -87,9 +87,17 @@ export interface LLMInterpretResponse {
   changed_fields: string[];
 }
 
+export type StemName = "vocals" | "drums" | "bass" | "other";
+export const STEM_NAMES: StemName[] = ["vocals", "drums", "bass", "other"];
+
+export interface StemLevel { gain_db: number; mute: boolean; solo: boolean; }
+export type StemMix = Record<StemName, StemLevel>;
+
 export interface RenderRequest {
   track_id: string;
   params: Params;
+  /** Set = render from the stems with these levels (409 if not separated). */
+  stem_mix?: StemMix | null;
   format?: "wav" | "mp3";
   region_start_sec?: number | null;
   region_end_sec?: number | null;
@@ -110,9 +118,37 @@ export interface Preset {
 
 export interface StemsJobResponse {
   job_id: string;
-  status: "pending" | "running" | "done" | "error";
-  stems?: Record<string, string> | null;
+  status: "none" | "pending" | "running" | "done" | "error";
+  progress: number; // 0..1
+  stems?: Record<StemName, string> | null; // URLs when done
+  model?: string | null;
+  device?: string | null;
+  elapsed_sec?: number | null;
   error?: string | null;
+}
+
+export interface Section {
+  start: number;
+  end: number;
+  bar_start: number; // 1-based, inclusive
+  bar_end: number;   // 1-based, exclusive
+  label: string;     // same letter = same material
+  name: string;      // intro / strofa / ritornello / bridge / break / outro / parte
+  energy: number;    // 0..1
+}
+
+export interface ChordSpan { start: number; end: number; chord: string; } // "N" = no chord
+
+export interface StructureResponse {
+  track_id: string;
+  source: "mix" | "stems";
+  bpm: number;
+  key: string;
+  beats_per_bar: number;
+  beats: number[];
+  downbeats: number[]; // downbeats[i] = start of bar i+1
+  sections: Section[];
+  chords: ChordSpan[];
 }
 
 // ---- Defaults ----
@@ -135,6 +171,11 @@ export const defaultChain = (): EffectChain => ({
   pitch: { enabled: false, semitones: 0 },
   tempo: { enabled: false, ratio: 1.0 },
   limiter: { enabled: false, threshold_db: -0.3, release_ms: 100 },
+});
+
+export const defaultStemLevel = (): StemLevel => ({ gain_db: 0, mute: false, solo: false });
+export const defaultStemMix = (): StemMix => ({
+  vocals: defaultStemLevel(), drums: defaultStemLevel(), bass: defaultStemLevel(), other: defaultStemLevel(),
 });
 
 export const defaultParams = (): Params => ({

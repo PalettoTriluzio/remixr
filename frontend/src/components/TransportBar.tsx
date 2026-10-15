@@ -1,15 +1,20 @@
-import { Play, Pause, Repeat, Volume2, X, Loader2, AlertCircle, Scale } from "lucide-react";
+import { Play, Pause, Repeat, Volume2, X, Loader2, AlertCircle, Scale, Magnet } from "lucide-react";
 import { useEffect, useState } from "react";
 import clsx from "clsx";
 import { useTrackStore } from "../lib/store";
 import { useRemixStore } from "../lib/remixStore";
 import { player } from "../lib/player";
 import { formatDuration } from "../lib/format";
+import { barBeat, barOf, useStemsStore } from "../lib/stemsStore";
 
 export function TransportBar() {
   const { track, wavesurfer, isPlaying, currentTime } = useTrackStore();
   const { abMode, loop, region, setRegion, previewStatus, previewError, amount, setAmount, levelMatch, setLevelMatch } = useRemixStore();
   const [volume, setVolume] = useState(80);
+  const structure = useStemsStore((s) => s.structure);
+  const snap = useStemsStore((s) => s.snap);
+  const setSnap = useStemsStore((s) => s.setSnap);
+  const grid = structure && structure.downbeats.length > 0 ? structure : null;
 
   const disabled = !wavesurfer;
   const canB = previewStatus === "ready" || player.hasPreview();
@@ -41,6 +46,17 @@ export function TransportBar() {
         )}
       >
         <Repeat className="w-4 h-4" />
+      </button>
+      <button
+        disabled={disabled || !grid}
+        onClick={() => setSnap(!snap)}
+        title="Aggancia la regione alle battute"
+        className={clsx(
+          "w-8 h-8 rounded hover:bg-bg-hover flex items-center justify-center disabled:opacity-40",
+          snap && grid ? "text-accent" : "text-white/60",
+        )}
+      >
+        <Magnet className="w-4 h-4" />
       </button>
 
       {/* A/B: original vs remix preview */}
@@ -112,6 +128,7 @@ export function TransportBar() {
           region ? (
             <span className="flex items-center gap-1">
               region {formatDuration(region.start)}–{formatDuration(region.end)}
+              {grid && ` · battute ${Math.max(1, barOf(region.start, grid.downbeats))}–${Math.max(1, barOf(region.end - 0.05, grid.downbeats))}`}
               <button onClick={() => setRegion(null)} title="Rimuovi regione (Esc)" className="hover:text-white">
                 <X className="w-3 h-3" />
               </button>
@@ -136,6 +153,11 @@ export function TransportBar() {
           disabled={disabled}
         />
       </div>
+      {grid && (
+        <span className="text-xs font-mono text-white/60 w-14 text-right" title="Battuta.movimento">
+          {barBeat(currentTime, grid.beats, grid.downbeats, grid.beats_per_bar)}
+        </span>
+      )}
       <span className="text-xs font-mono text-white/40 w-24 text-right">
         {formatDuration(currentTime)} / {formatDuration(track?.duration_sec ?? 0)}
       </span>

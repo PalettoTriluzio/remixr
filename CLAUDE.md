@@ -43,7 +43,8 @@ pip install llama-cpp-python==0.3.2 --no-cache-dir
 ### Diagnostica e build (script in `tools/`, li lancia l'utente)
 - `tools/diag.ps1` — fotografia dell'ambiente Windows (GPU/CUDA/`CUDA_PATH_V*`/MSVC/Python/pacchetti/ffmpeg/node/git). **Sola lettura.**
 - `tools/build-llama-cuda.ps1` — build di `llama-cpp-python` con CUDA, 4 strategie in cascata: `ninja-allow-unsupported` → `ninja` → `msbuild` → `wheel` precompilata. Si ferma alla prima con `llama_supports_gpu_offload() == True`.
-- Entrambi caricano `vcvars64.bat` da soli (niente "x64 Native Tools Prompt") e scrivono in `tools/logs/`, che **non è gitignorata**: i log si committano e si leggono dall'altra macchina.
+- `tools/install-torch-cuda.ps1` — torch/torchaudio 2.5.1 **cu124** al posto della wheel CPU, ripristina `numpy==1.26.4`, scarica i pesi demucs (`htdemucs_ft`, `htdemucs`), prova una separazione sulla GPU.
+- `diag`/`build-llama` caricano `vcvars64.bat` da soli (niente "x64 Native Tools Prompt"); tutti scrivono in `tools/logs/`, che **non è gitignorata**: i log si committano e si leggono dall'altra macchina.
 - Dettagli in `tools/README.md`.
 
 ### Stato ambiente macchina utente (2026-10-09)
@@ -65,7 +66,7 @@ Rilevato dal log `errors.txt`: Python 3.11, CUDA **12.6** (`v12.6`), MSVC **19.4
 
 **Analisi 2026-10-11 (commit utente `1dd18f8`, "F4 not implemented")**: il commit ha come parent `27366d4` (F3+F4), quindi il codice è aggiornato; la stringa "Not implemented (F4)" non esiste più → risponde un **processo uvicorn vecchio** (su Windows `--reload` può lasciare processi orfani sulla porta 8000, e Windows permette bind doppi). I log pushati sono solo build del 2026-10-09, nessun log runtime. Effetto collaterale trovato nel log della build riuscita: pip ha aggiornato **numpy 1.26.4 → 2.4.6** (rompe il pin di `requirements.txt`, rischio numba/librosa) → ripristinare `numpy==1.26.4`. Procedura per l'utente: README → Troubleshooting → "Not implemented (F4)" (il log del backend va in `tools/logs/backend-*.log`). Il commit cancella anche `backend/models/.gitkeep` (innocuo: `storage.py` crea la cartella).
 
-**L'app gira anche senza llama-cpp**: `llama_cpp` è importato solo dentro `app/llm/engine.py` al primo load → senza, `/llm/interpret` risponde 503 e il resto funziona. `demucs`/`torch` non importati (F5 stub 501).
+**L'app gira anche senza llama-cpp**: `llama_cpp` è importato solo dentro `app/llm/engine.py` al primo load → senza, `/llm/interpret` risponde 503 e il resto funziona. `torch`/`demucs` importati solo dentro il job di separazione (`app/stems/separate.py`): senza, il job finisce in `error` e il resto funziona.
 
 ## Formati audio
 - **Input**: MP3, WAV, FLAC, AAC/M4A, OGG (via `soundfile` + `librosa`/`audioread` fallback)
@@ -82,17 +83,19 @@ remixr/
 │   │   ├── api/               # endpoints (upload/audio, analyze, render, llm, presets, stems)
 │   │   ├── audio/             # loader.py: soundfile→librosa fallback (MP3/WAV/FLAC/M4A/AAC/OGG)
 │   │   ├── analysis/          # features.py: BPM (librosa.beat), key (Krumhansl), peaks, mel-spectrum
+│   │   │                      # structure.py: beat/downbeat, sezioni, accordi (da stems se ci sono)
 │   │   ├── dsp/               # chain.py: params→pedalboard + mid/side + time/pitch
 │   │   │                      # render.py: decode cache → process → WAV/MP3
 │   │   ├── llm/               # engine.py: Llama singleton (lock, warm-up, grammar JSON)
 │   │   │                      # interpret.py: prompt → delta params → merge/clamp/diff
 │   │   │                      # styles.py: tabella artista → tratti di produzione
-│   │   ├── stems/             # (F5) demucs wrapper
+│   │   ├── stems/             # separate.py: job demucs in background (1 worker), progress, OOM→CPU
 │   │   └── presets/           # store.py: preset utente + genre templates (JSON)
 │   ├── data/
 │   │   ├── uploads/           # audio caricati (gitignored)
 │   │   ├── renders/           # output (gitignored)
-│   │   ├── stems/             # stems separate (gitignored)
+│   │   ├── stems/             # stems separate: <track_id>/{vocals,drums,bass,other}.wav + meta.json (gitignored)
+│   │   ├── analysis/          # cache struttura: <track_id>.<mix|stems>.v<N>.json (gitignored)
 │   │   ├── presets/           # preset utente JSON
 │   │   └── genre_templates/   # template di genere JSON
 │   ├── models/                # LLM GGUF files (gitignored)
@@ -101,14 +104,16 @@ remixr/
 │   ├── src/
 │   │   ├── components/        # WaveformView (corsia A + regions), CompareLane (corsia B: A sopra/B sotto),
 │   │   │                      # SpectrumView (spettro live), EffectRack, EffectCard, Knob, PromptPanel,
-│   │   │                      # TransportBar, TopBar (undo/redo, preset, export)
+│   │   │                      # TransportBar, TopBar (undo/redo, preset, export),
+│   │   │                      # StemsPanel (separazione + mixer), StructureLane (griglia, sezioni, accordi)
 │   │   ├── hooks/             # usePreviewSync (debounce 300 ms → /render/preview + decode per la corsia B),
 │   │   │                      # useShortcuts (Space, B, L, Esc, Ctrl+Z/Y), useLevelMatch (volume pari A/B),
-│   │   │                      # useGlobalDrop (drop di un file ovunque)
+│   │   │                      # useGlobalDrop (drop di un file ovunque), useTrackStructure (stems status/poll + struttura)
 │   │   ├── lib/               # api, types, store (track + buffer originale), remixStore (params/undo/A-B/chat),
 │   │   │                      # effects (metadata knob + path helpers), player (motore A/B),
 │   │   │                      # peaks (decode 8 kHz, colonne peak/rms, livelli), analyser (AnalyserNode condiviso),
-│   │   │                      # morph (Intensità), looks (look istantanei), session (localStorage)
+│   │   │                      # morph (Intensità), looks (look istantanei), session (localStorage),
+│   │   │                      # stemsStore (job stems, mixer, struttura, snap — legato alla traccia)
 │   │   ├── App.tsx
 │   │   └── main.tsx
 │   ├── package.json
@@ -126,13 +131,15 @@ remixr/
 - `GET  /api/audio/{track_id}` → raw audio file stream (for wavesurfer) ✅
 - `GET  /api/track/{track_id}` → info dell'upload se esiste ancora (ripristino sessione) ✅
 - `GET  /api/analyze/{track_id}` → `{bpm, key, peaks[], spectrum[]}` ✅
-- `POST /api/stems/{track_id}` (async) → `{job_id, status}` / `GET /api/stems/{track_id}` → status+paths (F5)
+- `POST /api/stems/{track_id}` → avvia la separazione (idempotente) / `GET /api/stems/{track_id}` → `{job_id, status: none|pending|running|done|error, progress, stems{nome: url}, model, device, elapsed_sec, error}` ✅
+- `GET  /api/stems/{track_id}/{stem}` → WAV dello stem ✅
+- `GET  /api/structure/{track_id}` → `{source: mix|stems, bpm, key, beats_per_bar, beats[], downbeats[], sections[{start,end,bar_start,bar_end,label,name,energy}], chords[{start,end,chord}]}` ✅
 - `GET  /api/llm/status` → `{state: idle|loading|ready|error, model, gpu_offload, error, available[]}` ✅
 - `POST /api/llm/model` `{model}` → cambia GGUF a runtime (libera la VRAM, ricarica in background) ✅
 - `GET  /api/llm/styles` → artisti con tratti curati (suggerimenti UI) ✅
 - `POST /api/llm/interpret` `{prompt, current_params, genre?, bpm?, key?, reference_artist?, variation?}` → `{params, explanation, changed_fields[]}` ✅ (503 = LLM non disponibile, 502 = output non valido)
-- `POST /api/render/preview` `{track_id, params, region?}` → WAV 16-bit stream, max 30 s ✅
-- `POST /api/render/export` `{track_id, params, format}` → `{render_id, path, duration_sec}` ✅
+- `POST /api/render/preview` `{track_id, params, stem_mix?, region?}` → WAV 16-bit stream, max 30 s ✅
+- `POST /api/render/export` `{track_id, params, stem_mix?, format}` → `{render_id, path, duration_sec}` ✅ (`stem_mix` senza stems → 409)
 - `GET  /api/render/file/{render_id}` → download ✅
 - `GET/POST/DELETE /api/presets` → CRUD su `data/presets/<slug>.json` ✅
 - `GET  /api/genre-templates` → list da `data/genre_templates/*.json` (7 generi, effetti parziali + default Pydantic) ✅
@@ -197,5 +204,17 @@ Ordine fisso in `app/dsp/chain.py`:
 - **Stile artista** ("fammela come la farebbe X"): `app/llm/styles.py` = ~35 artisti → tratti di produzione nel vocabolario della catena. Artista dal campo `reference_artist` (match esplicito) o trovato nel testo del prompt (nomi ambigui come "Ultimo" solo dal campo). Artista sconosciuto → il modello usa la sua conoscenza e deve dirlo se non lo conosce. Il system prompt impone onestà: si imita solo produzione/mix, non voce/melodia/strumenti.
 - **Genere**: se esiste `data/genre_templates/<genere>.json`, la sua catena (parziale) va nel prompt come punto di partenza.
 
+## Flip — stravolgere i brani (dal 2026-10-15)
+Obiettivo dell'utente: rifacimenti radicali alla "Una direzione giusta" (thasup su Neffa): tieni un pezzo riconoscibile (voce/hook), butta il resto, costruisci un pezzo nuovo (tempo, groove, armonia). Piano in 4 passi: **F5** stems + griglia → **F9** timeline + campionatore → **F10** strumentale generato (simbolico) → **F11** ricetta AI.
+- Generazione **simbolica** (pattern + synth numpy + sample CC0), **non** MusicGen/Stable Audio: pesi con licenza non commerciale / restrizioni → violano "gratis, no royalty". Eventuale opzione solo-uso-personale più avanti.
+- Melodia (basic-pitch) rimandata a F9, dove serve (intonazione/armonizzazione).
+
+### F5 — Stems + struttura
+- **demucs** (`app/stems/separate.py`): un worker, un job per traccia (`job_id = track_id`). Default `htdemucs_ft` su GPU (4 passate, voce migliore), `htdemucs` su CPU. Env `REMIXR_STEMS_MODEL`, `REMIXR_STEMS_DEVICE`. Progress = `tqdm` di `demucs.apply` sostituito durante il job. OOM CUDA (LLM in VRAM) → ripete su CPU. Stems ricampionati al **sr originale** e tagliati/paddati alla **stessa lunghezza** dell'upload: stessa timeline del file. Scrittura in `<id>.tmp/` + rename; `meta.json` = marker "done" (sopravvive ai riavvii).
+- **Mixer stems** = `StemMix` (gain_db −60…+12, mute, solo) nella **richiesta di render**, non in `Params`: è legato alla traccia (non entra in preset/LLM/look/undo/sessione). Solo vince, −60 dB = spento. Mixer a zero → si renderizza il file originale (somma stems ≈ originale, non identica). `per_stem` (catene per stem) resta 501.
+- **Struttura** (`app/analysis/structure.py`, euristiche, nessun modello): beat da librosa sull'onset del drum stem (se il drum stem è quasi vuoto → mix); 4/4 assunto, fase della battuta = dove kick (onset < 150 Hz) e cambio armonico (chroma) coincidono; accordi = chroma beat-sync (bass+other, o HPSS del mix) vs 24 triadi + Viterbi, "N" sul silenzio; sezioni = SSM a livello di battuta (chroma+MFCC) → novelty a scacchiera → confini (min 4 battute, bonus ogni 4) → lettere per somiglianza (coseno > 0.6) → nomi indicativi (ritornello = lettera ripetuta più energica/con più voce). Cache su disco per sorgente; `VERSION` in `api/structure.py` invalida.
+- UI: righe di battuta sulla waveform A (numeri ogni 4/8/16), corsia sezioni (clic = regione, max 30 s) + accordi, `battuta.movimento` nella transport bar, **snap** della regione alle battute (magnete, default on), pannello Stems in cima al rack (acapella / strumentale / reset, download WAV).
+- Dopo la separazione la struttura viene ricalcolata dagli stems (`source: "stems"`).
+
 ## Progressione (vedi PLAN.md per dettaglio)
-MVP → DSP core → LLM integration → Stems → Preset & templates → Polish UI.
+MVP → DSP core → LLM integration → Preset & templates → Polish UI → **Flip**: Stems + struttura (F5) → Timeline + campionatore (F9) → Strumentale (F10) → Ricetta AI (F11).

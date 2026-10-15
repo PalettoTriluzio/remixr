@@ -54,11 +54,29 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 - ☑ Merge del delta con clamp ai bound Pydantic + validazione + `changed_fields`
 - ☑ Frontend `PromptPanel`: badge modello, chat, animazione "thinking", diff `vecchio → nuovo`, annulla, highlight nel rack
 
-## F5 — Stems (opzionale toggle)
-- ☐ `backend/app/stems/demucs_wrapper.py` (chiamata `demucs.separate` in background task)
-- ☐ `POST /api/stems/{id}` (job async) + polling `GET /api/stems/{id}`
-- ☐ Estensione schema params: `per_stem` (chain separata per vocals/drums/bass/other)
-- ☐ UI: toggle "Stems mode", tabs per stem nel rack
+## F5 — Stems + struttura (Flip passo 1) ◐ (scritto, da provare)
+- ☑ `app/stems/separate.py`: demucs in background (1 worker, job per traccia, progress, OOM CUDA → CPU, risultati su disco)
+- ☑ `POST/GET /api/stems/{id}` (polling) + `GET /api/stems/{id}/{stem}` (download WAV)
+- ☑ Mixer stems (`StemMix`: volume, mute, solo) nella richiesta di render → preview ed export
+- ☑ `app/analysis/structure.py` + `GET /api/structure/{id}`: beat, downbeat (4/4), sezioni con lettere/nomi, accordi; ricalcolata dagli stems
+- ☑ UI: `StemsPanel` (separa, mixer, acapella/strumentale, download), griglia battute sulla waveform, `StructureLane` (sezioni cliccabili, accordi), snap regione alle battute, `battuta.movimento`
+- ☑ `tools/install-torch-cuda.ps1` (torch cu124, numpy pin, pesi demucs, test GPU)
+- ☐ Catene di effetti per stem (`per_stem`, ancora 501) — probabilmente assorbite dalle tracce della timeline (F9)
+
+## F9 — Timeline + campionatore (Flip passo 2)
+- ☐ Timeline ad arrangiamento: tracce, clip a battute, snap alla griglia
+- ☐ Chop di uno stem per battute/transienti; per chop: pitch, reverse, stretch, filtro, gate
+- ☐ Warp a un BPM nuovo (pitch preservato) + trasposizione di tonalità
+- ☐ Melodia della voce (basic-pitch, Apache 2.0) → correzione d'intonazione sulla scala, armonizzazioni
+
+## F10 — Strumentale generato (Flip passo 3)
+- ☐ Step sequencer batteria (trap, drill, house, boom bap…) + kit CC0 inclusi
+- ☐ 808 e synth/pad in numpy che seguono gli accordi
+- ☐ Progressione nuova nella tonalità scelta; voce adattata o solo chop compatibili
+
+## F11 — Ricetta AI (Flip passo 4)
+- ☐ LLM → "ricetta di flip" JSON (BPM/tonalità target, stems da tenere, chop, sezioni, pattern, basso, accordi)
+- ☐ Render deterministico della ricetta, tutto modificabile a mano nella timeline; varianti come oggi
 
 ## F6 — Preset & Genre Templates ◐ (scritto, da provare)
 - ☑ CRUD preset JSON (`data/presets/<slug>.json`, `app/presets/store.py`)
@@ -121,3 +139,4 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 - 2026-10-11: README, passo 1 della procedura F4: `git log -3` sostituito con `git merge-base --is-ancestor 27366d4 HEAD` (con commit successivi `27366d4` usciva dalle ultime 3 righe).
 - 2026-10-12: "rendilo definitivo". **A/B visivo**: corsia B (`CompareLane`: finestra di preview, originale sopra / remix sotto, stessa scala, peak/RMS/durata, clic = ascolta A o B da lì), riquadro della finestra sulla waveform A, spettro live (`SpectrumView` + `lib/analyser.ts`), colori dell'interfaccia per lato (ciano A, viola B). **Stile artista** (`app/llm/styles.py`, `reference_artist`, campo "Stile di"). **Modelli**: scelta automatica del più grande che sta in VRAM, cambio a runtime dalla UI, grammar in cache. **F6**: CRUD preset + 7 genre template + menu in top bar; template del genere passato all'LLM. **Export** in top bar. **Undo/redo** e **scorciatoie**. README: tabella modelli per 16 GB, tour aggiornato.
 - 2026-10-12: giro "esperienza" (F8): Intensità (`lib/morph.ts`), look istantanei (`lib/looks.ts`), varianti/Sorprendimi (`variation` in `/llm/interpret`, `seed` in `engine.chat_json`), volume pari A/B (`useLevelMatch`, trim in `player.ts`), sessione in localStorage (`lib/session.ts` + `GET /api/track/{id}`), drop ovunque (`useGlobalDrop`). Versione UI 0.3.0.
+- 2026-10-15: **Flip** (stravolgere i brani, rifacimenti alla thasup/Neffa): piano in 4 passi F5 → F9 → F10 → F11, generazione simbolica (no MusicGen/Stable Audio per licenza). **F5 scritto**: separazione demucs in background (`app/stems/separate.py`, default `htdemucs_ft` su GPU), endpoint stems con progress e download, mixer stems in preview/export (`StemMix` nella richiesta di render), analisi struttura (`app/analysis/structure.py`: beat/downbeat, sezioni, accordi, cache in `data/analysis/`), UI (pannello Stems, griglia battute, corsia sezioni/accordi, snap, battuta.movimento), `tools/install-torch-cuda.ps1`. Melodia (basic-pitch) spostata in F9.

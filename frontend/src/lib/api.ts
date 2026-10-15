@@ -1,6 +1,6 @@
 import type {
   AnalyzeResponse, LLMInterpretRequest, LLMInterpretResponse, LLMStatus,
-  Preset, RenderRequest, RenderResponse, StemsJobResponse, UploadResponse,
+  Preset, RenderRequest, RenderResponse, StemName, StemsJobResponse, StructureResponse, UploadResponse,
 } from "./types";
 
 const BASE = "/api";
@@ -47,6 +47,12 @@ export const api = {
 
   getStems: (trackId: string) =>
     request<StemsJobResponse>(`/stems/${trackId}`),
+
+  stemFileUrl: (trackId: string, stem: StemName) => `${BASE}/stems/${trackId}/${stem}`,
+
+  /** Beat grid, sections, chords (from the stems once they exist). */
+  structure: (trackId: string) =>
+    request<StructureResponse>(`/structure/${trackId}`),
 
   llmStatus: () => request<LLMStatus>("/llm/status"),
   selectModel: (model: string) =>

@@ -9,12 +9,14 @@ import { usePreviewSync } from "./hooks/usePreviewSync";
 import { useShortcuts } from "./hooks/useShortcuts";
 import { useLevelMatch } from "./hooks/useLevelMatch";
 import { useGlobalDrop } from "./hooks/useGlobalDrop";
+import { useTrackStructure } from "./hooks/useTrackStructure";
 import { startSession } from "./lib/session";
 
 export default function App() {
   usePreviewSync();
   useShortcuts();
   useLevelMatch();
+  useTrackStructure();
   const dragging = useGlobalDrop();
   useEffect(() => startSession(), []);
 
