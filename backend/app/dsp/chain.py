@@ -165,7 +165,12 @@ def apply_time_pitch(samples: np.ndarray, sr: int, chain: EffectChain) -> np.nda
     """
     semitones = chain.pitch.semitones if chain.pitch.enabled else 0.0
     ratio = chain.tempo.ratio if chain.tempo.enabled else 1.0
+    return time_pitch(samples, sr, ratio, semitones)
 
+
+def time_pitch(samples: np.ndarray, sr: int, ratio: float, semitones: float) -> np.ndarray:
+    """Speed `ratio` (pitch kept) + `semitones` (length kept). Shared with the
+    flip renderer (app/flip/render.py)."""
     pitch_only = abs(ratio - 1.0) <= EPS
     if pitch_only and abs(semitones) <= EPS:
         return samples

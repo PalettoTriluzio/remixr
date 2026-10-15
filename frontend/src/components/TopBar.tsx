@@ -5,14 +5,25 @@ import { api } from "../lib/api";
 import { morphParams } from "../lib/morph";
 import { useRemixStore } from "../lib/remixStore";
 import { activeStemMix, useStemsStore } from "../lib/stemsStore";
+import { useFlipStore } from "../lib/flipStore";
+import { enterFlip } from "../lib/flipActions";
 import { useTrackStore } from "../lib/store";
 import type { Preset } from "../lib/types";
 
 export function TopBar() {
-  const undo = useRemixStore((s) => s.undo);
-  const redo = useRemixStore((s) => s.redo);
-  const canUndo = useRemixStore((s) => s.past.length > 0);
-  const canRedo = useRemixStore((s) => s.future.length > 0);
+  const flip = useFlipStore((s) => s.view === "flip");
+  const remixUndo = useRemixStore((s) => s.undo);
+  const remixRedo = useRemixStore((s) => s.redo);
+  const remixCanUndo = useRemixStore((s) => s.past.length > 0);
+  const remixCanRedo = useRemixStore((s) => s.future.length > 0);
+  const flipUndo = useFlipStore((s) => s.undo);
+  const flipRedo = useFlipStore((s) => s.redo);
+  const flipCanUndo = useFlipStore((s) => s.past.length > 0);
+  const flipCanRedo = useFlipStore((s) => s.future.length > 0);
+  const undo = flip ? flipUndo : remixUndo;
+  const redo = flip ? flipRedo : remixRedo;
+  const canUndo = flip ? flipCanUndo : remixCanUndo;
+  const canRedo = flip ? flipCanRedo : remixCanRedo;
 
   return (
     <header className="h-12 shrink-0 border-b border-line bg-bg-panel flex items-center px-4 gap-4">
@@ -21,6 +32,7 @@ export function TopBar() {
         <span className="font-mono text-sm tracking-wider">REMIXR</span>
         <span className="text-xs text-white/40 font-mono">v0.3.0</span>
       </div>
+      <ViewSwitch />
       <div className="flex-1" />
       <div className="flex items-center gap-1">
         <IconButton onClick={undo} disabled={!canUndo} title="Annulla (Ctrl+Z)"><Undo2 className="w-3.5 h-3.5" /></IconButton>
@@ -30,6 +42,32 @@ export function TopBar() {
         <ExportButton />
       </div>
     </header>
+  );
+}
+
+/** REMIX = effects on the whole song · FLIP = rebuild it from its pieces. */
+function ViewSwitch() {
+  const flip = useFlipStore((s) => s.view === "flip");
+  const setView = useFlipStore((s) => s.setView);
+  const hasTrack = useTrackStore((s) => !!s.track);
+  return (
+    <div className="flex rounded overflow-hidden border border-line text-xs font-mono ml-4">
+      <button
+        onClick={() => setView("remix")}
+        className={clsx("px-3 h-7", !flip ? "bg-accent/30 text-white font-semibold" : "text-white/50 hover:bg-bg-hover")}
+        title="Effetti sulla canzone intera"
+      >
+        REMIX
+      </button>
+      <button
+        onClick={enterFlip}
+        disabled={!hasTrack}
+        className={clsx("px-3 h-7 disabled:opacity-30", flip ? "bg-accent-hot/30 text-white font-semibold" : "text-white/50 hover:bg-bg-hover")}
+        title="Ricostruisci la canzone dai suoi pezzi: timeline, campionatore, nuovo tempo e tonalità"
+      >
+        FLIP
+      </button>
+    </div>
   );
 }
 
@@ -195,15 +233,24 @@ function ExportButton() {
     try {
       // Whole track, current params (the region only limits the preview).
       const { params, amount } = useRemixStore.getState();
-      const res = await api.renderExport({
-        track_id: track.track_id,
-        params: morphParams(params, amount),
-        stem_mix: activeStemMix(useStemsStore.getState()),
-        format,
-      });
+      const { view, project } = useFlipStore.getState();
+      const isFlip = view === "flip" && !!project;
+      const res = isFlip
+        ? await api.flipExport({
+            track_id: track.track_id,
+            project: project!,
+            master: morphParams(params, amount).global_chain,
+            format,
+          })
+        : await api.renderExport({
+            track_id: track.track_id,
+            params: morphParams(params, amount),
+            stem_mix: activeStemMix(useStemsStore.getState()),
+            format,
+          });
       const a = document.createElement("a");
       a.href = api.renderFileUrl(res.render_id);
-      a.download = `${track.filename.replace(/\.[^.]+$/, "")}_remix.${format}`;
+      a.download = `${track.filename.replace(/\.[^.]+$/, "")}_${isFlip ? "flip" : "remix"}.${format}`;
       document.body.appendChild(a);
       a.click();
       a.remove();

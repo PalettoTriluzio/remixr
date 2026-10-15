@@ -6,6 +6,7 @@ import { decodeForView } from "../lib/peaks";
 import { player } from "../lib/player";
 import { useRemixStore } from "../lib/remixStore";
 import { activeStemMix, useStemsStore } from "../lib/stemsStore";
+import { useFlipStore } from "../lib/flipStore";
 import { useTrackStore } from "../lib/store";
 
 const DEBOUNCE_MS = 300;
@@ -19,6 +20,7 @@ export function usePreviewSync() {
   const region = useRemixStore((s) => s.region);
   const setStatus = useRemixStore((s) => s.setPreviewStatus);
   const setView = useRemixStore((s) => s.setPreviewView);
+  const flipView = useFlipStore((s) => s.view === "flip");
   const job = useStemsStore((s) => s.job);
   const mix = useStemsStore((s) => s.mix);
   const stemMix = useMemo(() => activeStemMix({ job, mix }), [job, mix]);
@@ -40,7 +42,8 @@ export function usePreviewSync() {
   const params = useMemo(() => morphParams(target, amount), [target, amount]);
 
   useEffect(() => {
-    if (!track) return;
+    // Flip view renders the arrangement instead (useFlipPreview).
+    if (!track || flipView) return;
     const chain = params.global_chain;
     if (isNeutral(chain) && !stemMix) {
       player.clearPreview();
@@ -77,7 +80,7 @@ export function usePreviewSync() {
       clearTimeout(timer);
       ctrl.abort();
     };
-  }, [track, params, stemMix, region, setStatus, setView]);
+  }, [track, flipView, params, stemMix, region, setStatus, setView]);
 
   // Track removed or replaced: the old preview belongs to the old audio.
   useEffect(() => () => player.clearPreview(), [track?.track_id]);

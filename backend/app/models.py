@@ -1,6 +1,6 @@
 """Single source of truth for parameter schema. Mirrored in frontend/src/lib/types.ts."""
 from typing import Literal, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 # ---- Effects ----
@@ -239,3 +239,87 @@ class StructureResponse(BaseModel):
     downbeats: list[float]  # downbeats[i] = start of bar i+1
     sections: list[Section]
     chords: list[ChordSpan]
+
+
+# ---- Flip: arrangement built from slices of the song ----
+# A project is a timeline in beats at its own BPM. Each clip takes a slice of
+# the original (a stem or the mix) and places it on a track; the backend
+# renders it deterministically (app/flip/render.py). F10/F11 add generated
+# tracks and an AI "recipe" on top of this same schema.
+
+FlipSource = Literal["vocals", "drums", "bass", "other", "mix"]
+GateRate = Literal["off", "1/4", "1/8", "1/16", "1/32"]
+
+
+class FlipClip(BaseModel):
+    id: str = Field(..., min_length=1, max_length=40)
+    source: FlipSource = "vocals"
+    # Slice of the original, in seconds, and how many beats of the original
+    # grid it spans (sets the natural speed at the project's BPM).
+    src_start: float = Field(..., ge=0.0)
+    src_end: float = Field(..., gt=0.0)
+    src_beats: float = Field(4.0, gt=0.0, le=256.0)
+    # Placement on the project timeline.
+    at_beat: float = Field(0.0, ge=0.0, le=4096.0)
+    length_beats: float = Field(4.0, gt=0.0, le=1024.0)
+    # loop=False: the slice is stretched to fill length_beats.
+    # loop=True:  it plays src_beats long at the project tempo and repeats.
+    loop: bool = False
+    # warp = tempo changes, pitch stays · repitch = like a turntable, pitch follows speed
+    stretch: Literal["warp", "repitch"] = "warp"
+    semitones: float = Field(0.0, ge=-24.0, le=24.0)
+    reverse: bool = False
+    gain_db: float = Field(0.0, ge=-60.0, le=12.0)
+    hp_freq: float = Field(20.0, ge=20.0, le=2000.0)      # 20 = off
+    lp_freq: float = Field(20000.0, ge=200.0, le=20000.0)  # 20000 = off
+    gate: GateRate = "off"  # rhythmic chopper locked to the project grid
+    gate_duty: float = Field(0.5, ge=0.05, le=0.95)
+    fade_in_ms: float = Field(5.0, ge=0.0, le=2000.0)
+    fade_out_ms: float = Field(10.0, ge=0.0, le=4000.0)
+    # Note-by-note pitch correction toward the scale of project.source_key
+    # (0 = off, 1 = every note dead on), for vocals and melodic stems.
+    tune: float = Field(0.0, ge=0.0, le=1.0)
+    # Diatonic harmony: every note moved N scale steps (2 = third above,
+    # 4 = fifth above, -2 = third below, 7 = octave). 0 = off.
+    harmony: int = Field(0, ge=-7, le=7)
+
+    @model_validator(mode="after")
+    def _slice_not_empty(self):
+        if self.src_end <= self.src_start:
+            raise ValueError("src_end must be greater than src_start")
+        return self
+
+
+class FlipTrack(BaseModel):
+    id: str = Field(..., min_length=1, max_length=40)
+    name: str = Field("Traccia", max_length=40)
+    gain_db: float = Field(0.0, ge=-60.0, le=12.0)
+    pan: float = Field(0.0, ge=-1.0, le=1.0)
+    mute: bool = False
+    solo: bool = False
+    follow_key: bool = True  # transposed with the project (off for drums)
+    chain: EffectChain = Field(default_factory=EffectChain)  # tempo is ignored here
+    clips: list[FlipClip] = Field(default_factory=list, max_length=512)
+
+
+class FlipProject(BaseModel):
+    bpm: float = Field(120.0, ge=40.0, le=240.0)
+    bars: int = Field(16, ge=1, le=256)
+    beats_per_bar: int = Field(4, ge=1, le=12)
+    source_key: str = Field("C major", max_length=20)  # key of the original: scale for tune/harmony
+    transpose: float = Field(0.0, ge=-12.0, le=12.0)    # semitones, tracks with follow_key
+    tracks: list[FlipTrack] = Field(default_factory=list, max_length=16)
+
+
+class FlipRenderRequest(BaseModel):
+    track_id: str
+    project: FlipProject
+    master: EffectChain = Field(default_factory=EffectChain)  # the rack, as heard (intensity applied)
+    format: Literal["wav", "mp3"] = "wav"
+    # Preview window in project beats (None = from the start / to the end).
+    start_beat: Optional[float] = Field(None, ge=0.0)
+    end_beat: Optional[float] = Field(None, gt=0.0)
+
+
+class OnsetsResponse(BaseModel):
+    times: list[float]  # seconds in the original, inside the requested slice

@@ -3,7 +3,8 @@
 import { api } from "./api";
 import { useRemixStore, type ChatMessage } from "./remixStore";
 import { useTrackStore } from "./store";
-import type { AnalyzeResponse, Params, UploadResponse } from "./types";
+import { useFlipStore } from "./flipStore";
+import type { AnalyzeResponse, FlipProject, Params, UploadResponse } from "./types";
 
 const KEY = "remixr.session.v1";
 const SAVE_DEBOUNCE_MS = 500;
@@ -16,6 +17,8 @@ interface Saved {
   amount: number;
   levelMatch: boolean;
   messages: ChatMessage[];
+  /** Flip project + the song it is made of. */
+  flip?: { trackId: string; project: FlipProject } | null;
 }
 
 function save() {
@@ -28,6 +31,10 @@ function save() {
     amount: r.amount,
     levelMatch: r.levelMatch,
     messages: r.messages.slice(-MAX_MESSAGES),
+    flip: (() => {
+      const f = useFlipStore.getState();
+      return f.project && f.trackId ? { trackId: f.trackId, project: f.project } : null;
+    })(),
   };
   try {
     localStorage.setItem(KEY, JSON.stringify(data));
@@ -55,6 +62,9 @@ export function startSession(): () => void {
           messages: Array.isArray(s.messages) ? s.messages : [],
         });
       }
+      if (s.flip?.project && s.flip.trackId && s.track?.track_id === s.flip.trackId) {
+        useFlipStore.getState().setProject(s.flip.trackId, s.flip.project);
+      }
       // The upload may have been deleted meanwhile: check before reopening.
       if (s.track) {
         const saved = s.track;
@@ -80,6 +90,9 @@ export function startSession(): () => void {
     }),
     useTrackStore.subscribe((s, prev) => {
       if (s.track !== prev.track || s.analysis !== prev.analysis) schedule();
+    }),
+    useFlipStore.subscribe((s, prev) => {
+      if (s.project !== prev.project) schedule();
     }),
   ];
   return () => {

@@ -10,6 +10,11 @@ import { useShortcuts } from "./hooks/useShortcuts";
 import { useLevelMatch } from "./hooks/useLevelMatch";
 import { useGlobalDrop } from "./hooks/useGlobalDrop";
 import { useTrackStructure } from "./hooks/useTrackStructure";
+import { useFlipPreview } from "./hooks/useFlipPreview";
+import { useFlipStore } from "./lib/flipStore";
+import { FlipSidebar } from "./components/FlipSidebar";
+import { FlipTimeline } from "./components/FlipTimeline";
+import { FlipTransport } from "./components/FlipTransport";
 import { startSession } from "./lib/session";
 
 export default function App() {
@@ -17,6 +22,8 @@ export default function App() {
   useShortcuts();
   useLevelMatch();
   useTrackStructure();
+  useFlipPreview();
+  const flip = useFlipStore((s) => s.view === "flip");
   const dragging = useGlobalDrop();
   useEffect(() => startSession(), []);
 
@@ -24,11 +31,18 @@ export default function App() {
     <div className="h-full flex flex-col relative">
       <TopBar />
       <WaveformView />
-      <main className="flex-1 flex overflow-hidden">
-        <EffectRack />
-        <PromptPanel />
-      </main>
-      <TransportBar />
+      {flip ? (
+        <main className="flex-1 flex overflow-hidden">
+          <FlipSidebar />
+          <FlipTimeline />
+        </main>
+      ) : (
+        <main className="flex-1 flex overflow-hidden">
+          <EffectRack />
+          <PromptPanel />
+        </main>
+      )}
+      {flip ? <FlipTransport /> : <TransportBar />}
 
       {dragging && (
         <div className="absolute inset-0 z-[100] bg-bg/80 backdrop-blur-sm border-2 border-dashed border-accent rounded-lg m-2 flex flex-col items-center justify-center gap-2 pointer-events-none">

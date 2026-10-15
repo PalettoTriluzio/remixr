@@ -182,3 +182,68 @@ export const defaultParams = (): Params => ({
   global_chain: defaultChain(),
   per_stem: null,
 });
+
+// ---- Flip (arrangement), mirror of the Flip* models ----
+
+export type FlipSource = StemName | "mix";
+export type GateRate = "off" | "1/4" | "1/8" | "1/16" | "1/32";
+
+export interface FlipClip {
+  id: string;
+  source: FlipSource;
+  src_start: number;   // seconds in the original
+  src_end: number;
+  src_beats: number;   // beats of the original grid the slice spans
+  at_beat: number;     // position on the project timeline
+  length_beats: number;
+  loop: boolean;       // false = stretched to fill, true = repeats at project tempo
+  stretch: "warp" | "repitch";
+  semitones: number;
+  reverse: boolean;
+  gain_db: number;
+  hp_freq: number;     // 20 = off
+  lp_freq: number;     // 20000 = off
+  gate: GateRate;
+  gate_duty: number;
+  fade_in_ms: number;
+  fade_out_ms: number;
+  tune: number;        // 0..1 pitch correction toward the scale
+  harmony: number;     // diatonic steps, 0 = off
+}
+
+export interface FlipTrack {
+  id: string;
+  name: string;
+  gain_db: number;
+  pan: number;
+  mute: boolean;
+  solo: boolean;
+  follow_key: boolean;
+  chain: EffectChain;
+  clips: FlipClip[];
+}
+
+export interface FlipProject {
+  bpm: number;
+  bars: number;
+  beats_per_bar: number;
+  source_key: string;
+  transpose: number;
+  tracks: FlipTrack[];
+}
+
+export interface FlipRenderRequest {
+  track_id: string;
+  project: FlipProject;
+  master: EffectChain;
+  format?: "wav" | "mp3";
+  start_beat?: number | null;
+  end_beat?: number | null;
+}
+
+export const defaultClip = (c: Pick<FlipClip, "id" | "source" | "src_start" | "src_end" | "src_beats" | "at_beat" | "length_beats">): FlipClip => ({
+  loop: false, stretch: "warp", semitones: 0, reverse: false, gain_db: 0,
+  hp_freq: 20, lp_freq: 20000, gate: "off", gate_duty: 0.5,
+  fade_in_ms: 5, fade_out_ms: 10, tune: 0, harmony: 0,
+  ...c,
+});

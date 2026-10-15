@@ -1,25 +1,31 @@
 import { useEffect, useState } from "react";
 import clsx from "clsx";
 import { ChevronDown, ChevronRight, Power, RotateCcw } from "lucide-react";
-import { getIn, type EffectDef } from "../lib/effects";
-import { useRemixStore } from "../lib/remixStore";
-import { defaultChain } from "../lib/types";
+import { getIn, type EffectDef, type EffectId } from "../lib/effects";
+import { defaultChain, type EffectChain } from "../lib/types";
 import { Knob } from "./Knob";
 
 const DEFAULTS = defaultChain();
 
-export function EffectCard({ def }: { def: EffectDef }) {
-  const effect = useRemixStore((s) => s.params.global_chain[def.id]);
-  const highlighted = useRemixStore((s) => s.highlighted);
-  const setParam = useRemixStore((s) => s.setParam);
-  const resetEffect = useRemixStore((s) => s.resetEffect);
+export interface ChainBinding {
+  chain: EffectChain;
+  /** `path` is inside the chain, e.g. "reverb.wet". */
+  onSet: (path: string, value: unknown) => void;
+  onReset: (id: EffectId) => void;
+  /** Touched by the AI (pink) — paths inside the chain. */
+  isHighlighted?: (path: string) => boolean;
+}
+
+export function EffectCard({ def, binding }: { def: EffectDef; binding: ChainBinding }) {
+  const { chain, onSet, onReset, isHighlighted = () => false } = binding;
+  const effect = chain[def.id];
   // null = follow the bypass state (open when enabled); set by the chevron.
   const [open, setOpen] = useState<boolean | null>(null);
 
   const enabled = effect.enabled;
   const expanded = open ?? enabled;
   useEffect(() => setOpen(null), [enabled]);
-  const touched = [...highlighted].some((p) => p.startsWith(`global_chain.${def.id}.`));
+  const touched = def.controls.some((c) => isHighlighted(`${def.id}.${c.key}`)) || isHighlighted(`${def.id}.enabled`);
 
   return (
     <div
@@ -38,14 +44,14 @@ export function EffectCard({ def }: { def: EffectDef }) {
           {touched && <span className="ml-1 text-[9px] font-mono text-accent-hot">AI</span>}
         </button>
         <button
-          onClick={() => resetEffect(def.id)}
+          onClick={() => onReset(def.id)}
           title="Reset ai default"
           className="w-6 h-6 rounded flex items-center justify-center text-white/30 hover:text-white hover:bg-bg-hover"
         >
           <RotateCcw className="w-3 h-3" />
         </button>
         <button
-          onClick={() => setParam(`${def.id}.enabled`, !enabled)}
+          onClick={() => onSet(`${def.id}.enabled`, !enabled)}
           title={enabled ? "Bypass" : "Attiva"}
           className={clsx(
             "w-6 h-6 rounded flex items-center justify-center hover:bg-bg-hover",
@@ -64,9 +70,9 @@ export function EffectCard({ def }: { def: EffectDef }) {
               def={c}
               value={getIn(effect, c.key) as number}
               defaultValue={getIn(DEFAULTS[def.id], c.key) as number}
-              onChange={(v) => setParam(`${def.id}.${c.key}`, v)}
+              onChange={(v) => onSet(`${def.id}.${c.key}`, v)}
               dim={!enabled}
-              highlight={highlighted.has(`global_chain.${def.id}.${c.key}`)}
+              highlight={isHighlighted(`${def.id}.${c.key}`)}
             />
           ))}
         </div>

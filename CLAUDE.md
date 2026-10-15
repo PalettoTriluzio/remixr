@@ -91,6 +91,8 @@ remixr/
 │   │   │                      # interpret.py: prompt → delta params → merge/clamp/diff
 │   │   │                      # styles.py: tabella artista → tratti di produzione
 │   │   ├── stems/             # separate.py: job demucs in background (1 worker), progress, OOM→CPU
+│   │   ├── flip/              # render.py: FlipProject → audio (clip cache, gate, track chain, master), onsets
+│   │   │                      # tune.py: intonazione nota per nota + armonia diatonica (pYIN)
 │   │   └── presets/           # store.py: preset utente + genre templates (JSON)
 │   ├── data/
 │   │   ├── uploads/           # audio caricati (gitignored)
@@ -106,15 +108,20 @@ remixr/
 │   │   ├── components/        # WaveformView (corsia A + regions), CompareLane (corsia B: A sopra/B sotto),
 │   │   │                      # SpectrumView (spettro live), EffectRack, EffectCard, Knob, PromptPanel,
 │   │   │                      # TransportBar, TopBar (undo/redo, preset, export),
-│   │   │                      # StemsPanel (separazione + mixer), StructureLane (griglia, sezioni, accordi)
+│   │   │                      # StemsPanel (separazione + mixer), StructureLane (griglia, sezioni, accordi),
+│   │   │                      # ChainRack/EffectCard (rack generico su una EffectChain),
+│   │   │                      # Flip: FlipTimeline, ClipWave, FlipSidebar (clip/traccia/master), SourceBar, FlipTransport
 │   │   ├── hooks/             # usePreviewSync (debounce 300 ms → /render/preview + decode per la corsia B),
 │   │   │                      # useShortcuts (Space, B, L, Esc, Ctrl+Z/Y), useLevelMatch (volume pari A/B),
-│   │   │                      # useGlobalDrop (drop di un file ovunque), useTrackStructure (stems status/poll + struttura)
+│   │   │                      # useGlobalDrop (drop di un file ovunque), useTrackStructure (stems status/poll + struttura),
+│   │   │                      # useFlipPreview (debounce 350 ms → /flip/preview, cambio canzone = progetto azzerato)
 │   │   ├── lib/               # api, types, store (track + buffer originale), remixStore (params/undo/A-B/chat),
 │   │   │                      # effects (metadata knob + path helpers), player (motore A/B),
 │   │   │                      # peaks (decode 8 kHz, colonne peak/rms, livelli), analyser (AnalyserNode condiviso),
 │   │   │                      # morph (Intensità), looks (look istantanei), session (localStorage),
-│   │   │                      # stemsStore (job stems, mixer, struttura, snap — legato alla traccia)
+│   │   │                      # stemsStore (job stems, mixer, struttura, snap — legato alla traccia),
+│   │   │                      # flip (griglia sorgente, chop, factory), flipStore (progetto, undo, selezione, ops),
+│   │   │                      # flipActions (entra in flip, pezzo→clip, parti dal ritornello, taglia), flipPlayer, keys
 │   │   ├── App.tsx
 │   │   └── main.tsx
 │   ├── package.json
@@ -139,6 +146,9 @@ remixr/
 - `POST /api/llm/model` `{model}` → cambia GGUF a runtime (libera la VRAM, ricarica in background) ✅
 - `GET  /api/llm/styles` → artisti con tratti curati (suggerimenti UI) ✅
 - `POST /api/llm/interpret` `{prompt, current_params, genre?, bpm?, key?, reference_artist?, variation?}` → `{params, explanation, changed_fields[]}` ✅ (503 = LLM non disponibile, 502 = output non valido)
+- `POST /api/flip/preview` `{track_id, project, master, start_beat?, end_beat?}` → WAV 16-bit, max 120 s ✅ (409 = clip su stems non separati)
+- `POST /api/flip/export` `{track_id, project, master, format}` → `{render_id, path, duration_sec}` ✅
+- `GET  /api/flip/onsets/{track_id}?source&start&end` → `{times[]}` (transienti per il taglio) ✅
 - `POST /api/render/preview` `{track_id, params, stem_mix?, region?}` → WAV 16-bit stream, max 30 s ✅
 - `POST /api/render/export` `{track_id, params, stem_mix?, format}` → `{render_id, path, duration_sec}` ✅ (`stem_mix` senza stems → 409)
 - `GET  /api/render/file/{render_id}` → download ✅
@@ -208,7 +218,7 @@ Ordine fisso in `app/dsp/chain.py`:
 ## Flip — stravolgere i brani (dal 2026-10-15)
 Obiettivo dell'utente: rifacimenti radicali alla "Una direzione giusta" (thasup su Neffa): tieni un pezzo riconoscibile (voce/hook), butta il resto, costruisci un pezzo nuovo (tempo, groove, armonia). Piano in 4 passi: **F5** stems + griglia → **F9** timeline + campionatore → **F10** strumentale generato (simbolico) → **F11** ricetta AI.
 - Generazione **simbolica** (pattern + synth numpy + sample CC0), **non** MusicGen/Stable Audio: pesi con licenza non commerciale / restrizioni → violano "gratis, no royalty". Eventuale opzione solo-uso-personale più avanti.
-- Melodia (basic-pitch) rimandata a F9, dove serve (intonazione/armonizzazione).
+- Melodia: in F9 basta pYIN di librosa (intonazione/armonia nota per nota), basic-pitch non serve.
 
 ### F5 — Stems + struttura
 - **demucs** (`app/stems/separate.py`): un worker, un job per traccia (`job_id = track_id`). Default `htdemucs_ft` su GPU (4 passate, voce migliore), `htdemucs` su CPU. Env `REMIXR_STEMS_MODEL`, `REMIXR_STEMS_DEVICE`. Progress = `tqdm` di `demucs.apply` sostituito durante il job. OOM CUDA (LLM in VRAM) → ripete su CPU. Stems ricampionati al **sr originale** e tagliati/paddati alla **stessa lunghezza** dell'upload: stessa timeline del file. Scrittura in `<id>.tmp/` + rename; `meta.json` = marker "done" (sopravvive ai riavvii).
@@ -216,6 +226,16 @@ Obiettivo dell'utente: rifacimenti radicali alla "Una direzione giusta" (thasup 
 - **Struttura** (`app/analysis/structure.py`, euristiche, nessun modello): beat da librosa sull'onset del drum stem (se il drum stem è quasi vuoto → mix); 4/4 assunto, fase della battuta = dove kick (onset < 150 Hz) e cambio armonico (chroma) coincidono; accordi = chroma beat-sync (bass+other, o HPSS del mix) vs 24 triadi + Viterbi, "N" sul silenzio; sezioni = SSM a livello di battuta (chroma+MFCC) → novelty a scacchiera → confini (min 4 battute, bonus ogni 4) → lettere per somiglianza (coseno > 0.6) → nomi indicativi (ritornello = lettera ripetuta più energica/con più voce). Cache su disco per sorgente; `VERSION` in `api/structure.py` invalida.
 - UI: righe di battuta sulla waveform A (numeri ogni 4/8/16), corsia sezioni (clic = regione, max 30 s) + accordi, `battuta.movimento` nella transport bar, **snap** della regione alle battute (magnete, default on), pannello Stems in cima al rack (acapella / strumentale / reset, download WAV).
 - Dopo la separazione la struttura viene ricalcolata dagli stems (`source: "stems"`).
+
+### F9 — Timeline + campionatore (2026-10-15)
+- **Due viste** (switch REMIX | FLIP in top bar, `flipStore.view`). REMIX = tutto come prima. FLIP = waveform A + struttura in alto (sorgente), sotto `SourceBar` al posto della corsia B, poi sidebar (CLIP / TRACCIA / MASTER) + timeline, `FlipTransport` al posto della transport bar. Il pannello AI non c'è in FLIP (arriva con F11).
+- **Schema** (`models.py`, `FlipProject` → tracks → clips). Clip = fetta dell'originale (`source` stem o mix, `src_start/src_end` in s, `src_beats` = battiti della griglia sorgente) posata a `at_beat` per `length_beats`. `loop=false` → stirata a riempire; `loop=true` → suona `src_beats` al BPM del progetto e si ripete. `stretch`: warp (Rubber Band, pitch fermo) | repitch (resample, giradischi). Per clip: semitoni, reverse, gain, HP/LP, gate ritmico sulla griglia del progetto (`1/4…1/32`, duty), fade, `tune` 0..1, `harmony` (gradi di scala). Traccia: gain, pan, mute/solo, `follow_key` (batteria no), `chain` = EffectChain (tempo ignorato). Progetto: bpm, bars, `source_key` (scala per tune/armonia), `transpose`.
+- **Render** (`app/flip/render.py`): per clip fetta → tune/armonia → reverse → warp|repitch (+transpose se `follow_key`) → loop → HP/LP, in **cache LRU 48** (chiave = hash dei campi che cambiano il suono, esclusi posizione/gain/gate/fade). Poi gate+fade+gain, posa, catena traccia, pan equal-power (centro = unità), master = **rack del remix con intensità** (`morphParams(...).global_chain`). Preview = finestra in beat (loop se attivo, altrimenti dal beat 0; oltre 120 s dalla battuta del playhead).
+- **Intonazione/armonia** (`app/flip/tune.py`): pYIN (librosa, niente basic-pitch) → note = run di frame sulla stessa nota di scala (≥ 3 frame) → ogni nota spostata in blocco (PitchShift, contesto 50 ms, crossfade 10 ms). Tune sposta la mediana verso la nota di scala; harmony sposta di N gradi (terza = 3 o 4 semitoni a seconda del grado). Non voiced = invariato.
+- **Griglia sorgente** (`lib/flip.ts`): `beatPos`/`timeAt` frazionari sui beat di `/structure` (o griglia dritta dal BPM). Pezzo→clip: `src_beats = beatsBetween` (intero se entro 0.15), clip alla posizione del playhead, playhead spostato alla fine (pezzi in fila). Taglio: battute / ½ / beat / 1/8 / transienti (`/flip/onsets`), i pezzi restano al loro posto (reverse gestito).
+- Timeline: trascina = sposta (anche su altra traccia), Alt+trascina = copia, bordo destro = lunghezza, griglia battuta/1/4/1/8/1/16/libera, righello clic = playhead, trascina = range di loop, Ctrl+rotella = zoom. Canc / Ctrl+D / Esc / Space / L / Ctrl+Z in vista FLIP agiscono sul progetto (undo separato, max 100, gesture coalescenti 800 ms).
+- Il progetto è legato alla canzone (`flipStore.trackId`): salvato in sessione con il track_id, azzerato se carichi un'altra canzone. La forma d'onda nelle clip è quella del mix (8 kHz di wavesurfer), anche per le clip di stems.
+- "Parti dal ritornello": sezione `ritornello` (o la più energica), prime 8 battute, voce + batteria in loop ×2 dal beat 0.
 
 ## Progressione (vedi PLAN.md per dettaglio)
 MVP → DSP core → LLM integration → Preset & templates → Polish UI → **Flip**: Stems + struttura (F5) → Timeline + campionatore (F9) → Strumentale (F10) → Ricetta AI (F11).

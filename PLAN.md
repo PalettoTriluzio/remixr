@@ -63,11 +63,17 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 - ☑ `tools/install-torch-cuda.ps1` (torch cu124, numpy pin, pesi demucs, test GPU)
 - ☐ Catene di effetti per stem (`per_stem`, ancora 501) — probabilmente assorbite dalle tracce della timeline (F9)
 
-## F9 — Timeline + campionatore (Flip passo 2)
-- ☐ Timeline ad arrangiamento: tracce, clip a battute, snap alla griglia
-- ☐ Chop di uno stem per battute/transienti; per chop: pitch, reverse, stretch, filtro, gate
-- ☐ Warp a un BPM nuovo (pitch preservato) + trasposizione di tonalità
-- ☐ Melodia della voce (basic-pitch, Apache 2.0) → correzione d'intonazione sulla scala, armonizzazioni
+## F9 — Timeline + campionatore (Flip passo 2) ◐ (scritto, da provare)
+- ☑ Schema `FlipProject`/`FlipTrack`/`FlipClip` + render backend (`app/flip/render.py`, cache per clip) + `/api/flip/preview|export|onsets`
+- ☑ Vista FLIP: switch in top bar, timeline (tracce, clip, sposta/copia/allunga, griglia, righello, loop, zoom), forma d'onda nelle clip
+- ☑ Pezzo → clip (`SourceBar`: Voce/Batteria/Basso/Altro/Mix al playhead), "Parti dal ritornello"
+- ☑ Taglio per battute / ½ / beat / 1/8 / transienti; per clip: pitch, reverse, stira/loop, warp/vinile, HP/LP, gate ritmico, fade, gain
+- ☑ BPM nuovo (warp, pitch preservato) + trasposizione del progetto (tracce con ♪)
+- ☑ Intonazione nota per nota + armonia diatonica (pYIN, niente basic-pitch) + "seconda voce"
+- ☑ Effetti per traccia (rack generico `ChainRack`), master = rack del remix con intensità
+- ☑ Undo/redo e scorciatoie del progetto, progetto salvato in sessione, export del flip
+- ☐ Forma d'onda vera degli stems nelle clip (ora: quella del mix)
+- ☐ Automazioni (volume/filtro nel tempo), sidechain
 
 ## F10 — Strumentale generato (Flip passo 3)
 - ☐ Step sequencer batteria (trap, drill, house, boom bap…) + kit CC0 inclusi
@@ -141,3 +147,4 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 - 2026-10-12: giro "esperienza" (F8): Intensità (`lib/morph.ts`), look istantanei (`lib/looks.ts`), varianti/Sorprendimi (`variation` in `/llm/interpret`, `seed` in `engine.chat_json`), volume pari A/B (`useLevelMatch`, trim in `player.ts`), sessione in localStorage (`lib/session.ts` + `GET /api/track/{id}`), drop ovunque (`useGlobalDrop`). Versione UI 0.3.0.
 - 2026-10-15: **Flip** (stravolgere i brani, rifacimenti alla thasup/Neffa): piano in 4 passi F5 → F9 → F10 → F11, generazione simbolica (no MusicGen/Stable Audio per licenza). **F5 scritto**: separazione demucs in background (`app/stems/separate.py`, default `htdemucs_ft` su GPU), endpoint stems con progress e download, mixer stems in preview/export (`StemMix` nella richiesta di render), analisi struttura (`app/analysis/structure.py`: beat/downbeat, sezioni, accordi, cache in `data/analysis/`), UI (pannello Stems, griglia battute, corsia sezioni/accordi, snap, battuta.movimento), `tools/install-torch-cuda.ps1`. Melodia (basic-pitch) spostata in F9.
 - 2026-10-15: `UltimoMessagio.md` in root con le istruzioni per provare F5 (pull, `install-torch-cuda.ps1`, riavvio, checklist di prova, log).
+- 2026-10-15: **F9 scritto** (Flip passo 2): vista FLIP con timeline ad arrangiamento e campionatore. Backend `app/flip/` (render con cache per clip, intonazione/armonia pYIN) + `/api/flip/*`; frontend `flip`, `flipStore`, `flipActions`, `flipPlayer`, `FlipTimeline`, `FlipSidebar`, `SourceBar`, `FlipTransport`, `ClipWave`; rack reso generico (`ChainRack` + `EffectCard` con binding) per gli effetti di traccia; `player.pauseAll()`; `dsp/render.py`: `decode`/`write_audio` pubbliche; `dsp/chain.py`: `time_pitch()` riusabile. basic-pitch non serve più (pYIN).

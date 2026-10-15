@@ -31,7 +31,7 @@ def clear_cache() -> None:
     _cache.clear()
 
 
-def _decode(path: Path, start: float | None, end: float | None) -> tuple[np.ndarray, int]:
+def decode(path: Path, start: float | None, end: float | None) -> tuple[np.ndarray, int]:
     key = (str(path), path.stat().st_mtime_ns, start, end)
     cached = _cache.get(key)
     if cached is not None:
@@ -79,11 +79,11 @@ def _mix_stems(
         audible = (lvl.solo if any_solo else True) and not lvl.mute and lvl.gain_db > -60.0
         if not audible:
             continue
-        samples, sr = _decode(stems[name], start, end)
+        samples, sr = decode(stems[name], start, end)
         part = samples * np.float32(10 ** (lvl.gain_db / 20))
         out = part if out is None else out + part
     if out is None:  # everything muted: silence of the right shape
-        samples, sr = _decode(stems[STEM_NAMES[0]], start, end)
+        samples, sr = decode(stems[STEM_NAMES[0]], start, end)
         out = np.zeros_like(samples)
     return out, sr
 
@@ -101,11 +101,11 @@ def render(
     if stems is not None and stem_mix is not None:
         samples, sr = _mix_stems(stems, stem_mix, start, end)
     else:
-        samples, sr = _decode(path, start, end)
+        samples, sr = decode(path, start, end)
     return process(samples, sr, chain), sr
 
 
-def _write(target, samples: np.ndarray, sr: int, *, fmt: str, subtype: str | None = None) -> None:
+def write_audio(target, samples: np.ndarray, sr: int, *, fmt: str, subtype: str | None = None) -> None:
     # Clip before quantising: int conversion wraps around on overshoot, which
     # turns a hot mix into full-scale noise.
     data = np.clip(samples, -1.0, 1.0).T  # soundfile wants (frames, channels)
@@ -128,13 +128,13 @@ def export(
     render_id = uuid.uuid4().hex
     if fmt == "wav":
         out = RENDERS_DIR / f"{render_id}.wav"
-        _write(str(out), samples, sr, fmt="WAV", subtype=EXPORT_SUBTYPE)
+        write_audio(str(out), samples, sr, fmt="WAV", subtype=EXPORT_SUBTYPE)
     elif fmt == "mp3":
         out = RENDERS_DIR / f"{render_id}.mp3"
         try:
             # libsndfile >= 1.1 (soundfile >= 0.12) can encode MP3, but exposes
             # no bitrate control — true 320 kbps CBR lands in F7 via ffmpeg.
-            _write(str(out), samples, sr, fmt="MP3")
+            write_audio(str(out), samples, sr, fmt="MP3")
         except Exception as exc:  # noqa: BLE001
             out.unlink(missing_ok=True)
             raise ValueError(f"MP3 encoding unavailable in this libsndfile build: {exc}") from exc
@@ -158,5 +158,5 @@ def preview_wav(
     samples, sr = render(path, chain, s, e, stems, stem_mix)
 
     buf = io.BytesIO()
-    _write(buf, samples, sr, fmt="WAV", subtype=PREVIEW_SUBTYPE)
+    write_audio(buf, samples, sr, fmt="WAV", subtype=PREVIEW_SUBTYPE)
     return buf.getvalue()

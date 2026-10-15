@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import upload, analyze, structure, stems, llm, render, presets
+from app.api import upload, analyze, structure, stems, llm, render, presets, flip
 from app.llm import engine
 
 
@@ -40,3 +40,4 @@ app.include_router(stems.router, prefix="/api", tags=["stems"])
 app.include_router(llm.router, prefix="/api", tags=["llm"])
 app.include_router(render.router, prefix="/api", tags=["render"])
 app.include_router(presets.router, prefix="/api", tags=["presets"])
+app.include_router(flip.router, prefix="/api", tags=["flip"])

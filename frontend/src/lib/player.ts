@@ -209,6 +209,12 @@ export const player = {
     useRemixStore.getState().setPreviewView(null);
   },
 
+  /** Stop both sides (flip playback takes over). */
+  pauseAll() {
+    remix.pause();
+    ws()?.pause();
+  },
+
   setLoop(v: boolean) {
     useRemixStore.getState().setLoop(v);
     remix.loop = v;

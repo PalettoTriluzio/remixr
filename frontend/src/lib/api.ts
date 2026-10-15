@@ -1,5 +1,5 @@
 import type {
-  AnalyzeResponse, LLMInterpretRequest, LLMInterpretResponse, LLMStatus,
+  AnalyzeResponse, FlipRenderRequest, FlipSource, LLMInterpretRequest, LLMInterpretResponse, LLMStatus,
   Preset, RenderRequest, RenderResponse, StemName, StemsJobResponse, StructureResponse, UploadResponse,
 } from "./types";
 
@@ -84,6 +84,25 @@ export const api = {
     }),
 
   renderFileUrl: (renderId: string) => `${BASE}/render/file/${renderId}`,
+
+  /** WAV of the flip project (or a beat window), max 120 s. */
+  flipPreview: async (req: FlipRenderRequest, signal?: AbortSignal): Promise<Blob> => {
+    const res = await fetch(`${BASE}/flip/preview`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+      signal,
+    });
+    if (!res.ok) throw new Error(await errorText(res));
+    return res.blob();
+  },
+
+  flipExport: (req: FlipRenderRequest) =>
+    request<RenderResponse>("/flip/export", { method: "POST", body: JSON.stringify(req) }),
+
+  /** Transients inside a slice of the original (seconds). */
+  flipOnsets: (trackId: string, source: FlipSource, start: number, end: number) =>
+    request<{ times: number[] }>(`/flip/onsets/${trackId}?source=${source}&start=${start}&end=${end}`),
 
   listPresets: () => request<Preset[]>("/presets"),
   createPreset: (preset: Preset) =>

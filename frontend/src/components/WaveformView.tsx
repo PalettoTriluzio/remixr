@@ -15,6 +15,8 @@ import { SpectrumView } from "./SpectrumView";
 import { LaneLabel } from "./LaneLabel";
 import { GridOverlay, StructureLane } from "./StructureLane";
 import { snapToBar, useStemsStore } from "../lib/stemsStore";
+import { useFlipStore } from "../lib/flipStore";
+import { SourceBar } from "./SourceBar";
 
 const PREVIEW_MAX_SEC = 30;
 
@@ -28,6 +30,7 @@ export function WaveformView() {
   const setRegion = useRemixStore((s) => s.setRegion);
   const abMode = useRemixStore((s) => s.abMode);
   const view = useRemixStore((s) => s.previewView);
+  const flipView = useFlipStore((s) => s.view === "flip");
   const containerRef = useRef<HTMLDivElement>(null);
   const regionsRef = useRef<RegionsPlugin | null>(null);
 
@@ -146,7 +149,7 @@ export function WaveformView() {
           </div>
         </div>
         <StructureLane />
-        <CompareLane />
+        {flipView ? <SourceBar /> : <CompareLane />}
       </div>
 
       <aside className="w-64 shrink-0 border-l border-line flex flex-col min-h-0">

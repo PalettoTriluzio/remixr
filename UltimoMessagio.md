@@ -1,48 +1,28 @@
-# Ultimo passo — Flip F5: stems + struttura (2026-10-15)
+# Ultimo passo — Flip F9: timeline + campionatore (2026-10-15)
 
-Commit: `8edb735` — "Flip F5: stems demucs (job, mixer, download) + struttura (battute, sezioni, accordi)".
 Il codice non è stato eseguito: va provato su Windows.
+Non servono nuove dipendenze: niente da installare.
 
 ## Cosa c'è di nuovo
-- **Stems** (in cima alla colonna sinistra): "Separa voce · batteria · basso · altro" lancia demucs in background con barra di progresso.
-  - Poi c'è un mixer: **M** = muto, **S** = solo, volume da −∞ a +12 dB (doppio clic = 0 dB).
-  - Ci sono i tasti **acapella**, **strumentale** e reset, più il download di ogni stem in WAV.
-  - Il mix degli stems entra nella preview B e nell'export.
-  - Gli stems restano su disco (`backend/data/stems/`) anche dopo un riavvio.
-- **Struttura** (automatica, corsia sotto la waveform A):
-  - battute numerate disegnate sulla waveform;
-  - sezioni: stessa lettera = stesso materiale, con un nome indicativo (intro / strofa / ritornello / bridge / break / outro). **Clic su una sezione = diventa la regione** (max 30 s);
-  - accordi.
-  - Quando gli stems sono pronti, la struttura viene ricalcolata da quelli ed è più precisa (in basso a destra della corsia: "da stems").
-- **Transport bar**: posizione in `battuta.movimento` (es. `17.3`) e **magnete** = la regione si aggancia a battute intere (attivo di default).
+In alto, accanto al logo, ci sono due tasti: **REMIX | FLIP**.
+- **REMIX**: tutto come prima.
+- **FLIP**: ricostruisci la canzone dai suoi pezzi.
+  - **In alto** c'è la canzone originale con battute e sezioni: è la *sorgente*.
+  - **Sotto**, una timeline con tracce e clip, al **BPM e nella tonalità che scegli tu**.
+  - **A sinistra**:
+    - **CLIP** = il campionatore sulla clip selezionata;
+    - **TRACCIA** = volume, pan ed effetti della traccia;
+    - **MASTER** = il rack del remix, dove valgono anche look, preset, AI e intensità.
 
 ## Cosa fare
-
-1. Aggiorna il repo:
-   ```powershell
-   git pull
-   ```
-
-2. Installa torch con CUDA. Serve a demucs per lavorare sulla GPU: senza funziona lo stesso, ma su CPU ci vogliono minuti.
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File .\tools\install-torch-cuda.ps1
-   ```
-   Lo script:
-   - sostituisce il torch solo-CPU con torch 2.5.1 CUDA (download di ~2.5 GB);
-   - rimette `numpy==1.26.4`;
-   - scarica i pesi di demucs (dopo la separazione funziona offline);
-   - fa una separazione di prova sulla GPU.
-
-   Alla fine deve scrivere `FATTO` in verde.
-
-3. Riavvia il backend (chiudi il vecchio uvicorn prima di lanciarlo):
+1. `git pull`
+2. Riavvia il backend (chiudi il vecchio uvicorn):
    ```powershell
    cd backend
    .venv\Scripts\activate
    uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
    ```
-
-4. Avvia il frontend:
+3. Avvia il frontend:
    ```powershell
    cd frontend
    npm run dev
@@ -50,29 +30,40 @@ Il codice non è stato eseguito: va provato su Windows.
    Apri http://localhost:5173
 
 ## Cosa provare
-1. Carica una canzone: dopo qualche secondo compaiono le battute sulla waveform e la corsia con sezioni e accordi.
-2. Clicca una sezione: diventa la regione e la transport bar mostra "battute X–Y".
-3. Trascina una regione a mano: col magnete acceso si aggancia alle battute.
-4. Premi "Separa voce · batteria · basso · altro":
-   - accanto alla percentuale deve comparire **CUDA** (se dice CPU, lo script del punto 2 non è andato a buon fine);
-   - su GPU ci vogliono circa 10–40 secondi per canzone.
-5. Prova **acapella** e **strumentale**, muto e solo sui singoli stems, e il download di uno stem.
-6. Fai un export con il mixer modificato: deve rispettare il mix degli stems.
+1. Carica una canzone e separa gli stems (pannello Stems in vista REMIX, o dal link nella barra della vista FLIP).
+2. Premi **FLIP**. Il progetto parte al BPM e nella tonalità della canzone, con le tracce Voce / Batteria / Basso / Altro.
+3. Premi **Parti dal ritornello**: voce e batteria del ritornello in loop. Premi **Spazio** per ascoltare.
+4. Cambia il **BPM** nella barra della timeline (es. da 90 a 140): tutto va al nuovo tempo e la voce resta intonata.
+5. Usa **TONALITÀ − / +**: le tracce con ♪ cambiano tonalità, la batteria no.
+6. Costruisci a mano:
+   - seleziona un pezzo sulla waveform in alto (trascina, o clicca una sezione);
+   - premi **Voce** nella barra sotto la waveform: diventa una clip al playhead.
+   - Ripeti: i pezzi si mettono in fila.
+7. Prova il campionatore su una clip di voce, nella scheda **CLIP**:
+   - **Taglia → beat** (o *transienti*), poi sposta i pezzi trascinandoli; **Alt+trascina** = copia;
+   - **loop**, **÷2 / ×2**, **◀ reverse**, **vinile** (velocità e pitch insieme);
+   - **Gate ritmico 1/16**: effetto stutter a tempo;
+   - **Intona** al 100%: ogni nota va sulla scala;
+   - **+ seconda voce**: una terza sopra, su una traccia nuova.
+8. Righello della timeline: **clic** = sposta il playhead, **trascina** = range di loop (**L** lo accende e lo spegne).
+9. Scheda **TRACCIA**: effetti solo su quella traccia (es. riverbero solo sulla voce).
+10. **Export** dalla top bar: salva il flip come `<nome>_flip.wav`.
+11. **Ctrl+Z** annulla le modifiche al flip. **Canc** elimina la clip, **Ctrl+D** la duplica.
+12. Ricarica la pagina: il progetto deve tornare (ripremi FLIP).
 
 ## Da sapere
-- Battute, sezioni e accordi vengono da regole di analisi, senza un modello dedicato. Il tempo in 4/4 è dato per scontato. Sui brani con molta batteria dovrebbero essere affidabili; i nomi delle sezioni sono solo indicativi.
-- Se il modello di linguaggio occupa troppa VRAM, la separazione passa da sola alla CPU e finisce comunque. Per restare sulla GPU puoi:
-  - scegliere un GGUF più piccolo dal pannello AI;
-  - oppure impostare `REMIXR_STEMS_MODEL=htdemucs`, che fa 1 passata invece di 4.
+- La forma d'onda dentro le clip è sempre quella del mix, anche per le clip di stems. Il suono invece è quello giusto.
+- L'intonazione funziona bene su voci soliste pulite. Su cori o parti molto effettate può fare artefatti.
+- Il pannello AI non c'è in vista FLIP: arriva con il passo 4 (ricetta AI).
+- L'anteprima suona al massimo 120 s alla volta. Oltre, parte dalla battuta del playhead (o usa il loop). L'export è sempre completo.
 
 ## Se qualcosa non va
-Il log dello script finisce in `tools/logs/torch-cuda-*.log`. Committalo e pushalo:
-```powershell
-git add tools/logs
-git commit -m "log torch cuda"
-git push
-```
-Se l'errore è nell'app, copia anche il messaggio del pannello Stems o della corsia struttura.
+Copia il messaggio d'errore che compare in alto a destra nella barra della timeline. Se c'è, aggiungi l'errore del terminale del backend.
 
 ## Prossimo passo
-Quando questo passo funziona: **F9 — timeline + campionatore** (chop della voce, warp a un BPM nuovo, cambio di tonalità, correzione d'intonazione).
+**F10 — strumentale generato**:
+- batteria a step con kit CC0;
+- 808 e synth che seguono gli accordi;
+- nuova progressione armonica.
+
+Così il flip avrà un beat tutto nuovo sotto la voce.
