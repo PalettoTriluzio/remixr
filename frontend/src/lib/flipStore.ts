@@ -3,7 +3,9 @@
 // session with its track_id and dropped when another song is loaded.
 import { create } from "zustand";
 import { clipEnd, newTrack, projectBeats, uid } from "./flip";
-import type { ChordMark, FlipClip, FlipProject, FlipTrack, GenPart, GenStyle, Mood, MoodProfile, PatternClip, RecipeResponse } from "./types";
+import type {
+  AiResult, AutoParam, AutoPoint, ChordMark, FlipClip, FlipProject, FlipTrack, GenPart, GenStyle, Mood, MoodProfile, PatternClip,
+} from "./types";
 
 export type View = "remix" | "flip";
 export type Selection =
@@ -28,7 +30,7 @@ export interface RecipeMessage {
   id: string;
   prompt: string;
   /** Set on answers; null on errors. */
-  res: RecipeResponse | null;
+  res: AiResult | null;
   error?: string;
   variant?: number;
   seed: number;
@@ -76,6 +78,10 @@ interface FlipState {
   updateRecipe: (id: string, patch: Partial<RecipeMessage>) => void;
   setActiveRecipe: (id: string | null) => void;
   setThinking: (v: boolean) => void;
+
+  /** Automation lane shown over a track (one parameter at a time). */
+  autoLane: Record<string, AutoParam>;
+  setAutoLane: (trackId: string, p: AutoParam | null) => void;
 
   setView: (v: View) => void;
   setProject: (trackId: string, p: FlipProject) => void;
@@ -127,6 +133,15 @@ export const useFlipStore = create<FlipState>((set) => ({
   updateRecipe: (id, patch) => set((s) => ({ recipes: s.recipes.map((m) => (m.id === id ? { ...m, ...patch } : m)) })),
   setActiveRecipe: (activeRecipe) => set({ activeRecipe }),
   setThinking: (thinking) => set({ thinking }),
+
+  autoLane: {},
+  setAutoLane: (trackId, p) =>
+    set((s) => {
+      const next = { ...s.autoLane };
+      if (p) next[trackId] = p;
+      else delete next[trackId];
+      return { autoLane: next };
+    }),
 
   setView: (view) => set({ view }),
   setProject: (trackId, project) =>
@@ -196,6 +211,14 @@ export const ops = {
   removeTrack: (trackId: string) => (p: FlipProject): FlipProject => ({ ...p, tracks: p.tracks.filter((t) => t.id !== trackId) }),
 
   setTrack: (trackId: string, patch: Partial<FlipTrack>) => (p: FlipProject) => mapTrack(p, trackId, (t) => ({ ...t, ...patch })),
+
+  setAutomation: (trackId: string, param: AutoParam, points: AutoPoint[]) => (p: FlipProject) =>
+    mapTrack(p, trackId, (t) => {
+      const automation = { ...t.automation };
+      if (points.length) automation[param] = [...points].sort((a, b) => a.beat - b.beat);
+      else delete automation[param];
+      return { ...t, automation };
+    }),
 
   addClip: (trackId: string, clip: FlipClip) => (p: FlipProject) =>
     fit(mapTrack(p, trackId, (t) => ({ ...t, clips: [...t.clips, clip] })), clipEnd(clip)),
@@ -280,7 +303,7 @@ export const ops = {
     let list = [...p.tracks];
     for (const t of tracks) {
       const i = list.findIndex((o) => o.kind !== "audio" && o.kind === t.kind && o.name === t.name);
-      if (i >= 0) list[i] = { ...t, chain: list[i].chain, gain_db: list[i].gain_db, pan: list[i].pan };
+      if (i >= 0) list[i] = { ...t, chain: list[i].chain, gain_db: list[i].gain_db, pan: list[i].pan, automation: list[i].automation, sidechain: list[i].sidechain };
       else if (list.length < 16) list = [...list, t];
     }
     const end = Math.max(0, ...tracks.flatMap((t) => t.patterns.map((c) => c.at_beat + c.length_beats)));

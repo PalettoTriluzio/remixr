@@ -21,7 +21,9 @@ import numpy as np
 from pedalboard import HighpassFilter, LowpassFilter, Pedalboard
 
 from app.dsp.chain import EPS, process, time_pitch
+from app.dsp.encode import write_mp3
 from app.dsp.render import EXPORT_SUBTYPE, PREVIEW_SUBTYPE, decode, write_audio
+from app.flip import automation
 from app.flip.instruments import render_drums, render_notes
 from app.flip.tune import retune
 from app.models import EffectChain, FlipClip, FlipProject, FlipTrack, PatternClip
@@ -233,7 +235,18 @@ def render_project(
     n = round((b1 - b0) * beat_sec * sr)
     mix = np.zeros((2, n), dtype=np.float32)
 
-    for track in _audible(project.tracks):
+    # Project beat of every sample, only if some track is automated.
+    beats = (b0 + np.arange(n, dtype=np.float64) / (beat_sec * sr)
+             if any(any(v) for t in project.tracks for v in t.automation.values()) else None)
+    audible = _audible(project.tracks)
+    by_id = {t.id: t for t in audible}
+    # Sidechain: keys are kept after their chain + volume automation; ducked
+    # tracks wait until every key is rendered. Only these stay in memory.
+    ducked = {t.id for t in audible if t.sidechain.enabled and t.sidechain.source in by_id and t.sidechain.source != t.id}
+    keys = {by_id[i].sidechain.source for i in ducked}
+    post: dict[str, np.ndarray] = {}
+    pending: list[tuple[FlipTrack, np.ndarray]] = []
+    for track in audible:
         buf = np.zeros((2, n), dtype=np.float32)
         used = False
         if track.kind == "audio":
@@ -257,9 +270,28 @@ def render_project(
                 used |= _place(buf, audio, c0, c1, b0, beat_sec, sr)
         if not used:
             continue
+        auto = {k: v for k, v in track.automation.items() if v} if beats is not None else {}
+        if auto:
+            buf = automation.apply_filters(buf, sr, auto, beats)
         chain = track.chain.model_copy(update={"tempo": track.chain.tempo.model_copy(update={"enabled": False})})
-        buf = _stereo(process(buf, sr, chain))
-        mix += _fit(_pan(buf, track.pan, track.gain_db), n)
+        buf = _fit(_stereo(process(buf, sr, chain)), n)
+        if auto:
+            buf = automation.apply_volume(buf, auto, beats)
+        if track.id in keys:
+            post[track.id] = buf.copy()
+        if track.id in ducked:
+            pending.append((track, buf))
+        else:
+            mix += _pan(buf, track.pan, track.gain_db)
+
+    # Ducked tracks last: their key may come later in the list.
+    for track, buf in pending:
+        sc = track.sidechain
+        if sc.source in post:
+            src = by_id[sc.source]
+            low = src.kind == "drums" or (src.kind == "audio" and bool(src.clips) and all(c.source == "drums" for c in src.clips))
+            buf = automation.duck(buf, post[sc.source], sr, sc.amount_db, sc.release_ms, low)
+        mix += _pan(buf, track.pan, track.gain_db)
 
     return process(mix, sr, master), sr
 
@@ -280,11 +312,7 @@ def export(track_id: str, project: FlipProject, master: EffectChain, fmt: str) -
     if fmt == "wav":
         write_audio(str(out), samples, sr, fmt="WAV", subtype=EXPORT_SUBTYPE)
     elif fmt == "mp3":
-        try:
-            write_audio(str(out), samples, sr, fmt="MP3")
-        except Exception as exc:  # noqa: BLE001
-            out.unlink(missing_ok=True)
-            raise ValueError(f"MP3 encoding unavailable in this libsndfile build: {exc}") from exc
+        write_mp3(out, samples, sr)
     else:
         raise ValueError(f"Unsupported format: {fmt}")
     return render_id, out, samples.shape[1] / sr

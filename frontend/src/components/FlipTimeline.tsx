@@ -5,13 +5,17 @@
 import { useEffect, useRef, useState, type PointerEvent as RPointerEvent, type RefObject, type WheelEvent } from "react";
 import clsx from "clsx";
 import {
-  AlertCircle, Loader2, Minus, Music, Plus, Repeat, Sparkles, Trash2, ZoomIn, ZoomOut,
+  Activity, AlertCircle, Loader2, Minus, Music, Plus, Repeat, Sparkles, Trash2, ZoomIn, ZoomOut,
 } from "lucide-react";
+import { AUTO_META, AUTO_ORDER } from "../lib/automation";
+import { AutomationLane } from "./AutomationLane";
 import { KIND_STYLE, SOURCE_STYLE, projectBeats, uid } from "../lib/flip";
 import { starterFromChorus } from "../lib/flipActions";
 import { flipPlayer } from "../lib/flipPlayer";
 import { SNAPS, ops, snapBeat, snapStep, useFlipStore } from "../lib/flipStore";
 import { useTrackStore } from "../lib/store";
+import { useStemPeaks } from "../lib/stemPeaks";
+import { useStemsStore } from "../lib/stemsStore";
 import { transposeChord, transposeKey } from "../lib/keys";
 import { DRUM_VOICES, type FlipClip, type FlipProject, type FlipTrack, type PatternClip } from "../lib/types";
 import { ClipWave } from "./ClipWave";
@@ -314,6 +318,7 @@ function TrackRow({ project, track, index }: { project: FlipProject; track: Flip
   const total = projectBeats(project);
   const bar = project.beats_per_bar * zoom;
   const trackSelected = selection?.trackId === track.id;
+  const lane = useFlipStore((s) => s.autoLane[track.id]);
 
   return (
     <div className="flex border-b border-line/70" style={{ height: ROW_H }}>
@@ -332,6 +337,7 @@ function TrackRow({ project, track, index }: { project: FlipProject; track: Flip
         {track.kind === "audio"
           ? track.clips.map((c) => <ClipBlock key={c.id} project={project} track={track} index={index} clip={c} />)
           : track.patterns.map((c) => <PatternBlock key={c.id} project={project} track={track} index={index} clip={c} />)}
+        {lane && <AutomationLane project={project} track={track} param={lane} width={total * zoom} height={ROW_H - 1} />}
       </div>
     </div>
   );
@@ -369,6 +375,7 @@ function TrackHeader({ track, selected }: { track: FlipTrack; selected: boolean 
         >
           <Music className="w-3 h-3" />
         </button>
+        <AutoButton track={track} />
         <button
           onClick={() => edit(ops.removeTrack(track.id))}
           title="Elimina traccia (Ctrl+Z per annullare)"
@@ -398,6 +405,31 @@ function TrackHeader({ track, selected }: { track: FlipTrack; selected: boolean 
         <span className="w-8 text-right">{track.pan === 0 ? "C" : `${track.pan < 0 ? "L" : "R"}${Math.round(Math.abs(track.pan) * 100)}`}</span>
       </label>
     </div>
+  );
+}
+
+/** Cycles the automation lane: off → volume → LP → HP → off. */
+function AutoButton({ track }: { track: FlipTrack }) {
+  const lane = useFlipStore((s) => s.autoLane[track.id]);
+  const setAutoLane = useFlipStore((s) => s.setAutoLane);
+  const has = AUTO_ORDER.filter((p) => (track.automation[p]?.length ?? 0) > 0);
+  const next = () => {
+    const i = lane ? AUTO_ORDER.indexOf(lane) + 1 : 0;
+    setAutoLane(track.id, i < AUTO_ORDER.length ? AUTO_ORDER[i] : null);
+  };
+  return (
+    <button
+      onClick={next}
+      title={`Automazione: ${lane ? AUTO_META[lane].label : "nascosta"} (clic = parametro successivo)${has.length ? `\nAttive: ${has.map((p) => AUTO_META[p].label).join(", ")}` : ""}`}
+      className={clsx(
+        "h-5 px-0.5 rounded flex items-center justify-center text-[8px] font-mono",
+        lane ? "bg-white/15" : "hover:text-white",
+      )}
+      style={{ color: lane ? AUTO_META[lane].color : has.length ? AUTO_META[has[0]].color : "rgba(255,255,255,0.25)" }}
+    >
+      <Activity className="w-3 h-3" />
+      {lane && AUTO_META[lane].short}
+    </button>
   );
 }
 
@@ -444,6 +476,9 @@ function ClipBlock({ project, track, index, clip }: { project: FlipProject; trac
   const snap = useFlipStore((s) => s.snap);
   const selection = useFlipStore((s) => s.selection);
   const buffer = useTrackStore((s) => s.originalBuffer);
+  const trackId = useTrackStore((s) => s.track?.track_id);
+  const stemsReady = useStemsStore((s) => s.job?.status === "done");
+  const peaks = useStemPeaks(trackId, clip.source, stemsReady);
   const selected = selection?.kind === "clip" && selection.clipId === clip.id;
   const color = SOURCE_STYLE[clip.source].color;
   const width = Math.max(4, clip.length_beats * zoom);
@@ -493,7 +528,7 @@ function ClipBlock({ project, track, index, clip }: { project: FlipProject; trac
       onPointerDown={(e) => start(e, "move")}
       title={`${SOURCE_STYLE[clip.source].label} · ${clip.src_start.toFixed(2)}–${clip.src_end.toFixed(2)} s · ${clip.length_beats} beat\nAlt+trascina = copia`}
     >
-      {buffer && <ClipWave buffer={buffer} clip={clip} zoom={zoom} color={color} />}
+      {(buffer || peaks) && <ClipWave buffer={buffer} peaks={peaks} clip={clip} zoom={zoom} color={color} />}
       <div className="absolute top-0 left-0 right-2 px-1 text-[9px] font-mono whitespace-nowrap overflow-hidden text-white/85 pointer-events-none">
         <span style={{ color }}>{SOURCE_STYLE[clip.source].label}</span> {flags}
       </div>

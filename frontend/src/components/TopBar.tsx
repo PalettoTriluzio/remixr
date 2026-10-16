@@ -270,7 +270,7 @@ function ExportButton() {
         className="h-8 bg-bg-card border border-line border-r-0 rounded-l text-xs px-1.5"
       >
         <option value="wav">WAV 24</option>
-        <option value="mp3">MP3</option>
+        <option value="mp3">MP3 320</option>
       </select>
       <button
         onClick={() => void run()}

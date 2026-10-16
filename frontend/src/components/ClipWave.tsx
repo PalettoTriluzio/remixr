@@ -1,11 +1,14 @@
-// Mini waveform inside a flip clip: the slice of the original (wavesurfer's
-// 8 kHz decode of the mix — stems are not decoded in the browser), laid out
-// as it plays: one cycle per src_beats when looped, stretched otherwise,
-// mirrored when reversed.
+// Mini waveform inside a flip clip: the slice of its source — the stem's own
+// peaks (server, lib/stemPeaks) or, for the mix / while they load,
+// wavesurfer's 8 kHz decode of the mix — laid out as it plays: one cycle per
+// src_beats when looped, stretched otherwise, mirrored when reversed.
 import { useEffect, useRef } from "react";
+import type { StemPeaks } from "../lib/stemPeaks";
 import type { FlipClip } from "../lib/types";
 
-export function ClipWave({ buffer, clip, zoom, color }: { buffer: AudioBuffer; clip: FlipClip; zoom: number; color: string }) {
+export function ClipWave({ buffer, peaks: stem, clip, zoom, color }: {
+  buffer: AudioBuffer | null; peaks: StemPeaks | null; clip: FlipClip; zoom: number; color: string;
+}) {
   const ref = useRef<HTMLCanvasElement>(null);
   const width = Math.max(4, Math.round(clip.length_beats * zoom));
   const cycle = Math.max(2, Math.round((clip.loop ? clip.src_beats : clip.length_beats) * zoom));
@@ -22,9 +25,11 @@ export function ClipWave({ buffer, clip, zoom, color }: { buffer: AudioBuffer; c
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, width, h);
 
-    const data = buffer.getChannelData(0);
-    const a = Math.max(0, Math.floor(clip.src_start * buffer.sampleRate));
-    const b = Math.min(data.length, Math.ceil(clip.src_end * buffer.sampleRate));
+    const data: ArrayLike<number> | null = stem ? stem.data : buffer ? buffer.getChannelData(0) : null;
+    const rate = stem ? stem.rate : buffer?.sampleRate ?? 1;
+    if (!data) return;
+    const a = Math.max(0, Math.floor(clip.src_start * rate));
+    const b = Math.min(data.length, Math.ceil(clip.src_end * rate));
     if (b <= a) return;
     // Peak per column of one cycle.
     const peaks = new Float32Array(cycle);
@@ -55,7 +60,7 @@ export function ClipWave({ buffer, clip, zoom, color }: { buffer: AudioBuffer; c
       g.fillStyle = "#ffffff";
       for (let x = cycle; x < width; x += cycle) g.fillRect(x, 0, 1, h);
     }
-  }, [buffer, clip.src_start, clip.src_end, clip.reverse, clip.loop, width, cycle, color]);
+  }, [buffer, stem, clip.src_start, clip.src_end, clip.reverse, clip.loop, width, cycle, color]);
 
   return <canvas ref={ref} className="absolute inset-0 w-full h-full pointer-events-none" />;
 }

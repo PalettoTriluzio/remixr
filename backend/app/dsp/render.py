@@ -11,6 +11,7 @@ import soundfile as sf
 
 from app.audio.loader import audio_info, load_audio_segment
 from app.dsp.chain import process
+from app.dsp.encode import write_mp3
 from app.models import EffectChain, StemMix
 from app.storage import RENDERS_DIR, STEM_NAMES
 
@@ -131,13 +132,7 @@ def export(
         write_audio(str(out), samples, sr, fmt="WAV", subtype=EXPORT_SUBTYPE)
     elif fmt == "mp3":
         out = RENDERS_DIR / f"{render_id}.mp3"
-        try:
-            # libsndfile >= 1.1 (soundfile >= 0.12) can encode MP3, but exposes
-            # no bitrate control — true 320 kbps CBR lands in F7 via ffmpeg.
-            write_audio(str(out), samples, sr, fmt="MP3")
-        except Exception as exc:  # noqa: BLE001
-            out.unlink(missing_ok=True)
-            raise ValueError(f"MP3 encoding unavailable in this libsndfile build: {exc}") from exc
+        write_mp3(out, samples, sr)
     else:
         raise ValueError(f"Unsupported format: {fmt}")
 

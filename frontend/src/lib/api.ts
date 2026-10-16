@@ -1,6 +1,6 @@
 import type {
   AnalyzeResponse, FlipRenderRequest, FlipSource, GenerateRequest, GenerateResponse, LLMInterpretRequest, LLMInterpretResponse, LLMStatus,
-  MoodProfile, Preset, RecipeBuildRequest, RecipeRequest, RecipeResponse, RenderRequest, RenderResponse, StemName, StemsJobResponse, StructureResponse, UploadResponse,
+  EditRequest, EditResponse, MoodProfile, Preset, RecipeBuildRequest, RecipeRequest, RecipeResponse, RenderRequest, RenderResponse, StemName, StemsJobResponse, StructureResponse, UploadResponse,
 } from "./types";
 
 const BASE = "/api";
@@ -103,9 +103,16 @@ export const api = {
   /** New drums / bass / chords / arpeggio tracks (patterns, not audio). */
   flipGenerate: (req: GenerateRequest) =>
     request<GenerateResponse>("/flip/generate", { method: "POST", body: JSON.stringify(req) }),
+  stemPeaks: async (trackId: string, stem: string): Promise<{ rate: number; data: Uint8Array }> => {
+    const res = await fetch(`${BASE}/stems/${trackId}/${stem}/peaks`);
+    if (!res.ok) throw new Error(await errorText(res));
+    return { rate: Number(res.headers.get("X-Peaks-Rate")) || 100, data: new Uint8Array(await res.arrayBuffer()) };
+  },
   flipMood: (trackId: string) => request<MoodProfile>(`/flip/mood/${trackId}`),
   flipRecipe: (req: RecipeRequest) =>
     request<RecipeResponse>("/flip/recipe", { method: "POST", body: JSON.stringify(req) }),
+  flipEdit: (req: EditRequest) =>
+    request<EditResponse>("/flip/edit", { method: "POST", body: JSON.stringify(req) }),
   flipRecipeBuild: (req: RecipeBuildRequest) =>
     request<RecipeResponse>("/flip/recipe/build", { method: "POST", body: JSON.stringify(req) }),
 

@@ -7,9 +7,10 @@ from app.flip.generate import generate as generate_parts
 from app.flip.recipe import build as build_recipe
 from app.llm import engine
 from app.llm.interpret import LLMOutputError
+from app.llm.edit import edit_flip
 from app.llm.recipe import make_recipe
 from app.models import (
-    FlipRenderRequest, GenerateRequest, GenerateResponse, MoodProfile, OnsetsResponse, RecipeBuildRequest,
+    EditRequest, EditResponse, FlipRenderRequest, GenerateRequest, GenerateResponse, MoodProfile, OnsetsResponse, RecipeBuildRequest,
     RecipeRequest, RecipeResponse, RenderResponse,
 )
 
@@ -104,3 +105,17 @@ def recipe_build(req: RecipeBuildRequest):
     except Exception as e:  # noqa: BLE001
         raise _errors(e, "Recipe build") from e
     return RecipeResponse(recipe=req.recipe, project=project, explanation=req.explanation, notes=notes)
+
+
+@router.post("/flip/edit", response_model=EditResponse)
+def edit(req: EditRequest):
+    """Prompt → operations on the current flip (sections, parts, effects,
+    automation, sidechain) → the edited project."""
+    try:
+        return edit_flip(req)
+    except engine.LLMUnavailable as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except LLMOutputError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+    except Exception as e:  # noqa: BLE001
+        raise _errors(e, "Edit") from e

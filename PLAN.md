@@ -72,8 +72,8 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 - ☑ Intonazione nota per nota + armonia diatonica (pYIN, niente basic-pitch) + "seconda voce"
 - ☑ Effetti per traccia (rack generico `ChainRack`), master = rack del remix con intensità
 - ☑ Undo/redo e scorciatoie del progetto, progetto salvato in sessione, export del flip
-- ☐ Forma d'onda vera degli stems nelle clip (ora: quella del mix)
-- ☐ Automazioni (volume/filtro nel tempo), sidechain
+- ◐ Forma d'onda vera degli stems nelle clip (scritto 2026-10-16, da provare): `GET /stems/{id}/{stem}/peaks`
+- ◐ Automazioni (volume, passa-basso, passa-alto nel tempo) + sidechain (scritto 2026-10-16, da provare)
 
 ## F10 — Strumentale generato (Flip passo 3) ☑ (provato dall'utente 2026-10-16)
 - ☑ Batteria a step sintetizzata (5 kit, roll, swing) — niente sample: zero licenze
@@ -88,7 +88,8 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 - ☑ LLM → ricetta JSON (`FlipRecipe`: BPM, trasposizione, stile, mood, armonia, sezioni con campione/battute/stems/effetti/parti/energia), grammar dallo schema
 - ☑ Build deterministico (`app/flip/recipe.py`) → `FlipProject` normale, tutto modificabile; riga SEZIONI sulla timeline
 - ☑ Pannello AI FLIP: esempi, 3 varianti, "ascolta questa", "altro strumentale" (stessa ricetta, seed nuovo, senza LLM)
-- ☐ Ricetta che modifica il progetto esistente invece di sostituirlo; chop melodici guidati dall'AI
+- ◐ AI che modifica il flip esistente (scritto 2026-10-16, da provare): 13 operazioni (`app/flip/edit.py`), modalità "modifica questo flip" / "nuovo flip"
+- ☐ Chop melodici guidati dall'AI
 
 ## F6 — Preset & Genre Templates ◐ (scritto, da provare)
 - ☑ CRUD preset JSON (`data/presets/<slug>.json`, `app/presets/store.py`)
@@ -107,7 +108,7 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 - ☑ Spectrum analyzer real-time (colonna destra, colore per lato A/B)
 - ☑ Corsia B: confronto A sopra / B sotto della finestra di preview + peak/RMS/durata; UI che cambia colore con il lato
 - ☑ Export dalla top bar (traccia intera, WAV 24 / MP3 libsndfile, download `<nome>_remix.<ext>`)
-- ☐ Export MP3 320 CBR vero (via ffmpeg)
+- ◐ Export MP3 320 CBR (scritto 2026-10-16, da provare): ffmpeg/libmp3lame, fallback libsndfile CBR livello 0
 - ☑ Undo/redo history sui params (Ctrl+Z / Ctrl+Shift+Z, bottoni in top bar)
 - ☑ Keyboard shortcuts (Space play, B A/B, L loop, Esc regione, Ctrl+Z/Y)
 - ☐ Dark theme fine-tuning
@@ -128,7 +129,7 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 ## Decisioni prese
 - **Ordine chain** (fisso, implementato in F2): `[time/pitch] → gain → HP → EQ → Comp → Distortion → LP → Delay → Reverb → Stereo → Limiter`.
 - **`tempo.ratio` = moltiplicatore di velocità** (2.0 = doppia velocità). Lo `stretch_factor` di pedalboard viene sondato a runtime perché la sua semantica cambia tra versioni.
-- **Preview**: WAV 16-bit, finestra max 30 s, non persistito. Export: WAV 24-bit. MP3 320 CBR vero → F7 (ffmpeg).
+- **Preview**: WAV 16-bit, finestra max 30 s, non persistito. Export: WAV 24-bit. MP3 320 CBR vero → ffmpeg (`app/dsp/encode.py`, 2026-10-16).
 - **LLM** (aggiornato 2026-10-12): default = il GGUF più grande che sta tutto in VRAM (≤ 12 GB). Consigliato sulla 4090 Laptop: **Qwen2.5-14B-Instruct Q5_K_M** (~10.5 GB). 32B solo IQ3 (al limite) o con offload parziale (lento). Qwen3/Gemma 3 richiedono un llama-cpp-python più nuovo di 0.3.2.
 - **LLM → delta, non Params completi** (2026-10-10): meno token, niente rumore sui campi non toccati; merge+clamp lato backend.
 - **A/B**: A = originale intero, B = preview della finestra (regione o primi 30 s). Niente drag-to-reorder (catena fissa).
@@ -156,3 +157,4 @@ Legenda: ☐ da fare · ◐ in corso · ☑ fatto
 - 2026-10-15: **F9 scritto** (Flip passo 2): vista FLIP con timeline ad arrangiamento e campionatore. Backend `app/flip/` (render con cache per clip, intonazione/armonia pYIN) + `/api/flip/*`; frontend `flip`, `flipStore`, `flipActions`, `flipPlayer`, `FlipTimeline`, `FlipSidebar`, `SourceBar`, `FlipTransport`, `ClipWave`; rack reso generico (`ChainRack` + `EffectCard` con binding) per gli effetti di traccia; `player.pauseAll()`; `dsp/render.py`: `decode`/`write_audio` pubbliche; `dsp/chain.py`: `time_pitch()` riusabile. basic-pitch non serve più (pYIN).
 - 2026-10-15: **F10 scritto** (Flip passo 3): strumentale generato simbolico. Backend `app/flip/instruments.py` (batteria e synth in numpy), `app/flip/generate.py` (8 stili, armonia dalla canzone o nuova, basso/accordi/arpeggio), `/api/flip/generate`, render delle `PatternClip` in `flip/render.py` (cache condivisa); `structure_for()` spostata in `analysis/structure.py`. Frontend: tipi pattern/strumento, `ops` per pattern + `mergeGenerated`, `generateParts`/`regenerateSelected`, `GeneratePanel`, `PatternEditor`, blocchi pattern e riga accordi nella timeline, scheda suono in TRACCIA, `normalizeProject` per i progetti salvati.
 - 2026-10-16: F10 provato dall'utente ("funziona tutto"), chiede un generatore che capisca meglio il mood. **Mood dalla canzone**: `app/analysis/mood.py` + `GET /api/flip/mood/{id}`, `mood: auto` in `/flip/generate`, `Feel` in `generate.py` (densità, energia, brillantezza, spazio, grit) applicato a batteria/basso/accordi/arpeggio/suoni; mood "auto" usa anche l'energia delle sezioni da cui vengono le clip. **F11 scritto**: `app/llm/recipe.py` (prompt, schema, sanitize), `app/flip/recipe.py` (build), `POST /api/flip/recipe` e `/api/flip/recipe/build`, `FlipProject.markers`; frontend `RecipePanel` (AI FLIP a destra della timeline), `askRecipe`/`applyRecipe`/`rebuildRecipe`, riga SEZIONI, mood nel pannello Genera.
+- 2026-10-16: mood + F11 provati dall'utente ("funziona tutto"). Sviluppati i 4 passi successivi: **AI che modifica il flip** (`app/flip/edit.py` operazioni + `Builder` condiviso in `flip/recipe.py`, `app/llm/edit.py` prompt/riassunto del progetto/sanitize, `POST /api/flip/edit`, `Marker` con energia, pannello con modalità modifica/nuovo); **waveform degli stems** (`GET /api/stems/{id}/{stem}/peaks`, `lib/stemPeaks.ts`, `ClipWave` con peaks); **automazioni + sidechain** (`app/flip/automation.py`, `FlipTrack.automation`/`sidechain`, render in due fasi, `AutomationLane`, schede Automazione/Sidechain in TRACCIA, tocchi automatici della ricetta); **MP3 320** (`app/dsp/encode.py`). Installer rimandato.

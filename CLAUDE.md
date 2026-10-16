@@ -71,7 +71,7 @@ Rilevato dal log `errors.txt`: Python 3.11, CUDA **12.6** (`v12.6`), MSVC **19.4
 
 ## Formati audio
 - **Input**: MP3, WAV, FLAC, AAC/M4A, OGG (via `soundfile` + `librosa`/`audioread` fallback)
-- **Output**: WAV 24-bit (default) + MP3 320kbps opzionale
+- **Output**: WAV 24-bit (default) + MP3 320 kbps CBR (`app/dsp/encode.py`: ffmpeg `libmp3lame -b:a 320k` con i float su stdin, `REMIXR_FFMPEG` se non è nel PATH; senza ffmpeg libsndfile `bitrate_mode=CONSTANT, compression_level=0` = 320, ricampionato se il sr non è da MP3)
 
 ## Architettura
 ```
@@ -88,16 +88,20 @@ remixr/
 │   │   │                      # mood.py: valenza/energia/brillantezza → mood + stile consigliato
 │   │   ├── dsp/               # chain.py: params→pedalboard + mid/side + time/pitch
 │   │   │                      # render.py: decode cache → process → WAV/MP3
+│   │   │                      # encode.py: MP3 320 CBR (ffmpeg, fallback libsndfile)
 │   │   ├── llm/               # engine.py: Llama singleton (lock, warm-up, grammar JSON)
 │   │   │                      # interpret.py: prompt → delta params → merge/clamp/diff
 │   │   │                      # styles.py: tabella artista → tratti di produzione
 │   │   │                      # recipe.py: prompt → ricetta di flip (F11)
+│   │   │                      # edit.py: prompt → operazioni sul flip attuale (F11b)
 │   │   ├── stems/             # separate.py: job demucs in background (1 worker), progress, OOM→CPU
 │   │   ├── flip/              # render.py: FlipProject → audio (clip cache, gate, track chain, master), onsets
 │   │   │                      # tune.py: intonazione nota per nota + armonia diatonica (pYIN)
 │   │   │                      # instruments.py: batteria e synth in numpy (kit, preset, 808 con glide)
 │   │   │                      # generate.py: strumentale procedurale per stile e mood (pattern + note)
-│   │   │                      # recipe.py: ricetta → FlipProject (deterministico)
+│   │   │                      # recipe.py: ricetta → FlipProject (deterministico), Builder condiviso
+│   │   │                      # edit.py: operazioni AI sul progetto (sezioni, parti, effetti, automazioni)
+│   │   │                      # automation.py: automazioni (volume/LP/HP) + sidechain
 │   │   └── presets/           # store.py: preset utente + genre templates (JSON)
 │   ├── data/
 │   │   ├── uploads/           # audio caricati (gitignored)
@@ -117,7 +121,7 @@ remixr/
 │   │   │                      # ChainRack/EffectCard (rack generico su una EffectChain),
 │   │   │                      # Flip: FlipTimeline, ClipWave, FlipSidebar (clip/traccia/master), SourceBar, FlipTransport,
 │   │   │                      # GeneratePanel (genera strumentale), PatternEditor (step grid / piano roll),
-│   │   │                      # RecipePanel (AI FLIP: frase → ricetta → progetto)
+│   │   │                      # RecipePanel (AI FLIP: nuovo flip o modifica), AutomationLane (curva sulla traccia)
 │   │   ├── hooks/             # usePreviewSync (debounce 300 ms → /render/preview + decode per la corsia B),
 │   │   │                      # useShortcuts (Space, B, L, Esc, Ctrl+Z/Y), useLevelMatch (volume pari A/B),
 │   │   │                      # useGlobalDrop (drop di un file ovunque), useTrackStructure (stems status/poll + struttura),
@@ -128,7 +132,8 @@ remixr/
 │   │   │                      # morph (Intensità), looks (look istantanei), session (localStorage),
 │   │   │                      # stemsStore (job stems, mixer, struttura, snap — legato alla traccia),
 │   │   │                      # flip (griglia sorgente, chop, factory), flipStore (progetto, undo, selezione, ops),
-│   │   │                      # flipActions (entra in flip, pezzo→clip, parti dal ritornello, taglia), flipPlayer, keys
+│   │   │                      # flipActions (entra in flip, pezzo→clip, parti dal ritornello, taglia, AI), flipPlayer, keys,
+│   │   │                      # automation (metadati/valori delle automazioni), stemPeaks (waveform degli stems)
 │   │   ├── App.tsx
 │   │   └── main.tsx
 │   ├── package.json
@@ -148,6 +153,7 @@ remixr/
 - `GET  /api/analyze/{track_id}` → `{bpm, key, peaks[], spectrum[]}` ✅
 - `POST /api/stems/{track_id}` → avvia la separazione (idempotente) / `GET /api/stems/{track_id}` → `{job_id, status: none|pending|running|done|error, progress, stems{nome: url}, model, device, elapsed_sec, error}` ✅
 - `GET  /api/stems/{track_id}/{stem}` → WAV dello stem ✅
+- `GET  /api/stems/{track_id}/{stem}/peaks` → uint8 grezzi (picchi, 100/s, header `X-Peaks-Rate`), cache `<stem>.peaks100.u8` ✅
 - `GET  /api/structure/{track_id}` → `{source: mix|stems, bpm, key, beats_per_bar, beats[], downbeats[], sections[{start,end,bar_start,bar_end,label,name,energy}], chords[{start,end,chord}]}` ✅
 - `GET  /api/llm/status` → `{state: idle|loading|ready|error, model, gpu_offload, error, available[]}` ✅
 - `POST /api/llm/model` `{model}` → cambia GGUF a runtime (libera la VRAM, ricarica in background) ✅
@@ -160,6 +166,7 @@ remixr/
 - `GET  /api/flip/mood/{track_id}` → `{mood, valence, energy, brightness, minor_share, suggested_style, description}` ✅
 - `POST /api/flip/recipe` `{track_id, prompt, variation?, seed}` → `{recipe, project, explanation, notes[]}` ✅ (503/502 come `/llm/interpret`)
 - `POST /api/flip/recipe/build` `{track_id, recipe, seed, explanation}` → come sopra, senza LLM ✅
+- `POST /api/flip/edit` `{track_id, project, prompt, style, mood, harmony, variation?, seed}` → `{project, explanation, applied[], notes[], style, mood, harmony}` ✅ (503/502 come sopra)
 - `POST /api/render/preview` `{track_id, params, stem_mix?, region?}` → WAV 16-bit stream, max 30 s ✅
 - `POST /api/render/export` `{track_id, params, stem_mix?, format}` → `{render_id, path, duration_sec}` ✅ (`stem_mix` senza stems → 409)
 - `GET  /api/render/file/{render_id}` → download ✅
@@ -261,6 +268,15 @@ Obiettivo dell'utente: rifacimenti radicali alla "Una direzione giusta" (thasup 
 - `app/llm/recipe.py`: system prompt (concetto di flip, campi, regole), contesto = BPM/tonalità/stems sì-no, profilo mood, sezioni dell'originale con energia; schema JSON scritto a mano (enum per tutto, explanation per prima) → grammar; `sanitize()` filtra enum e clampa i numeri (output sporco → mai una ricetta invalida). Varianti = temperature 0.8 + seed casuale + hint, come `/llm/interpret`. `max_tokens` 1800.
 - `app/flip/recipe.py` (deterministico): per sezione, una clip **loop** per stem tenuto (`src_beats = sample_bars × bpb`, griglia dai downbeat di `/structure`), effetti sulle sorgenti melodiche, poi `generate()` per le parti con l'energia della sezione (armonia "song" legge le clip appena posate). Tracce con lo stesso nome raccolgono clip/pattern di tutte le sezioni; tracce audio prima delle generate. Senza stems → `keep` diventa `mix` (nota). Max 128 battute. `markers` = sezioni della ricetta (riga SEZIONI, clic = loop).
 - UI: `RecipePanel` a destra della timeline (`flipStore.aiOpen`, pulsante "AI" nella toolbar se chiuso). Risposta = spiegazione + riepilogo (stile · BPM · mood · armonia, una riga per sezione) + note del builder. Applicare = **sostituisce il progetto** con un solo `edit` (Ctrl+Z torna indietro) e allinea le impostazioni di "genera strumentale". "altro strumentale" = `/recipe/build` con seed+1 (niente LLM). Chat delle ricette e mood in `flipStore` (non in sessione), azzerati al cambio canzone.
+
+### F11b — AI che modifica il flip + automazioni + waveform stems (2026-10-16)
+- **Modifica**: pannello AI FLIP con switch "modifica questo flip" (default se c'è contenuto) / "nuovo flip". `app/llm/edit.py` manda al modello un **riassunto del progetto** (BPM, tonalità, stile/mood/armonia del generatore, sezioni con battute ed energia, per traccia cosa contiene e dove, con effetti, mute, dB, sidechain, automazioni) e riceve `{explanation, ops[]}` (max 8, schema con enum, solo `op` obbligatorio; `sanitize_ops` filtra/clampa). `app/flip/edit.py` applica in ordine; un'op che fallisce viene annullata (copia del progetto) e diventa una nota.
+- **Operazioni** (`EditOp`): `add_section` (inserisce battute dopo una sezione/start/end, campioni + parti come una sezione di ricetta), `remove_section`, `duplicate_section`, `remove` (parti/stems in una sezione o ovunque; tracce generate vuote eliminate), `add_parts`/`regenerate` (taglia e rigenera nel range, con l'energia della sezione o quella data; "all" = sezione per sezione), `set_fx` (effetti della ricetta che **sostituiscono** quelli delle clip, spezzate ai bordi del range), `volume` (dB relativi), `tempo`, `transpose`, `style` (rifà tutto lo strumentale), `automate` (fade_in/out, filter_open/close, rise sul range), `sidechain` (sulla traccia di batteria). Indirizzi: nome di sezione (tutte quelle con quel nome) | `all` | `bars A-B`; target per ruolo: drums/bass/chords/arp (generati), vocals/other/mix/orig_drums/orig_bass/harmony (clip).
+- Inserire/togliere battute sposta clip, pattern, automazioni, accordi, sezioni; ciò che attraversa il punto viene spezzato (clip stirate: sorgente divisa in proporzione; loop e pattern ripartono dall'inizio del ciclo). `Marker{start,end,name,energy}`: l'energia serve a rigenerare.
+- Il `Builder` (`flip/recipe.py`) è condiviso fra ricetta e modifica (`samples`, `parts`, `finish`). La ricetta aggiunge da sola: filtro che si apre sull'intro calma (tracce generate non batteria), accordi (e basso in house) in sidechain sul Beat per house/afro/pop.
+- **Automazioni**: `FlipTrack.automation[volume|lowpass|highpass]` = punti `{beat, value 0..1}`, lineari, tenuti agli estremi. volume = gain value² · LP = 60·(20000/60)^v Hz · HP = 20·(4000/20)^v Hz (stesse formule in `lib/automation.ts`). Render: clip → HP/LP automatizzati (Butterworth 2° ordine ogni 256 campioni, stato portato, design in cache su cutoff quantizzato) → catena → volume automatizzato → sidechain → pan/gain. UI: icona ⚡ (Activity) nell'header traccia cicla volume → LP → HP → nascosta; la curva copre la traccia (clic = punto + trascina, doppio clic/tasto destro = toglie, snap ≤ 1/16); scheda TRACCIA → Automazione (mostra, cancella, forme pronte sul loop o su inizio/fine).
+- **Sidechain**: `FlipTrack.sidechain{enabled, source (track id), amount_db, release_ms}`. Chiave = traccia sorgente dopo catena e automazione, inviluppo a 1 ms (attacco istantaneo, rilascio esponenziale) normalizzato al 99.5° percentile, filtrato < 150 Hz se la sorgente è batteria. Solo chiavi e tracce "duckate" restano in memoria; sorgente muta = niente sidechain. UI: scheda TRACCIA → Sidechain (sorgente, "sulla cassa", quanto, rilascio).
+- **Waveform stems**: picchi calcolati dal backend a blocchi (`sf.blocks`), uint8 normalizzati allo stem; `useStemPeaks` li scarica una volta per traccia+stem; finché non ci sono `ClipWave` usa il mix.
 
 ## Progressione (vedi PLAN.md per dettaglio)
 MVP → DSP core → LLM integration → Preset & templates → Polish UI → **Flip**: Stems + struttura (F5) → Timeline + campionatore (F9) → Strumentale (F10) → Ricetta AI (F11).

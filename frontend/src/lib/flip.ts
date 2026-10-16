@@ -1,6 +1,6 @@
 // Flip helpers (pure): beat grid of the original, project factory, chopping.
 import type { AnalyzeResponse, FlipClip, FlipProject, FlipSource, FlipTrack, StructureResponse } from "./types";
-import { defaultChain, defaultInstrument } from "./types";
+import { defaultChain, defaultInstrument, defaultSidechain } from "./types";
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -73,6 +73,7 @@ export function beatsBetween(a: number, b: number, beats: number[]): number {
 const track = (name: string, follow_key = true): FlipTrack => ({
   id: uid(), name, kind: "audio", instrument: defaultInstrument(), patterns: [],
   gain_db: 0, pan: 0, mute: false, solo: false, follow_key, chain: defaultChain(), clips: [],
+  automation: {}, sidechain: defaultSidechain(),
 });
 
 /** Projects saved before F10 lack the generated-track fields. */
@@ -80,13 +81,15 @@ export function normalizeProject(p: FlipProject): FlipProject {
   return {
     ...p,
     chords: p.chords ?? [],
-    markers: p.markers ?? [],
+    markers: (p.markers ?? []).map((m) => ({ ...m, energy: m.energy ?? 0.55 })),
     tracks: p.tracks.map((t) => ({
       ...t,
       kind: t.kind ?? "audio",
       instrument: { ...defaultInstrument(), ...(t.instrument ?? {}) },
       patterns: t.patterns ?? [],
       clips: t.clips ?? [],
+      automation: t.automation ?? {},
+      sidechain: { ...defaultSidechain(), ...(t.sidechain ?? {}) },
     })),
   };
 }

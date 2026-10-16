@@ -1,33 +1,38 @@
-# Ultimo passo — Mood dalla canzone + Flip F11: ricetta AI (2026-10-16)
+# Ultimo passo — AI che modifica il flip, automazioni + sidechain, waveform degli stems, MP3 320 (2026-10-16)
 
-Il codice non è stato eseguito: va provato su Windows.
-Non servono nuove dipendenze. Per l'AI serve il modello LLM, come nella vista REMIX.
+Il codice non è stato eseguito: va provato su Windows. Non servono nuove dipendenze.
+Per l'MP3 si usa ffmpeg (già installato per il README §3).
 
 ## Cosa c'è di nuovo
 
-### 1. Lo strumentale capisce il mood
-In **genera strumentale** la riga **Mood** è sempre visibile. Il default è **dalla canzone (X)**:
-- il generatore analizza la canzone: accordi maggiori/minori, energia, timbro scuro o brillante;
-- considera anche l'energia delle parti da cui vengono le clip (un ritornello carico ≠ una strofa calma);
-- sotto la riga leggi come "suona" la canzone e uno **stile adatto** (cliccabile).
+### 1. AI che modifica il flip
+Nel pannello **AI FLIP** ci sono due modalità, scelte con lo switch sopra la casella di testo:
+- **modifica questo flip** (default quando la timeline ha già qualcosa): cambia solo quello che chiedi. Le altre parti e i ritocchi fatti a mano restano.
+  - Esempi: *"aggiungi un break di 4 battute dopo il ritornello"*, *"togli l'arpeggio e fai pompare gli accordi sulla cassa"*, *"voce un'ottava sopra nell'outro"*, *"filtro che si apre nell'intro e fade out alla fine"*, *"rifai il beat del ritornello più carico"*, *"portala a 150"*.
+  - Nella risposta compare una riga per ogni modifica applicata.
+  - Se una modifica non è possibile, compare tra le **note** e le altre vengono applicate lo stesso.
+- **nuovo flip**: come prima, costruisce tutto da zero.
 
-Il mood ora cambia tutto, non solo gli accordi nuovi:
-- **batteria**: più rada o più fitta, roll, ghost, intensità;
-- **basso**: fermo sui battere se il pezzo è calmo;
-- **accordi**: settime/none per sognante e malinconico, aperti per epico, più alti se brillante;
-- **suoni**: filtri, riverbero e delay, drive dell'808.
+Le sezioni hanno un nome: l'AI le trova per nome (*"il ritornello"*, *"l'outro"*). Senza sezioni puoi dire *"battute 9-16"*.
 
-Anche scegliendo un mood a mano, la canzone colora il risultato.
+### 2. Automazioni e sidechain
+- **Automazioni**: nell'intestazione di ogni traccia c'è l'icona ad onda. Ogni clic mostra la curva di un parametro sopra la traccia, in quest'ordine: **volume**, **filtro passa-basso**, **filtro passa-alto**, poi nascosta.
+  - Clic sulla curva = aggiungi un punto e trascinalo.
+  - Doppio clic su un punto = toglilo.
+- **Scheda TRACCIA → Automazione**: curve pronte (**fade in**, **fade out**, **apri filtro**, **chiudi filtro**, **sale da sotto**).
+  - Vengono applicate sul range di loop, se c'è; altrimenti sulle prime o sulle ultime 4 battute.
+- **Scheda TRACCIA → Sidechain**: la traccia si abbassa quando un'altra suona.
+  - **sulla cassa** = il classico pompaggio.
+  - Manopole **Quanto** e **Rilascio**.
+- Le ricette nuove li usano già da sole:
+  - con un'intro calma, il filtro si apre;
+  - in house, afro e pop gli accordi pompano sulla cassa.
 
-### 2. AI FLIP (F11)
-Nella vista **FLIP** c'è un pannello **AI FLIP** a destra (si chiude con la X, si riapre con **AI** nella barra della timeline).
-- Scrivi una frase, es. *"rifalla drill a 142, tieni solo il ritornello, intro con voce filtrata"*.
-- L'AI scrive una **ricetta**: tempo, stile, mood, sezioni. Per ogni sezione: quale parte dell'originale mettere in loop, quali stems, effetti, quali parti generare e con quanta energia.
-- La ricetta viene costruita sulla timeline e **sostituisce il progetto** (Ctrl+Z per tornare indietro).
-- Sotto il righello compare la riga **SEZIONI**: clic su una sezione = loop su quella sezione.
-- Tutto resta modificabile a mano, come sempre.
-- **3 varianti**: tre ricette diverse dalla stessa frase; **ascolta questa** mette sulla timeline quella che vuoi.
-- **altro strumentale**: stessa ricetta, nuovo strumentale, istantaneo (senza AI).
+### 3. Waveform vere degli stems
+Le clip di voce, batteria, basso e altro mostrano la forma d'onda del proprio stem, non più quella del mix.
+
+### 4. Export MP3 320
+Il formato si chiama **MP3 320** nella top bar: 320 kbps costanti tramite ffmpeg.
 
 ## Cosa fare
 1. `git pull`
@@ -38,37 +43,30 @@ Nella vista **FLIP** c'è un pannello **AI FLIP** a destra (si chiude con la X, 
    uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
    ```
 3. Avvia il frontend: `cd frontend` poi `npm run dev`, e apri http://localhost:5173
-4. Meglio con gli **stems separati** (vista REMIX → Stems): senza, l'AI può usare solo il mix intero.
 
 ## Cosa provare
-1. **Mood**: vista FLIP → **Parti dal ritornello** → **genera strumentale**.
-   - Controlla la riga sotto **Mood**: corrisponde a come senti la canzone?
-   - Genera con **dalla canzone**, poi con **sognante** e con **epico** sullo stesso pezzo: devono suonare chiaramente diversi (densità, accordi, spazio).
-   - Prova lo **stile adatto** proposto.
-2. **AI FLIP**: clicca uno degli esempi, oppure scrivi la frase sopra → **Flippa**. La prima ricetta può metterci qualche secondo.
-   - Leggi il riepilogo: sezioni, cosa tiene, effetti, parti.
-   - Premi Spazio. Clicca le sezioni nella riga **SEZIONI** per ascoltarle in loop.
-   - **altro strumentale** un paio di volte.
-3. Spunta **3 varianti** e chiedi qualcosa di aperto (*"versione lo-fi notturna"*): confronta le tre con **ascolta questa**.
-4. Dopo una ricetta, modifica a mano (sposta una clip, rigenera una parte) e prova **Ctrl+Z**.
-5. Export dalla top bar.
+1. Crea un flip con **nuovo flip** (es. *"rifalla drill a 142, tieni solo il ritornello, intro con voce filtrata"*).
+2. Passa a **modifica questo flip** e chiedi, una alla volta:
+   - *"aggiungi un break di 4 battute dopo il ritornello"*: nella riga SEZIONI compare il break e il resto si sposta;
+   - *"togli l'arpeggio e fai pompare gli accordi sulla cassa"*;
+   - *"voce un'ottava sopra nell'outro"*;
+   - *"filtro che si apre nell'intro"*.
+   Dopo ognuna: ascolta, poi **Ctrl+Z** per vedere che torna com'era.
+3. Fai un ritocco a mano (sposta una clip), poi chiedi una modifica all'AI: il ritocco deve restare.
+4. **Automazioni a mano**: clicca l'icona ad onda su una traccia, disegna un fade e ascolta. Prova anche **apri filtro** dalla scheda TRACCIA.
+5. **Sidechain**: seleziona la traccia Accordi o Basso synth → scheda TRACCIA → **sulla cassa** → alza **Quanto**.
+6. Con gli stems separati, controlla che le clip di voce e di batteria abbiano forme d'onda diverse.
+7. Export in **MP3 320**: in Esplora file → tasto destro → Proprietà → Dettagli, la velocità in bit deve essere 320 kbps.
 
 ## Da sapere
-- Il mood è un'analisi automatica: su alcuni brani può sbagliare. In quel caso scegli il mood a mano.
-- La prima volta che si apre il pannello Genera o si chiede una ricetta, il backend analizza il mood (qualche secondo); poi è in cache.
-- La ricetta sostituisce il progetto intero. Per ora non modifica un progetto esistente.
-- Con un modello piccolo (7B) le ricette possono essere meno precise: il 14B segue meglio le istruzioni.
+- Quando inserisci o togli battute, le clip in loop e i pattern tagliati a metà ripartono dall'inizio del loop.
+- Il sidechain non funziona se la traccia sorgente è muta.
+- Se ffmpeg non è nel PATH, l'MP3 viene fatto da libsndfile (sempre a 320). Per indicare dove si trova ffmpeg: `$env:REMIXR_FFMPEG = "C:\percorso\ffmpeg.exe"` prima di avviare uvicorn.
 
 ## Se qualcosa non va
-- Errori dell'AI: compaiono nel pannello AI FLIP.
-  - **503** = modello non caricato (guarda il badge del modello nella vista REMIX).
-  - **502** = risposta del modello non valida: riprova o cambia frase.
-- Copia il messaggio e aggiungi l'errore del terminale del backend.
+- **503** = modello non caricato.
+- **502** = risposta del modello non valida: riprova o cambia frase.
+- Per qualunque errore copia il messaggio (pannello AI, barra della timeline o top bar) e aggiungi l'errore del terminale del backend.
 
 ## Prossimo passo
-Da decidere con te. Candidati da `PLAN.md`:
-- ricetta AI che **modifica** il progetto esistente ("aggiungi un break di 4 battute", "togli l'arpeggio");
-- forma d'onda vera degli stems nelle clip;
-- automazioni e sidechain;
-- export MP3 320;
-- installer per Windows.
+Installer per Windows (rimandato), oppure quello che emerge dalle prove.

@@ -340,6 +340,34 @@ class ChordMark(BaseModel):
     name: str     # "Am", "F" (key of the original; the UI adds the transpose)
 
 
+class Marker(BaseModel):
+    """Named section of the flip (from an AI recipe or edit)."""
+    start: float  # project beats
+    end: float
+    name: str = Field("parte", max_length=30)
+    energy: float = Field(0.55, ge=0.0, le=1.0)  # used when its parts are regenerated
+
+
+AutoParam = Literal["volume", "lowpass", "highpass"]
+
+
+class AutoPoint(BaseModel):
+    """Automation breakpoint. value is normalised 0..1 (app/flip/automation.py):
+    volume = gain value² (1 = unchanged, 0 = silent) · lowpass = 60 Hz…20 kHz
+    (1 = open) · highpass = 20 Hz…4 kHz (0 = open), both on a log scale."""
+    beat: float = Field(..., ge=0.0, le=4096.0)
+    value: float = Field(..., ge=0.0, le=1.0)
+
+
+class Sidechain(BaseModel):
+    """Ducking: this track goes down when `source` (another track, e.g. the
+    Beat for a pumping bass/pad) hits."""
+    enabled: bool = False
+    source: str = Field("", max_length=40)  # track id
+    amount_db: float = Field(8.0, ge=0.0, le=30.0)
+    release_ms: float = Field(180.0, ge=20.0, le=1000.0)
+
+
 class FlipTrack(BaseModel):
     id: str = Field(..., min_length=1, max_length=40)
     name: str = Field("Traccia", max_length=40)
@@ -353,6 +381,10 @@ class FlipTrack(BaseModel):
     follow_key: bool = True  # transposed with the project (off for drums)
     chain: EffectChain = Field(default_factory=EffectChain)  # tempo is ignored here
     clips: list[FlipClip] = Field(default_factory=list, max_length=512)
+    # Breakpoints per parameter, in project beats (linear between points,
+    # held before the first and after the last). Missing = neutral.
+    automation: dict[AutoParam, list[AutoPoint]] = Field(default_factory=dict)
+    sidechain: Sidechain = Field(default_factory=Sidechain)
 
 
 class FlipProject(BaseModel):
@@ -363,7 +395,7 @@ class FlipProject(BaseModel):
     transpose: float = Field(0.0, ge=-12.0, le=12.0)    # semitones, tracks with follow_key
     tracks: list[FlipTrack] = Field(default_factory=list, max_length=16)
     chords: list[ChordMark] = Field(default_factory=list, max_length=1024)  # last generated progression
-    markers: list[ChordMark] = Field(default_factory=list, max_length=64)   # named sections (recipe), shown on the timeline
+    markers: list[Marker] = Field(default_factory=list, max_length=64)    # named sections (recipe), shown on the timeline
 
 
 class FlipRenderRequest(BaseModel):
@@ -470,3 +502,57 @@ class RecipeResponse(BaseModel):
     project: FlipProject
     explanation: str
     notes: list[str] = []  # what the builder had to adapt (no stems, missing section…)
+
+
+# ---- F11b: AI edits of the current flip ----
+# The LLM answers with a short list of operations on the project, applied in
+# order by app/flip/edit.py. Sections are addressed by marker name ("all",
+# "bars 9-16" also work), parts by role.
+
+EditTarget = Literal["drums", "bass", "chords", "arp", "vocals", "other", "mix", "orig_drums", "orig_bass", "harmony"]
+EditOpName = Literal[
+    "add_section", "remove_section", "duplicate_section", "remove", "add_parts", "regenerate",
+    "set_fx", "volume", "tempo", "transpose", "style", "automate", "sidechain",
+]
+
+
+class EditOp(BaseModel):
+    op: EditOpName
+    section: str = Field("all", max_length=40)   # marker name | "all" | "bars A-B"
+    after: str = Field("end", max_length=40)     # add/duplicate_section: marker name | "start" | "end"
+    name: str = Field("", max_length=30)
+    bars: int = Field(4, ge=1, le=32)
+    sample: SampleFrom = "auto"
+    sample_bars: Literal[1, 2, 4, 8] = 4
+    keep: list[FlipSource] = Field(default_factory=list)
+    fx: list[RecipeFx] = Field(default_factory=list)
+    parts: list[GenPart] = Field(default_factory=list)
+    targets: list[EditTarget] = Field(default_factory=list)
+    energy: Optional[Literal["low", "mid", "high"]] = None
+    value: float = 0.0  # volume: dB · tempo: BPM · transpose: semitones · sidechain: dB
+    style: Optional[GenStyle] = None
+    mood: Optional[Mood] = None
+    shape: Literal["none", "fade_in", "fade_out", "filter_open", "filter_close", "rise"] = "none"
+
+
+class EditRequest(BaseModel):
+    track_id: str
+    project: FlipProject
+    prompt: str = Field(..., min_length=1, max_length=2000)
+    # Current generator settings (style of the flip): used for new parts.
+    style: GenStyle = "trap"
+    mood: Literal["auto", "dark", "sad", "epic", "happy", "dreamy"] = "auto"
+    harmony: Literal["song", "new"] = "song"
+    variation: Optional[int] = Field(None, ge=1, le=5)
+    seed: int = Field(1, ge=0, le=2**31 - 1)
+
+
+class EditResponse(BaseModel):
+    project: FlipProject
+    explanation: str
+    applied: list[str]   # one line per operation, Italian
+    notes: list[str] = []
+    style: GenStyle
+    mood: Literal["auto", "dark", "sad", "epic", "happy", "dreamy"]
+    harmony: Literal["song", "new"]
+

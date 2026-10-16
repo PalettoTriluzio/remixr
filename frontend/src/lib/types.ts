@@ -254,6 +254,22 @@ export interface Instrument {
 
 export interface ChordMark { start: number; end: number; name: string; }
 
+/** Named section of the flip (AI recipe / edit). */
+export interface Marker { start: number; end: number; name: string; energy: number; }
+
+/** Automation: value 0..1 (volume: gain = v² · lowpass: 60 Hz…20 kHz · highpass: 20 Hz…4 kHz, log). */
+export type AutoParam = "volume" | "lowpass" | "highpass";
+export interface AutoPoint { beat: number; value: number; }
+
+/** Ducking of this track when `source` (track id) hits. */
+export interface Sidechain {
+  enabled: boolean;
+  source: string;
+  amount_db: number;
+  release_ms: number;
+}
+export const defaultSidechain = (): Sidechain => ({ enabled: false, source: "", amount_db: 8, release_ms: 180 });
+
 export interface FlipTrack {
   id: string;
   name: string;
@@ -267,6 +283,8 @@ export interface FlipTrack {
   follow_key: boolean;
   chain: EffectChain;
   clips: FlipClip[];
+  automation: Partial<Record<AutoParam, AutoPoint[]>>;
+  sidechain: Sidechain;
 }
 
 export interface FlipProject {
@@ -277,7 +295,7 @@ export interface FlipProject {
   transpose: number;
   tracks: FlipTrack[];
   chords: ChordMark[];
-  markers: ChordMark[]; // named sections (AI recipe)
+  markers: Marker[]; // named sections (AI recipe / edit)
 }
 
 export type GenStyle = "trap" | "drill" | "boombap" | "house" | "lofi" | "reggaeton" | "afro" | "pop";
@@ -358,6 +376,41 @@ export interface RecipeResponse {
   project: FlipProject;
   explanation: string;
   notes: string[];
+}
+
+// F11b: AI edits of the current flip
+export interface EditRequest {
+  track_id: string;
+  project: FlipProject;
+  prompt: string;
+  style: GenStyle;
+  mood: Mood | "auto";
+  harmony: "song" | "new";
+  variation?: number | null;
+  seed: number;
+}
+
+export interface EditResponse {
+  project: FlipProject;
+  explanation: string;
+  applied: string[];
+  notes: string[];
+  style: GenStyle;
+  mood: Mood | "auto";
+  harmony: "song" | "new";
+}
+
+/** One AI FLIP answer, recipe (new flip) or edit (changes to the current one). */
+export interface AiResult {
+  kind: "recipe" | "edit";
+  project: FlipProject;
+  explanation: string;
+  notes: string[];
+  recipe?: FlipRecipe;
+  applied?: string[];
+  style: GenStyle;
+  mood: Mood | "auto";
+  harmony: "song" | "new";
 }
 
 export const defaultInstrument = (): Instrument => ({

@@ -6,7 +6,9 @@ import {
 import { findClip, findPattern, ops, snapBeat, useFlipStore, type RecipeMessage } from "./flipStore";
 import { useStemsStore } from "./stemsStore";
 import { useTrackStore } from "./store";
-import { defaultClip, type FlipSource, type FlipTrack, type GenPart } from "./types";
+import {
+  defaultClip, type AiResult, type EditResponse, type FlipSource, type FlipTrack, type GenPart, type RecipeResponse,
+} from "./types";
 
 const flip = () => useFlipStore.getState();
 
@@ -170,39 +172,59 @@ export async function regenerateSelected(): Promise<string> {
   return res.explanation;
 }
 
-// ---- F11: AI recipe ----
+// ---- F11: AI FLIP (new recipe or edit of the current flip) ----
 
-/** Put a recipe's project on the timeline (one undo step). */
-export function applyRecipe(m: RecipeMessage) {
+const fromRecipe = (r: RecipeResponse): AiResult => ({
+  kind: "recipe", project: r.project, explanation: r.explanation, notes: r.notes, recipe: r.recipe,
+  style: r.recipe.style, mood: r.recipe.mood, harmony: r.recipe.harmony,
+});
+
+const fromEdit = (r: EditResponse): AiResult => ({
+  kind: "edit", project: r.project, explanation: r.explanation, notes: r.notes, applied: r.applied,
+  style: r.style, mood: r.mood, harmony: r.harmony,
+});
+
+/** Put an answer's project on the timeline (one undo step). */
+export function applyAi(m: RecipeMessage) {
   if (!m.res) return;
   const s = flip();
   const project = normalizeProject(m.res.project);
   s.edit(() => project);
-  s.select(null);
-  s.setLoop(null);
-  s.setPlayhead(0);
+  if (m.res.kind === "recipe") {
+    s.select(null);
+    s.setLoop(null);
+    s.setPlayhead(0);
+  }
   s.setActiveRecipe(m.id);
-  // "Genera strumentale" / "rigenera" continue in the same style.
-  const r = m.res.recipe;
-  s.setGen({ style: r.style, harmony: r.harmony, mood: r.mood });
+  // "Genera strumentale" / "rigenera" / the next edit continue in the same style.
+  s.setGen({ style: m.res.style, harmony: m.res.harmony, mood: m.res.mood });
 }
 
-/** Prompt → recipe(s). With variants, all start from the same prompt; the
+export type AiMode = "edit" | "recipe";
+
+/** Prompt → answer(s). With variants, all start from the same project; the
  * first one is applied, the others wait for "ascolta questa". */
-export async function askRecipe(prompt: string, variants: number) {
+export async function askAi(prompt: string, variants: number, mode: AiMode) {
   const track = useTrackStore.getState().track;
   const s = flip();
   if (!track || !s.project || s.thinking) return;
+  const before = s.project;
+  const g = s.gen;
   s.setThinking(true);
   try {
     for (let k = 1; k <= variants; k++) {
       const seed = Math.floor(Math.random() * 1e6) + 1;
       const id = uid();
+      const variation = variants > 1 ? k : null;
       try {
-        const res = await api.flipRecipe({ track_id: track.track_id, prompt, variation: variants > 1 ? k : null, seed });
-        const m: RecipeMessage = { id, prompt, res, seed, variant: variants > 1 ? k : undefined };
+        const res = mode === "recipe"
+          ? fromRecipe(await api.flipRecipe({ track_id: track.track_id, prompt, variation, seed }))
+          : fromEdit(await api.flipEdit({
+              track_id: track.track_id, project: before, prompt, style: g.style, mood: g.mood, harmony: g.harmony, variation, seed,
+            }));
+        const m: RecipeMessage = { id, prompt, res, seed, variant: variation ?? undefined };
         flip().pushRecipe(m);
-        if (k === 1) applyRecipe(m);
+        if (k === 1) applyAi(m);
       } catch (e) {
         flip().pushRecipe({ id, prompt, res: null, error: (e as Error).message, seed });
         break; // model down or bad answer: no point asking again
@@ -217,9 +239,9 @@ export async function askRecipe(prompt: string, variants: number) {
 export async function rebuildRecipe(id: string) {
   const track = useTrackStore.getState().track;
   const m = flip().recipes.find((x) => x.id === id);
-  if (!track || !m?.res) return;
+  if (!track || !m?.res?.recipe) return;
   const seed = m.seed + 1;
-  const res = await api.flipRecipeBuild({ track_id: track.track_id, recipe: m.res.recipe, seed, explanation: m.res.explanation });
+  const res = fromRecipe(await api.flipRecipeBuild({ track_id: track.track_id, recipe: m.res.recipe, seed, explanation: m.res.explanation }));
   flip().updateRecipe(id, { res, seed });
-  applyRecipe({ ...m, res, seed });
+  applyAi({ ...m, res, seed });
 }

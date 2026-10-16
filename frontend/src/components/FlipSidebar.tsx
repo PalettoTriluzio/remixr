@@ -4,11 +4,12 @@ import { useEffect, useState, type ReactNode } from "react";
 import clsx from "clsx";
 import { Copy, Loader2, Mic2, Scissors, Trash2, Wand2 } from "lucide-react";
 import { setIn, type ControlDef } from "../lib/effects";
-import { KIND_STYLE, SOURCE_STYLE, uid } from "../lib/flip";
+import { AUTO_META, AUTO_ORDER } from "../lib/automation";
+import { KIND_STYLE, SOURCE_STYLE, contentEnd, uid } from "../lib/flip";
 import { chopSelected, regenerateSelected, type ChopMode } from "../lib/flipActions";
 import { findClip, findPattern, findTrack, ops, useFlipStore } from "../lib/flipStore";
 import { transposeKey } from "../lib/keys";
-import { defaultChain, type FlipClip, type FlipTrack, type GateRate, type Instrument, type Kit, type PatternClip, type SynthPreset } from "../lib/types";
+import { defaultChain, type AutoParam, type AutoPoint, type FlipClip, type FlipTrack, type GateRate, type Instrument, type Kit, type PatternClip, type SynthPreset } from "../lib/types";
 import { ChainRack } from "./ChainRack";
 import { useRemixBinding } from "./EffectRack";
 import { Knob } from "./Knob";
@@ -364,6 +365,8 @@ function TrackInspector({ track }: { track: FlipTrack }) {
         <Knob def={TRACK_K.gain} value={track.gain_db} defaultValue={0} onChange={(v) => set({ gain_db: v }, `g-${track.id}`)} />
         <Knob def={TRACK_K.pan} value={track.pan} defaultValue={0} onChange={(v) => set({ pan: v }, `p-${track.id}`)} />
       </div>
+      <AutomationCard track={track} />
+      <SidechainCard track={track} />
       <p className="text-[10px] font-mono tracking-wider text-white/40 px-1 pt-1">EFFETTI DELLA TRACCIA</p>
       <ChainRack
         noTempo
@@ -374,6 +377,99 @@ function TrackInspector({ track }: { track: FlipTrack }) {
         }}
       />
     </>
+  );
+}
+
+// Ready-made shapes, over the loop range (or the first / last 4 bars).
+const SHAPES: Array<{ label: string; param: AutoParam; from: number; to: number; at: "start" | "end" }> = [
+  { label: "fade in", param: "volume", from: 0, to: 1, at: "start" },
+  { label: "fade out", param: "volume", from: 1, to: 0, at: "end" },
+  { label: "apri filtro", param: "lowpass", from: 0.3, to: 1, at: "start" },
+  { label: "chiudi filtro", param: "lowpass", from: 1, to: 0.3, at: "end" },
+  { label: "sale da sotto", param: "highpass", from: 0.75, to: 0, at: "start" },
+];
+
+function AutomationCard({ track }: { track: FlipTrack }) {
+  const project = useFlipStore((s) => s.project)!;
+  const edit = useFlipStore((s) => s.edit);
+  const loop = useFlipStore((s) => s.loop);
+  const lane = useFlipStore((s) => s.autoLane[track.id]);
+  const setAutoLane = useFlipStore((s) => s.setAutoLane);
+  const bpb = project.beats_per_bar;
+  const end = Math.max(bpb, Math.ceil(contentEnd(project) / bpb) * bpb);
+
+  const shape = (s: (typeof SHAPES)[number]) => {
+    const [a, b] = loop ? [loop.start, loop.end] : s.at === "start" ? [0, Math.min(end, 4 * bpb)] : [Math.max(0, end - 4 * bpb), end];
+    // Keep the points outside the range, replace those inside.
+    const kept = (track.automation[s.param] ?? []).filter((p) => p.beat < a || p.beat > b);
+    const pts: AutoPoint[] = [...kept, { beat: a, value: s.from }, { beat: b, value: s.to }];
+    edit(ops.setAutomation(track.id, s.param, pts));
+    setAutoLane(track.id, s.param);
+  };
+
+  return (
+    <Card title="Automazione" right={<span className="text-[10px] text-white/35">{loop ? "sul loop" : "inizio / fine"}</span>}>
+      <div className="space-y-1.5 text-[11px]">
+        {AUTO_ORDER.map((p) => {
+          const n = track.automation[p]?.length ?? 0;
+          return (
+            <div key={p} className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full" style={{ background: AUTO_META[p].color }} />
+              <button onClick={() => setAutoLane(track.id, lane === p ? null : p)} className={clsx("flex-1 text-left", lane === p ? "text-white" : "text-white/60 hover:text-white")}>
+                {AUTO_META[p].label} {n > 0 && <span className="text-white/35">· {n} punti</span>}
+              </button>
+              {n > 0 && <button onClick={() => edit(ops.setAutomation(track.id, p, []))} className="text-white/35 hover:text-accent-hot">cancella</button>}
+            </div>
+          );
+        })}
+        <div className="flex flex-wrap gap-1 pt-1">
+          {SHAPES.map((s) => <Chip key={s.label} onClick={() => shape(s)}>{s.label}</Chip>)}
+        </div>
+        <p className="text-white/30">Clic su un parametro = curva sulla traccia: clic aggiunge un punto, trascina lo sposta, doppio clic lo toglie.</p>
+      </div>
+    </Card>
+  );
+}
+
+const SC_K = {
+  amount: { key: "amount_db", label: "Quanto", min: 0, max: 30, step: 0.5, unit: "dB" },
+  release: { key: "release_ms", label: "Rilascio", min: 20, max: 1000, step: 5, unit: "ms", log: true },
+} satisfies Record<string, ControlDef>;
+
+function SidechainCard({ track }: { track: FlipTrack }) {
+  const project = useFlipStore((s) => s.project)!;
+  const edit = useFlipStore((s) => s.edit);
+  const sc = track.sidechain;
+  const set = (patch: Partial<FlipTrack["sidechain"]>, gesture?: string) =>
+    edit(ops.setTrack(track.id, { sidechain: { ...sc, ...patch } }), gesture);
+  const others = project.tracks.filter((t) => t.id !== track.id);
+  const beat = others.find((t) => t.kind === "drums") ?? others.find((t) => t.kind === "audio" && t.clips.length > 0 && t.clips.every((c) => c.source === "drums"));
+
+  return (
+    <Card title="Sidechain" right={<span className="text-[10px] text-white/35">si abbassa quando suona…</span>}>
+      <div className="space-y-2 text-[11px]">
+        <div className="flex items-center gap-1.5">
+          <select
+            value={sc.enabled ? sc.source : ""}
+            onChange={(e) => set({ source: e.target.value, enabled: e.target.value !== "" })}
+            className="flex-1 bg-bg border border-line rounded h-6 px-1"
+          >
+            <option value="">spento</option>
+            {others.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+          {!sc.enabled && beat && <Chip onClick={() => set({ source: beat.id, enabled: true })} title="Il classico pompaggio sulla cassa">sulla cassa</Chip>}
+        </div>
+        {sc.enabled && (
+          <div className="flex gap-2">
+            <Knob def={SC_K.amount} value={sc.amount_db} defaultValue={8} onChange={(v) => set({ amount_db: v }, `sca-${track.id}`)} />
+            <Knob def={SC_K.release} value={sc.release_ms} defaultValue={180} onChange={(v) => set({ release_ms: v }, `scr-${track.id}`)} />
+          </div>
+        )}
+        {sc.enabled && project.tracks.find((t) => t.id === sc.source)?.mute && (
+          <p className="text-accent-hot/80">La traccia sorgente è muta: niente sidechain.</p>
+        )}
+      </div>
+    </Card>
   );
 }
 
