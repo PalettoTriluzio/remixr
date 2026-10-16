@@ -22,6 +22,7 @@ const HEADER = 176; // px, track header column
 const ROW_H = 64;
 const RULER_H = 24;
 const CHORD_H = 18;
+const MARK_H = 18;
 
 export function FlipTimeline() {
   const project = useFlipStore((s) => s.project);
@@ -34,7 +35,7 @@ export function FlipTimeline() {
 
   const total = projectBeats(project);
   const empty = project.tracks.every((t) => t.clips.length === 0 && t.patterns.length === 0);
-  const headH = RULER_H + (project.chords.length ? CHORD_H : 0);
+  const headH = RULER_H + (project.markers.length ? MARK_H : 0) + (project.chords.length ? CHORD_H : 0);
 
   const onWheel = (e: WheelEvent) => {
     if (!e.ctrlKey && !e.metaKey) return;
@@ -69,6 +70,8 @@ function Toolbar({ project }: { project: FlipProject }) {
   const setSnap = useFlipStore((s) => s.setSnap);
   const status = useFlipStore((s) => s.status);
   const error = useFlipStore((s) => s.error);
+  const aiOpen = useFlipStore((s) => s.aiOpen);
+  const setAiOpen = useFlipStore((s) => s.setAiOpen);
 
   return (
     <div className="h-9 shrink-0 border-b border-line bg-bg-panel px-3 flex items-center gap-3 text-xs font-mono">
@@ -114,6 +117,11 @@ function Toolbar({ project }: { project: FlipProject }) {
         <Plus className="w-3 h-3" /> traccia
       </button>
       <GenerateButton />
+      {!aiOpen && (
+        <button onClick={() => setAiOpen(true)} className="flex items-center gap-1 px-2 h-6 rounded bg-bg-card hover:bg-bg-hover" title="Costruisci il flip da una frase">
+          <Sparkles className="w-3 h-3 text-accent-hot" /> AI
+        </button>
+      )}
 
       <div className="flex-1" />
       {status === "rendering" && <span className="flex items-center gap-1 text-white/40"><Loader2 className="w-3.5 h-3.5 animate-spin text-accent" /> rendering…</span>}
@@ -198,6 +206,26 @@ function Ruler({ project }: { project: FlipProject }) {
           ))}
         </div>
       </div>
+      {project.markers.length > 0 && (
+        <div className="flex border-t border-line/60" style={{ height: MARK_H }}>
+          <div className="sticky left-0 z-10 shrink-0 bg-bg-panel border-r border-line text-[9px] font-mono text-white/30 flex items-center px-2" style={{ width: HEADER }}>
+            SEZIONI
+          </div>
+          <div className="relative flex-1">
+            {project.markers.map((m, i) => (
+              <button
+                key={i}
+                onClick={() => setLoop({ start: m.start, end: m.end })}
+                className="absolute top-0 bottom-0 border-l-2 border-accent-hot/60 bg-accent-hot/[0.07] hover:bg-accent-hot/20 pl-1 text-left text-[10px] font-mono text-white/75 overflow-hidden whitespace-nowrap"
+                style={{ left: m.start * zoom, width: (m.end - m.start) * zoom, lineHeight: `${MARK_H}px` }}
+                title={`${m.name}: clic = loop su questa sezione`}
+              >
+                {m.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {project.chords.length > 0 && (
         <div className="flex border-t border-line/60" style={{ height: CHORD_H }}>
           <div className="sticky left-0 z-10 shrink-0 bg-bg-panel border-r border-line text-[9px] font-mono text-white/30 flex items-center px-2" style={{ width: HEADER }}>

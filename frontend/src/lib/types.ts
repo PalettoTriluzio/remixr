@@ -277,18 +277,30 @@ export interface FlipProject {
   transpose: number;
   tracks: FlipTrack[];
   chords: ChordMark[];
+  markers: ChordMark[]; // named sections (AI recipe)
 }
 
 export type GenStyle = "trap" | "drill" | "boombap" | "house" | "lofi" | "reggaeton" | "afro" | "pop";
 export type GenPart = "drums" | "bass" | "chords" | "arp";
 export type Mood = "dark" | "sad" | "epic" | "happy" | "dreamy";
 
+export interface MoodProfile {
+  track_id: string;
+  mood: Mood;
+  valence: number;
+  energy: number;
+  brightness: number;
+  minor_share: number;
+  suggested_style: GenStyle;
+  description: string;
+}
+
 export interface GenerateRequest {
   track_id: string;
   project: FlipProject;
   style: GenStyle;
   harmony: "song" | "new";
-  mood: Mood;
+  mood: Mood | "auto";
   parts: GenPart[];
   start_bar: number;
   bars: number;
@@ -299,6 +311,53 @@ export interface GenerateResponse {
   tracks: FlipTrack[];
   chords: ChordMark[];
   explanation: string;
+  mood: Mood;
+}
+
+// ---- F11: AI recipe ----
+
+export type RecipeFx = "none" | "filtered" | "telephone" | "reversed" | "stutter" | "octave_up" | "octave_down" | "harmony" | "tuned";
+export type SampleFrom = "none" | "auto" | "intro" | "strofa" | "ritornello" | "bridge" | "break" | "outro";
+
+export interface RecipeSection {
+  name: string;
+  bars: number;
+  sample: SampleFrom;
+  sample_bars: 1 | 2 | 4 | 8;
+  keep: FlipSource[];
+  fx: RecipeFx[];
+  parts: GenPart[];
+  energy: "low" | "mid" | "high";
+}
+
+export interface FlipRecipe {
+  bpm: number;
+  transpose: number;
+  style: GenStyle;
+  mood: Mood;
+  harmony: "song" | "new";
+  sections: RecipeSection[];
+}
+
+export interface RecipeRequest {
+  track_id: string;
+  prompt: string;
+  variation?: number | null;
+  seed: number;
+}
+
+export interface RecipeBuildRequest {
+  track_id: string;
+  recipe: FlipRecipe;
+  seed: number;
+  explanation: string;
+}
+
+export interface RecipeResponse {
+  recipe: FlipRecipe;
+  project: FlipProject;
+  explanation: string;
+  notes: string[];
 }
 
 export const defaultInstrument = (): Instrument => ({

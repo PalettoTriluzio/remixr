@@ -4,6 +4,11 @@ Deterministic for a given seed. Everything is written as patterns/notes
 (PatternClip) so the user can edit it afterwards; the sound comes from
 app/flip/instruments.py at render time.
 
+Mood (dark, sad, epic, happy, dreamy, or auto = read from the song and from
+the sections the clips come from) shapes everything through a Feel: drum
+density/rolls/velocity, bass movement, voicing register and extensions,
+filter brightness, reverb/delay space, 808 grit.
+
 Harmony:
   song  the chords of the original that sound under the audio clips placed in
         the range (mapped through each clip's stretch/loop/reverse/pitch), so
@@ -20,6 +25,7 @@ from collections import Counter
 from dataclasses import dataclass
 
 from app.analysis.features import _PITCH_CLASSES as PCS
+from app.analysis.mood import MOOD_LABEL, mood_for, pick_mood
 from app.analysis.structure import structure_for
 from app.flip.tune import _FLATS
 from app.models import (
@@ -57,7 +63,27 @@ PROGRESSIONS = {
     },
 }
 
-MOOD_LABEL = {"dark": "scuro", "sad": "malinconico", "epic": "epico", "happy": "solare", "dreamy": "sognante"}
+# Base feel per mood: density (drums, arp), energy (velocity, rhythm),
+# bright (filters, register), space (reverb/delay), grit (808 drive).
+MOOD_FEEL = {
+    "dark":   dict(density=0.6,  energy=0.65, bright=0.25, space=0.35, grit=0.8),
+    "sad":    dict(density=0.35, energy=0.35, bright=0.4,  space=0.6,  grit=0.3),
+    "epic":   dict(density=0.75, energy=0.85, bright=0.6,  space=0.55, grit=0.6),
+    "happy":  dict(density=0.65, energy=0.7,  bright=0.8,  space=0.3,  grit=0.25),
+    "dreamy": dict(density=0.3,  energy=0.3,  bright=0.55, space=0.8,  grit=0.1),
+}
+ENERGY_LEVEL = {"low": 0.25, "mid": 0.55, "high": 0.85}
+
+
+@dataclass
+class Feel:
+    mood: str
+    density: float
+    energy: float
+    bright: float
+    space: float
+    grit: float
+    source: str  # why this mood, for the explanation
 
 
 @dataclass
@@ -82,7 +108,7 @@ def _empty() -> tuple[dict[str, list[float]], dict[str, list[int]]]:
     return {v: [0.0] * 16 for v in DRUM_VOICES}, {v: [0] * 16 for v in DRUM_VOICES}
 
 
-def _groove(style: str, rng: random.Random) -> dict:
+def _groove(style: str, rng: random.Random, feel: Feel) -> dict:
     """Per-generation choices, so every bar of one beat belongs together."""
     kicks = {
         "trap": [[0, 10], [0, 7, 10], [0, 3, 10], [0, 10, 13], [0, 6, 10, 14]],
@@ -92,15 +118,26 @@ def _groove(style: str, rng: random.Random) -> dict:
         "afro": [[0, 7, 10], [0, 10], [0, 6, 10]],
         "pop": [[0, 8], [0, 6, 8], [0, 8, 10]],
     }.get(style, [[0, 4, 8, 12]])
+    # Calm moods take the sparser kick patterns, intense ones the busier.
+    kicks = sorted(kicks, key=len)
+    half = max(1, (len(kicks) + 1) // 2)
+    if feel.density < 0.4:
+        kicks = kicks[:half]
+    elif feel.density > 0.7:
+        kicks = kicks[len(kicks) - half:]
     a = rng.choice(kicks)
     b = rng.choice([k for k in kicks if k != a] or [a])
+    n_rolls = 1 if feel.density < 0.45 else 2 if feel.density < 0.75 else 3
     return {
         "kick_a": a,
         "kick_b": b,
-        "hat_div": rng.choice([1, 2, 2]),
-        "roll_spots": rng.sample([3, 6, 11, 14, 15], 2),
-        "open": rng.random() < 0.5,
-        "busy": rng.random() < 0.5,
+        "hat_div": 1 if rng.random() < feel.density else 2,
+        "roll_spots": rng.sample([3, 6, 11, 14, 15], n_rolls),
+        "roll_p": 0.35 + 0.55 * feel.density,
+        "ghost": 0.2 + 0.6 * feel.density,
+        "open": rng.random() < 0.25 + 0.5 * feel.energy,
+        "busy": rng.random() < feel.density,
+        "vel": 0.85 + 0.2 * feel.energy,
     }
 
 
@@ -122,7 +159,7 @@ def _bar(style: str, g: dict, rng: random.Random, idx: int, fill: bool):
             for s in range(0, 16, g["hat_div"]):
                 put("hat", [s], 0.75 if s % 4 == 0 else 0.55)
             for s in g["roll_spots"]:
-                if rng.random() < 0.7:
+                if rng.random() < g["roll_p"]:
                     put("hat", [s], 0.6)
                     R["hat"][s] = rng.choice([2, 3, 4, 6])
             if rng.random() < 0.25:
@@ -149,7 +186,7 @@ def _bar(style: str, g: dict, rng: random.Random, idx: int, fill: bool):
         hi, lo = (0.8, 0.55) if style == "boombap" else (0.5, 0.35)
         for s in range(0, 16, 2):
             put("hat", [s], hi if s % 4 == 0 else lo)
-        if rng.random() < 0.5:
+        if rng.random() < g["ghost"]:
             put("snare", [rng.choice([7, 15])], 0.35)  # ghost
         if style == "lofi" and g["busy"]:
             put("perc", [s for s in range(1, 16, 2)], 0.2)
@@ -194,18 +231,18 @@ def _bar(style: str, g: dict, rng: random.Random, idx: int, fill: bool):
         if fill:
             put("snare", [14, 15], 0.75)
 
-    # Humanise velocities a little.
+    # Mood energy scales the velocities; humanise a little.
     for v in L.values():
         for i, x in enumerate(v):
             if x > 0:
-                v[i] = round(min(1.0, max(0.1, x + rng.uniform(-0.06, 0.06))), 2)
+                v[i] = round(min(1.0, max(0.1, x * g["vel"] + rng.uniform(-0.06, 0.06))), 2)
     return L, R
 
 
-def _drum_pattern(style: str, rng: random.Random, bars: int, bpb: int, spb: int):
+def _drum_pattern(style: str, rng: random.Random, bars: int, bpb: int, spb: int, feel: Feel):
     """lanes/rolls for `bars` project bars. A style bar is 16 steps; on the
     32nd grid (half-time styles at slow tempos) two of them fit in a bar."""
-    g = _groove(style, rng)
+    g = _groove(style, rng, feel)
     total = bars * bpb * spb
     style_bars = math.ceil(total / 16)
     lanes = {v: [] for v in DRUM_VOICES}
@@ -317,8 +354,8 @@ def _chord_at(chords: list[Chord], cycle: float, beat: float) -> Chord:
     return chords[-1]
 
 
-def _voicing(ch: Chord, prev: list[int] | None, seventh: bool, low: int = 52, high: int = 77) -> list[int]:
-    ints = [0, 3 if ch.minor else 4, 7] + ([10 if ch.minor else 11] if seventh else [])
+def _voicing(ch: Chord, prev: list[int] | None, seventh: bool, low: int = 52, high: int = 77, add9: bool = False) -> list[int]:
+    ints = [0, 3 if ch.minor else 4, 7] + ([10 if ch.minor else 11] if seventh else []) + ([2] if add9 else [])
     pcs = [(ch.root + i) % 12 for i in ints]
     best, best_score = None, 1e9
     for rot in range(len(pcs)):
@@ -348,10 +385,14 @@ def _bass_pitch(root: int) -> int:
 
 # ---------------------------------------------------------------- parts
 
-def _bass_notes(style: str, chords: list[Chord], cycle: float, total: float, kicks: list[float], rng: random.Random) -> list[Note]:
+def _bass_notes(style: str, chords: list[Chord], cycle: float, total: float, kicks: list[float], rng: random.Random, feel: Feel) -> list[Note]:
     notes: list[Note] = []
+    vel = round(0.72 + 0.25 * feel.energy, 2)
     if style in ("trap", "drill", "reggaeton", "boombap", "lofi"):
         hits = sorted(set(k for k in kicks if k < total)) or [b for b in range(0, int(total), 4)]
+        if feel.energy < 0.35:
+            # Calm: the bass holds on the downbeats instead of chasing every kick.
+            hits = [h for h in hits if h % 4 == 0] or hits
         for i, b in enumerate(hits):
             nxt = hits[i + 1] if i + 1 < len(hits) else total
             gap = nxt - b
@@ -364,26 +405,36 @@ def _bass_notes(style: str, chords: list[Chord], cycle: float, total: float, kic
             pitch = _bass_pitch(_chord_at(chords, cycle, b).root)
             if style == "drill" and rng.random() < 0.2:
                 pitch += 12  # slide up an octave (glide does the rest)
-            notes.append(Note(start=b, length=max(0.125, length), pitch=pitch, vel=0.9))
+            notes.append(Note(start=b, length=max(0.125, length), pitch=pitch, vel=vel))
     elif style == "house":
         for b in [x + 0.5 for x in range(int(total))]:
             root = _bass_pitch(_chord_at(chords, cycle, b).root)
-            notes.append(Note(start=b, length=0.4, pitch=root + (12 if int(b) % 2 else 0), vel=0.85))
+            notes.append(Note(start=b, length=0.4, pitch=root + (12 if int(b) % 2 else 0), vel=vel))
     else:  # afro, pop: syncopated 3-3-2
         for bar in range(int(math.ceil(total / 4))):
             for off, ln in ((0, 1.25), (1.5, 1.0), (3.0, 0.75)):
                 b = bar * 4 + off
                 if b < total:
-                    notes.append(Note(start=b, length=ln, pitch=_bass_pitch(_chord_at(chords, cycle, b).root), vel=0.85))
+                    notes.append(Note(start=b, length=ln, pitch=_bass_pitch(_chord_at(chords, cycle, b).root), vel=vel))
     return notes
 
 
-def _chord_notes(style: str, chords: list[Chord], seventh: bool) -> list[Note]:
+def _chord_notes(style: str, chords: list[Chord], seventh: bool, feel: Feel) -> list[Note]:
     notes: list[Note] = []
     prev = None
+    # Bright moods sit higher; dreamy/sad get colour notes; epic gets the root
+    # doubled an octave below (open, big).
+    low = 48 + round(10 * feel.bright)
+    seventh = seventh or feel.mood in ("dreamy", "sad")
+    add9 = feel.mood == "dreamy"
+    vel = round(0.55 + 0.25 * feel.energy, 2)
     for ch in chords:
-        voicing = _voicing(ch, prev, seventh)
+        voicing = _voicing(ch, prev, seventh, low, low + 25, add9)
         prev = voicing
+        if feel.mood == "epic":
+            r = min(voicing) - ((min(voicing) - ch.root) % 12 or 12)
+            if r >= 36:
+                voicing = [r] + voicing
         dur = ch.end - ch.start
         if style == "house":
             hits = [(b + 0.5, 0.3) for b in range(int(ch.start), int(math.ceil(ch.end)))]
@@ -391,20 +442,23 @@ def _chord_notes(style: str, chords: list[Chord], seventh: bool) -> list[Note]:
             hits = [(ch.start + o, 0.35) for bar in range(int(math.ceil(dur / 4))) for o in (bar * 4 + 0.75, bar * 4 + 1.5, bar * 4 + 2.75, bar * 4 + 3.5)]
         elif style == "afro":
             hits = [(ch.start + o, 0.5) for bar in range(int(math.ceil(dur / 4))) for o in (bar * 4, bar * 4 + 1.5, bar * 4 + 2.5)]
+        elif style == "pop" and feel.energy > 0.65:
+            hits = [(ch.start + o, 0.9) for o in range(int(math.ceil(dur)))]  # driving quarter notes
         else:
             hits = [(ch.start, dur)]
         for start, ln in hits:
             if start >= ch.end:
                 continue
             for p in voicing:
-                notes.append(Note(start=start, length=min(ln, ch.end - start), pitch=p, vel=0.7))
+                notes.append(Note(start=start, length=min(ln, ch.end - start), pitch=p, vel=vel))
     return notes
 
 
-def _arp_notes(style: str, chords: list[Chord], rng: random.Random) -> list[Note]:
-    step = 0.25 if style in ("house", "pop", "afro") else 0.5
+def _arp_notes(style: str, chords: list[Chord], rng: random.Random, feel: Feel) -> list[Note]:
+    step = 0.25 if style in ("house", "pop", "afro") or feel.energy > 0.75 else 0.5
     shape = rng.choice(["up", "updown", "random"])
-    rest = 0.25 if style in ("trap", "drill", "lofi") else 0.12
+    rest = (0.25 if style in ("trap", "drill", "lofi") else 0.12) + 0.3 * (1 - feel.density)
+    vel = round(0.5 + 0.25 * feel.energy, 2)
     notes: list[Note] = []
     prev = None
     for ch in chords:
@@ -417,10 +471,67 @@ def _arp_notes(style: str, chords: list[Chord], rng: random.Random) -> list[Note
         while b < ch.end - 1e-6:
             if rng.random() >= rest:
                 p = rng.choice(seq) if shape == "random" else seq[i % len(seq)]
-                notes.append(Note(start=round(b, 4), length=step * 0.9, pitch=p, vel=0.65))
+                notes.append(Note(start=round(b, 4), length=step * 0.9, pitch=p, vel=vel))
             i += 1
             b += step
     return notes
+
+
+# ---------------------------------------------------------------- mood
+
+def _section_energy(req: GenerateRequest, b0: float, b1: float) -> float | None:
+    """Energy (0..1, relative to the loudest section) of the parts of the
+    original that the audio clips in [b0, b1) come from, weighted by overlap."""
+    structure = structure_for(req.track_id)
+    if structure is None or not structure.sections:
+        return None
+    total = acc = 0.0
+    for track in req.project.tracks:
+        if track.kind != "audio" or track.mute:
+            continue
+        for clip in track.clips:
+            overlap = min(clip.at_beat + clip.length_beats, b1) - max(clip.at_beat, b0)
+            if overlap <= 0:
+                continue
+            t = (clip.src_start + clip.src_end) / 2
+            sec = next((x for x in structure.sections if x.start <= t < x.end), structure.sections[-1])
+            acc += sec.energy * overlap
+            total += overlap
+    return acc / total if total > 0 else None
+
+
+def resolve_feel(req: GenerateRequest, b0: float, b1: float, energy: float | None = None) -> Feel:
+    """Mood → Feel. auto = from the song's profile and the sections in use.
+    A chosen mood is still coloured by the song (brightness, energy).
+    `energy` (0..1) overrides the energy, e.g. a recipe's quiet intro."""
+    try:
+        profile = mood_for(req.track_id)
+    except Exception:  # noqa: BLE001 — the analysis is a nice-to-have
+        profile = None
+    local = _section_energy(req, b0, b1)
+    song_energy = None
+    if profile is not None:
+        song_energy = profile.energy if local is None else 0.5 * profile.energy + 0.5 * local
+
+    if req.mood != "auto":
+        mood, source = req.mood, "scelto"
+    elif profile is not None:
+        mood = pick_mood(profile.valence, song_energy)
+        source = "dalla canzone: " + profile.description
+        if local is not None:
+            source += f"; la parte che usi ha energia {round(local * 100)}%"
+    else:
+        mood, source = "dark", "analisi del mood non riuscita, uso scuro"
+
+    f = Feel(mood=mood, source=source, **MOOD_FEEL[mood])
+    if profile is not None:
+        f.bright = 0.6 * f.bright + 0.4 * profile.brightness
+        f.energy = 0.6 * f.energy + 0.4 * song_energy
+        f.density = 0.7 * f.density + 0.3 * song_energy
+    if energy is not None:
+        f.energy = energy
+        f.density = 0.4 * f.density + 0.6 * energy
+    return f
 
 
 # ---------------------------------------------------------------- entry point
@@ -432,7 +543,8 @@ def _chain(**fx) -> EffectChain:
     return c
 
 
-def generate(req: GenerateRequest) -> GenerateResponse:
+def generate(req: GenerateRequest, energy: float | None = None) -> GenerateResponse:
+    """`energy` (0..1): internal override used by the recipe builder."""
     p: FlipProject = req.project
     rng = random.Random(req.seed)
     label, kit, swing, half_time, bass_preset, keys_preset, arp_preset, typical, seventh = STYLES[req.style]
@@ -441,12 +553,13 @@ def generate(req: GenerateRequest) -> GenerateResponse:
     bars = max(1, min(req.bars, p.bars - req.start_bar + 1))
     total = bars * bpb
     beat_ms = 60000.0 / p.bpm
+    feel = resolve_feel(req, b0, b0 + total, energy)
 
     # Half-time styles (trap, drill) at slow tempos: 32nd-note grid.
-    feel = 2 if half_time and p.bpm < 100 else 1
-    spb = 4 * feel
+    half = 2 if half_time and p.bpm < 100 else 1
+    spb = 4 * half
     pattern_bars = min(4, bars)
-    lanes, rolls = _drum_pattern(req.style, rng, pattern_bars, bpb, spb)
+    lanes, rolls = _drum_pattern(req.style, rng, pattern_bars, bpb, spb, feel)
     cycle_beats = pattern_bars * bpb
     kick_cycle = [s / spb for s, v in enumerate(lanes.get("kick", [])) if v > 0]
     kicks = [c * cycle_beats + k for c in range(int(math.ceil(total / cycle_beats))) for k in kick_cycle]
@@ -457,10 +570,10 @@ def generate(req: GenerateRequest) -> GenerateResponse:
         chord_cycle = float(total)
         harmony_note = "accordi della canzone sotto le clip"
     else:
-        chords, chord_cycle = _new_progression(p.source_key, req.mood, total, bpb)
+        chords, chord_cycle = _new_progression(p.source_key, feel.mood, total, bpb)
         harmony_note = (
             ("nessuna clip con accordi nel range: " if req.harmony == "song" else "")
-            + f"progressione nuova ({MOOD_LABEL[req.mood]}) in {p.source_key}"
+            + f"progressione nuova ({MOOD_LABEL[feel.mood]}) in {p.source_key}"
         )
 
     tracks: list[FlipTrack] = []
@@ -471,6 +584,13 @@ def generate(req: GenerateRequest) -> GenerateResponse:
             chain=chain or EffectChain(), patterns=[clip],
         ))
 
+    if swing > 0:
+        swing = min(0.5, swing + 0.05 * feel.space)
+    if feel.bright > 0.65:
+        arp_preset = "bell"
+    elif feel.bright < 0.35:
+        arp_preset = "pluck"
+
     if "drums" in req.parts:
         track("Beat", "drums", Instrument(kit=kit, decay=1.0),
               PatternClip(id=_uid(rng), at_beat=b0, length_beats=total, pattern_beats=cycle_beats,
@@ -478,30 +598,37 @@ def generate(req: GenerateRequest) -> GenerateResponse:
               -2.0, follow=False)
 
     if "bass" in req.parts:
-        inst = Instrument(preset=bass_preset, decay=1.6 if req.style in ("trap", "drill") else 0.6,
+        inst = Instrument(preset=bass_preset,
+                          decay=(1.4 + 0.8 * feel.space) if req.style in ("trap", "drill") else 0.6,
                           glide_ms=70.0 if req.style == "drill" else 0.0,
-                          drive_db=6.0 if bass_preset == "808" else 0.0, cutoff=1800.0, release_ms=80.0)
+                          drive_db=round(2.0 + 10.0 * feel.grit, 1) if bass_preset == "808" else 0.0,
+                          cutoff=round(1000.0 + 1600.0 * feel.bright), release_ms=80.0)
         track("Basso synth", "bass", inst,
               PatternClip(id=_uid(rng), at_beat=b0, length_beats=total, pattern_beats=total,
-                          notes=_bass_notes(req.style, chords, chord_cycle, total, kicks, rng), swing=swing),
+                          notes=_bass_notes(req.style, chords, chord_cycle, total, kicks, rng, feel), swing=swing),
               -4.0)
 
     if "chords" in req.parts:
         pad = keys_preset == "pad"
-        inst = Instrument(preset=keys_preset, attack_ms=350.0 if pad else 5.0, release_ms=700.0 if pad else 250.0,
-                          cutoff=2500.0 if pad else 6000.0, detune=0.4)
+        cutoff = (1200.0 + 4000.0 * feel.bright) if pad else (2500.0 + 6000.0 * feel.bright)
+        inst = Instrument(preset=keys_preset, attack_ms=(200.0 + 400.0 * feel.space) if pad else 5.0,
+                          release_ms=(500.0 + 900.0 * feel.space) if pad else 250.0,
+                          cutoff=round(cutoff), detune=round(0.3 + 0.3 * feel.space, 2))
         track("Accordi", "keys", inst,
               PatternClip(id=_uid(rng), at_beat=b0, length_beats=total, pattern_beats=chord_cycle,
-                          notes=_chord_notes(req.style, chords, seventh)),
-              -10.0, _chain(hp={"enabled": True, "freq": 180.0}, reverb={"enabled": True, "wet": 0.22, "room_size": 0.6}))
+                          notes=_chord_notes(req.style, chords, seventh, feel)),
+              -10.0, _chain(hp={"enabled": True, "freq": 180.0},
+                            reverb={"enabled": True, "wet": round(0.12 + 0.3 * feel.space, 2),
+                                    "room_size": round(0.4 + 0.5 * feel.space, 2)}))
 
     if "arp" in req.parts:
-        inst = Instrument(preset=arp_preset, attack_ms=2.0, release_ms=300.0, cutoff=5000.0)
+        inst = Instrument(preset=arp_preset, attack_ms=2.0, release_ms=300.0, cutoff=round(2000.0 + 6000.0 * feel.bright))
         track("Arpeggio", "keys", inst,
               PatternClip(id=_uid(rng), at_beat=b0, length_beats=total, pattern_beats=chord_cycle,
-                          notes=_arp_notes(req.style, chords, rng)),
-              -13.0, _chain(delay={"enabled": True, "time_ms": min(2000.0, beat_ms * 0.75), "feedback": 0.3, "mix": 0.2},
-                            reverb={"enabled": True, "wet": 0.2}))
+                          notes=_arp_notes(req.style, chords, rng, feel)),
+              -13.0, _chain(delay={"enabled": True, "time_ms": min(2000.0, beat_ms * 0.75), "feedback": 0.3,
+                                   "mix": round(0.12 + 0.2 * feel.space, 2)},
+                            reverb={"enabled": True, "wet": round(0.1 + 0.25 * feel.space, 2)}))
 
     marks = [ChordMark(start=b0 + c.start + k * chord_cycle, end=b0 + c.end + k * chord_cycle, name=c.name)
              for k in range(int(math.ceil(total / chord_cycle))) for c in chords if c.start + k * chord_cycle < total]
@@ -510,10 +637,10 @@ def generate(req: GenerateRequest) -> GenerateResponse:
 
     names = " – ".join(dict.fromkeys(c.name for c in chords))
     tempo_note = ""
-    if abs(p.bpm - typical) > 25 and not (feel == 2 and abs(p.bpm * 2 - typical) <= 25):
+    if abs(p.bpm - typical) > 25 and not (half == 2 and abs(p.bpm * 2 - typical) <= 25):
         tempo_note = f" Lo stile è tipico intorno ai {typical} BPM."
     explanation = (
-        f"{label} a {p.bpm:g} BPM{' (half-time, griglia a 1/32)' if feel == 2 else ''} su {bars} battute "
-        f"dalla {req.start_bar}: {harmony_note} ({names}).{tempo_note}"
+        f"{label} a {p.bpm:g} BPM{' (half-time, griglia a 1/32)' if half == 2 else ''} su {bars} battute "
+        f"dalla {req.start_bar}: {harmony_note} ({names}). Mood {MOOD_LABEL[feel.mood]} ({feel.source}).{tempo_note}"
     )
-    return GenerateResponse(tracks=tracks, chords=marks, explanation=explanation)
+    return GenerateResponse(tracks=tracks, chords=marks, explanation=explanation, mood=feel.mood)

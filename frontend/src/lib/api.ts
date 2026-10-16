@@ -1,6 +1,6 @@
 import type {
   AnalyzeResponse, FlipRenderRequest, FlipSource, GenerateRequest, GenerateResponse, LLMInterpretRequest, LLMInterpretResponse, LLMStatus,
-  Preset, RenderRequest, RenderResponse, StemName, StemsJobResponse, StructureResponse, UploadResponse,
+  MoodProfile, Preset, RecipeBuildRequest, RecipeRequest, RecipeResponse, RenderRequest, RenderResponse, StemName, StemsJobResponse, StructureResponse, UploadResponse,
 } from "./types";
 
 const BASE = "/api";
@@ -103,6 +103,11 @@ export const api = {
   /** New drums / bass / chords / arpeggio tracks (patterns, not audio). */
   flipGenerate: (req: GenerateRequest) =>
     request<GenerateResponse>("/flip/generate", { method: "POST", body: JSON.stringify(req) }),
+  flipMood: (trackId: string) => request<MoodProfile>(`/flip/mood/${trackId}`),
+  flipRecipe: (req: RecipeRequest) =>
+    request<RecipeResponse>("/flip/recipe", { method: "POST", body: JSON.stringify(req) }),
+  flipRecipeBuild: (req: RecipeBuildRequest) =>
+    request<RecipeResponse>("/flip/recipe/build", { method: "POST", body: JSON.stringify(req) }),
 
   /** Transients inside a slice of the original (seconds). */
   flipOnsets: (trackId: string, source: FlipSource, start: number, end: number) =>

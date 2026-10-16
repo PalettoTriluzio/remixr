@@ -3,7 +3,7 @@
 // session with its track_id and dropped when another song is loaded.
 import { create } from "zustand";
 import { clipEnd, newTrack, projectBeats, uid } from "./flip";
-import type { ChordMark, FlipClip, FlipProject, FlipTrack, GenPart, GenStyle, Mood, PatternClip } from "./types";
+import type { ChordMark, FlipClip, FlipProject, FlipTrack, GenPart, GenStyle, Mood, MoodProfile, PatternClip, RecipeResponse } from "./types";
 
 export type View = "remix" | "flip";
 export type Selection =
@@ -17,10 +17,21 @@ export type FlipStatus = "idle" | "rendering" | "ready" | "error";
 export interface GenOptions {
   style: GenStyle;
   harmony: "song" | "new";
-  mood: Mood;
+  mood: Mood | "auto";
   parts: GenPart[];
   seed: number;
   muteOriginal: boolean;
+}
+
+/** One answer of the AI flip panel (F11). */
+export interface RecipeMessage {
+  id: string;
+  prompt: string;
+  /** Set on answers; null on errors. */
+  res: RecipeResponse | null;
+  error?: string;
+  variant?: number;
+  seed: number;
 }
 
 /** Snap of moves/resizes on the timeline, in beats. */
@@ -50,6 +61,21 @@ interface FlipState {
   error: string | null;
   gen: GenOptions;
   setGen: (patch: Partial<GenOptions>) => void;
+  /** Mood analysis of the song (GET /flip/mood), for the generator panel. */
+  mood: MoodProfile | null;
+  setMood: (m: MoodProfile | null) => void;
+
+  // F11: AI panel
+  aiOpen: boolean;
+  setAiOpen: (v: boolean) => void;
+  recipes: RecipeMessage[];
+  /** Id of the recipe message whose project is on the timeline. */
+  activeRecipe: string | null;
+  thinking: boolean;
+  pushRecipe: (m: RecipeMessage) => void;
+  updateRecipe: (id: string, patch: Partial<RecipeMessage>) => void;
+  setActiveRecipe: (id: string | null) => void;
+  setThinking: (v: boolean) => void;
 
   setView: (v: View) => void;
   setProject: (trackId: string, p: FlipProject) => void;
@@ -87,13 +113,29 @@ export const useFlipStore = create<FlipState>((set) => ({
   loopOn: false,
   status: "idle",
   error: null,
-  gen: { style: "trap", harmony: "song", mood: "dark", parts: ["drums", "bass", "chords"], seed: 1, muteOriginal: true },
+  gen: { style: "trap", harmony: "song", mood: "auto", parts: ["drums", "bass", "chords"], seed: 1, muteOriginal: true },
   setGen: (patch) => set((s) => ({ gen: { ...s.gen, ...patch } })),
+  mood: null,
+  setMood: (mood) => set({ mood }),
+
+  aiOpen: true,
+  setAiOpen: (aiOpen) => set({ aiOpen }),
+  recipes: [],
+  activeRecipe: null,
+  thinking: false,
+  pushRecipe: (m) => set((s) => ({ recipes: [...s.recipes, m].slice(-40) })),
+  updateRecipe: (id, patch) => set((s) => ({ recipes: s.recipes.map((m) => (m.id === id ? { ...m, ...patch } : m)) })),
+  setActiveRecipe: (activeRecipe) => set({ activeRecipe }),
+  setThinking: (thinking) => set({ thinking }),
 
   setView: (view) => set({ view }),
   setProject: (trackId, project) =>
-    set({ trackId, project, selection: null, past: [], future: [], playhead: 0, loop: null, loopOn: false }),
-  clear: () => set({ trackId: null, project: null, selection: null, past: [], future: [], status: "idle", error: null }),
+    set((s) => ({
+      trackId, project, selection: null, past: [], future: [], playhead: 0, loop: null, loopOn: false,
+      // Recipes and mood belong to the song.
+      ...(s.trackId !== trackId ? { recipes: [], activeRecipe: null, mood: null } : {}),
+    })),
+  clear: () => set({ trackId: null, project: null, selection: null, past: [], future: [], status: "idle", error: null, recipes: [], activeRecipe: null, mood: null }),
 
   edit: (fn, gesture) =>
     set((s) => {

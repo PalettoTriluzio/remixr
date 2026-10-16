@@ -80,6 +80,7 @@ export function normalizeProject(p: FlipProject): FlipProject {
   return {
     ...p,
     chords: p.chords ?? [],
+    markers: p.markers ?? [],
     tracks: p.tracks.map((t) => ({
       ...t,
       kind: t.kind ?? "audio",
@@ -98,6 +99,7 @@ export function newProject(structure: StructureResponse | null, analysis: Analyz
     source_key: structure?.key || analysis?.key || "C major",
     transpose: 0,
     chords: [],
+    markers: [],
     tracks: hasStems
       ? [track("Voce"), track("Batteria", false), track("Basso"), track("Altro")]
       : [track("Campione")],

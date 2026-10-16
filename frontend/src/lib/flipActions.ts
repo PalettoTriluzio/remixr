@@ -1,9 +1,9 @@
 // Flip actions that need the other stores (track, structure, stems).
 import { api } from "./api";
 import {
-  SOURCE_STYLE, beatsBetween, chopAtTimes, chopEvery, clipEnd, newProject, sourceGrid, trackFor, uid,
+  SOURCE_STYLE, beatsBetween, chopAtTimes, chopEvery, clipEnd, newProject, normalizeProject, sourceGrid, trackFor, uid,
 } from "./flip";
-import { findClip, findPattern, ops, snapBeat, useFlipStore } from "./flipStore";
+import { findClip, findPattern, ops, snapBeat, useFlipStore, type RecipeMessage } from "./flipStore";
 import { useStemsStore } from "./stemsStore";
 import { useTrackStore } from "./store";
 import { defaultClip, type FlipSource, type FlipTrack, type GenPart } from "./types";
@@ -168,4 +168,58 @@ export async function regenerateSelected(): Promise<string> {
   const { lanes, rolls, notes, pattern_beats, steps_per_beat, swing } = fresh;
   flip().edit(ops.setPattern(found.track.id, found.clip.id, { lanes, rolls, notes, pattern_beats, steps_per_beat, swing }));
   return res.explanation;
+}
+
+// ---- F11: AI recipe ----
+
+/** Put a recipe's project on the timeline (one undo step). */
+export function applyRecipe(m: RecipeMessage) {
+  if (!m.res) return;
+  const s = flip();
+  const project = normalizeProject(m.res.project);
+  s.edit(() => project);
+  s.select(null);
+  s.setLoop(null);
+  s.setPlayhead(0);
+  s.setActiveRecipe(m.id);
+  // "Genera strumentale" / "rigenera" continue in the same style.
+  const r = m.res.recipe;
+  s.setGen({ style: r.style, harmony: r.harmony, mood: r.mood });
+}
+
+/** Prompt → recipe(s). With variants, all start from the same prompt; the
+ * first one is applied, the others wait for "ascolta questa". */
+export async function askRecipe(prompt: string, variants: number) {
+  const track = useTrackStore.getState().track;
+  const s = flip();
+  if (!track || !s.project || s.thinking) return;
+  s.setThinking(true);
+  try {
+    for (let k = 1; k <= variants; k++) {
+      const seed = Math.floor(Math.random() * 1e6) + 1;
+      const id = uid();
+      try {
+        const res = await api.flipRecipe({ track_id: track.track_id, prompt, variation: variants > 1 ? k : null, seed });
+        const m: RecipeMessage = { id, prompt, res, seed, variant: variants > 1 ? k : undefined };
+        flip().pushRecipe(m);
+        if (k === 1) applyRecipe(m);
+      } catch (e) {
+        flip().pushRecipe({ id, prompt, res: null, error: (e as Error).message, seed });
+        break; // model down or bad answer: no point asking again
+      }
+    }
+  } finally {
+    flip().setThinking(false);
+  }
+}
+
+/** Same recipe, next seed: another instrumental, same structure. No LLM. */
+export async function rebuildRecipe(id: string) {
+  const track = useTrackStore.getState().track;
+  const m = flip().recipes.find((x) => x.id === id);
+  if (!track || !m?.res) return;
+  const seed = m.seed + 1;
+  const res = await api.flipRecipeBuild({ track_id: track.track_id, recipe: m.res.recipe, seed, explanation: m.res.explanation });
+  flip().updateRecipe(id, { res, seed });
+  applyRecipe({ ...m, res, seed });
 }

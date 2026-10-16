@@ -363,6 +363,7 @@ class FlipProject(BaseModel):
     transpose: float = Field(0.0, ge=-12.0, le=12.0)    # semitones, tracks with follow_key
     tracks: list[FlipTrack] = Field(default_factory=list, max_length=16)
     chords: list[ChordMark] = Field(default_factory=list, max_length=1024)  # last generated progression
+    markers: list[ChordMark] = Field(default_factory=list, max_length=64)   # named sections (recipe), shown on the timeline
 
 
 class FlipRenderRequest(BaseModel):
@@ -381,6 +382,19 @@ class OnsetsResponse(BaseModel):
 
 GenStyle = Literal["trap", "drill", "boombap", "house", "lofi", "reggaeton", "afro", "pop"]
 GenPart = Literal["drums", "bass", "chords", "arp"]
+Mood = Literal["dark", "sad", "epic", "happy", "dreamy"]
+
+
+class MoodProfile(BaseModel):
+    """How the song feels (app/analysis/mood.py)."""
+    track_id: str
+    mood: Mood
+    valence: float          # 0 = sad/dark … 1 = bright/happy
+    energy: float           # 0 = calm … 1 = intense
+    brightness: float       # timbre, 0 = dark … 1 = bright
+    minor_share: float      # share of minor chords
+    suggested_style: GenStyle
+    description: str        # Italian, for the UI
 
 
 class GenerateRequest(BaseModel):
@@ -390,7 +404,10 @@ class GenerateRequest(BaseModel):
     # song = the chords of the original under the audio clips in the range
     # (they fit the vocal) · new = a fresh progression in the key
     harmony: Literal["song", "new"] = "song"
-    mood: Literal["dark", "sad", "epic", "happy", "dreamy"] = "dark"
+    # Shapes everything (density, brightness, voicings, space) and picks the
+    # progression for harmony=new. auto = read from the song (and from the
+    # sections the clips in the range come from).
+    mood: Literal["auto", "dark", "sad", "epic", "happy", "dreamy"] = "auto"
     parts: list[GenPart] = Field(default_factory=lambda: ["drums", "bass", "chords"], min_length=1)
     start_bar: int = Field(1, ge=1, le=256)
     bars: int = Field(8, ge=1, le=256)
@@ -401,3 +418,55 @@ class GenerateResponse(BaseModel):
     tracks: list[FlipTrack]   # one per part, ready to add (they replace same-name generated tracks)
     chords: list[ChordMark]   # progression used, project beats
     explanation: str
+    mood: Mood = "dark"       # the one used (resolved when the request said auto)
+
+
+# ---- F11: flip recipe (AI) ----
+# The LLM writes a recipe (sections: what to sample from the original, what to
+# keep, effects, which generated parts); app/flip/recipe.py turns it into a
+# FlipProject deterministically. Everything stays editable on the timeline.
+
+RecipeFx = Literal["none", "filtered", "telephone", "reversed", "stutter", "octave_up", "octave_down", "harmony", "tuned"]
+SampleFrom = Literal["none", "auto", "intro", "strofa", "ritornello", "bridge", "break", "outro"]
+
+
+class RecipeSection(BaseModel):
+    name: str = Field("parte", max_length=30)               # "intro", "drop"…, shown on the timeline
+    bars: int = Field(8, ge=1, le=32)
+    sample: SampleFrom = "auto"                              # section of the original to take (auto = the hook)
+    sample_bars: Literal[1, 2, 4, 8] = 4                     # loop length taken from it
+    keep: list[FlipSource] = Field(default_factory=list)     # stems taken from the original
+    fx: list[RecipeFx] = Field(default_factory=list)         # on the kept vocals/other/mix
+    parts: list[GenPart] = Field(default_factory=list)       # generated parts
+    energy: Literal["low", "mid", "high"] = "mid"
+
+
+class FlipRecipe(BaseModel):
+    bpm: float = Field(120.0, ge=40.0, le=240.0)
+    transpose: int = Field(0, ge=-12, le=12)
+    style: GenStyle = "trap"
+    mood: Mood = "dark"
+    harmony: Literal["song", "new"] = "song"
+    sections: list[RecipeSection] = Field(default_factory=list, min_length=1, max_length=12)
+
+
+class RecipeRequest(BaseModel):
+    track_id: str
+    prompt: str = Field(..., min_length=1, max_length=2000)
+    variation: Optional[int] = Field(None, ge=1, le=5)  # like /llm/interpret
+    seed: int = Field(1, ge=0, le=2**31 - 1)            # generated parts
+
+
+class RecipeBuildRequest(BaseModel):
+    """Rebuild from a recipe without the LLM (new seed = new instrumental)."""
+    track_id: str
+    recipe: FlipRecipe
+    seed: int = Field(1, ge=0, le=2**31 - 1)
+    explanation: str = ""
+
+
+class RecipeResponse(BaseModel):
+    recipe: FlipRecipe
+    project: FlipProject
+    explanation: str
+    notes: list[str] = []  # what the builder had to adapt (no stems, missing section…)

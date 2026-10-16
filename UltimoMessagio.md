@@ -1,29 +1,33 @@
-# Ultimo passo — Flip F10: strumentale generato (2026-10-15)
+# Ultimo passo — Mood dalla canzone + Flip F11: ricetta AI (2026-10-16)
 
 Il codice non è stato eseguito: va provato su Windows.
-Non servono nuove dipendenze: niente da installare. scipy c'è già, arriva con librosa.
+Non servono nuove dipendenze. Per l'AI serve il modello LLM, come nella vista REMIX.
 
 ## Cosa c'è di nuovo
-Nella vista **FLIP**, barra della timeline: **genera strumentale**.
-- **Stile**: trap, drill, boom bap, lo-fi, house, reggaeton, afro, pop.
-- **Armonia**:
-  - **dalla canzone** = gli accordi originali che suonano sotto le clip che hai messo, quindi il beat sta bene con la voce;
-  - **nuova** = una progressione nuova nella tonalità della canzone, scelta per **mood** (scuro, malinconico, epico, solare, sognante).
-- **Parti**: batteria, basso, accordi, arpeggio.
-- **Battute**: da dove a dove.
-- **variante**: stesse impostazioni, scelte diverse.
-- **silenzia batteria e basso originali** (attivo di default).
 
-Tutto è **sintetizzato**: nessun sample, nessuna licenza.
+### 1. Lo strumentale capisce il mood
+In **genera strumentale** la riga **Mood** è sempre visibile. Il default è **dalla canzone (X)**:
+- il generatore analizza la canzone: accordi maggiori/minori, energia, timbro scuro o brillante;
+- considera anche l'energia delle parti da cui vengono le clip (un ritornello carico ≠ una strofa calma);
+- sotto la riga leggi come "suona" la canzone e uno **stile adatto** (cliccabile).
 
-Nascono le tracce **Beat**, **Basso synth**, **Accordi**, **Arpeggio**. Sotto il righello compare la riga **ACCORDI**.
+Il mood ora cambia tutto, non solo gli accordi nuovi:
+- **batteria**: più rada o più fitta, roll, ghost, intensità;
+- **basso**: fermo sui battere se il pezzo è calmo;
+- **accordi**: settime/none per sognante e malinconico, aperti per epico, più alti se brillante;
+- **suoni**: filtri, riverbero e delay, drive dell'808.
 
-Clicca una clip generata:
-- **sotto la timeline** si apre l'editor:
-  - batteria = griglia a step: clic on/off, Shift+clic intensità, tasto destro roll;
-  - note = piano roll: clic aggiunge o toglie una nota;
-- **scheda CLIP**: **rigenera questa parte**, lunghezza, gain, swing;
-- **scheda TRACCIA**: kit o suono (808, sub, reese, pad, piano elettrico, campana…) e manopole (decay, glide, drive, filtro…).
+Anche scegliendo un mood a mano, la canzone colora il risultato.
+
+### 2. AI FLIP (F11)
+Nella vista **FLIP** c'è un pannello **AI FLIP** a destra (si chiude con la X, si riapre con **AI** nella barra della timeline).
+- Scrivi una frase, es. *"rifalla drill a 142, tieni solo il ritornello, intro con voce filtrata"*.
+- L'AI scrive una **ricetta**: tempo, stile, mood, sezioni. Per ogni sezione: quale parte dell'originale mettere in loop, quali stems, effetti, quali parti generare e con quanta energia.
+- La ricetta viene costruita sulla timeline e **sostituisce il progetto** (Ctrl+Z per tornare indietro).
+- Sotto il righello compare la riga **SEZIONI**: clic su una sezione = loop su quella sezione.
+- Tutto resta modificabile a mano, come sempre.
+- **3 varianti**: tre ricette diverse dalla stessa frase; **ascolta questa** mette sulla timeline quella che vuoi.
+- **altro strumentale**: stessa ricetta, nuovo strumentale, istantaneo (senza AI).
 
 ## Cosa fare
 1. `git pull`
@@ -34,30 +38,37 @@ Clicca una clip generata:
    uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
    ```
 3. Avvia il frontend: `cd frontend` poi `npm run dev`, e apri http://localhost:5173
+4. Meglio con gli **stems separati** (vista REMIX → Stems): senza, l'AI può usare solo il mix intero.
 
 ## Cosa provare
-1. Vista FLIP: **Parti dal ritornello**, oppure metti tu qualche clip di voce.
-2. **genera strumentale** → stile **Trap**, armonia **dalla canzone**, parti batteria + basso + accordi → **Genera**.
-   - Il messaggio sotto il pulsante dice quali accordi ha usato.
-   - Premi Spazio.
-3. Se il BPM è lontano da quello dello stile, il pannello propone **Usa N BPM**: provalo.
-4. Premi **variante** e rigenera: le tracce generate vengono sostituite, la voce resta.
-5. Prova **House** con l'arpeggio, poi **Lo-fi** con armonia **nuova** e mood **sognante**.
-6. Clicca la clip **Beat**:
-   - accendi e spegni qualche step;
-   - con il tasto destro su un hi-hat fai un roll;
-   - nella scheda CLIP alza lo **swing**.
-7. Clicca la clip **Basso synth**: nel piano roll aggiungi e togli note. Nella scheda TRACCIA cambia da **808** a **reese**.
-8. **TONALITÀ +2** nella barra della timeline: voce, basso e accordi salgono, la batteria no.
-9. Export dalla top bar.
+1. **Mood**: vista FLIP → **Parti dal ritornello** → **genera strumentale**.
+   - Controlla la riga sotto **Mood**: corrisponde a come senti la canzone?
+   - Genera con **dalla canzone**, poi con **sognante** e con **epico** sullo stesso pezzo: devono suonare chiaramente diversi (densità, accordi, spazio).
+   - Prova lo **stile adatto** proposto.
+2. **AI FLIP**: clicca uno degli esempi, oppure scrivi la frase sopra → **Flippa**. La prima ricetta può metterci qualche secondo.
+   - Leggi il riepilogo: sezioni, cosa tiene, effetti, parti.
+   - Premi Spazio. Clicca le sezioni nella riga **SEZIONI** per ascoltarle in loop.
+   - **altro strumentale** un paio di volte.
+3. Spunta **3 varianti** e chiedi qualcosa di aperto (*"versione lo-fi notturna"*): confronta le tre con **ascolta questa**.
+4. Dopo una ricetta, modifica a mano (sposta una clip, rigenera una parte) e prova **Ctrl+Z**.
+5. Export dalla top bar.
 
 ## Da sapere
-- Con armonia **dalla canzone** servono clip audio (voce/altro/mix) nel range. Se non ce ne sono, usa una progressione nuova e lo dice nel messaggio.
-- Gli accordi della canzone vengono dall'analisi automatica: su brani armonicamente complessi possono essere imprecisi. In quel caso prova **nuova** con il mood giusto.
-- I suoni sono sintetizzati: puliti e "da producer", non realistici.
+- Il mood è un'analisi automatica: su alcuni brani può sbagliare. In quel caso scegli il mood a mano.
+- La prima volta che si apre il pannello Genera o si chiede una ricetta, il backend analizza il mood (qualche secondo); poi è in cache.
+- La ricetta sostituisce il progetto intero. Per ora non modifica un progetto esistente.
+- Con un modello piccolo (7B) le ricette possono essere meno precise: il 14B segue meglio le istruzioni.
 
 ## Se qualcosa non va
-Copia il messaggio d'errore: sotto il pulsante **Genera**, oppure in alto a destra nella barra della timeline. Aggiungi l'errore del terminale del backend.
+- Errori dell'AI: compaiono nel pannello AI FLIP.
+  - **503** = modello non caricato (guarda il badge del modello nella vista REMIX).
+  - **502** = risposta del modello non valida: riprova o cambia frase.
+- Copia il messaggio e aggiungi l'errore del terminale del backend.
 
 ## Prossimo passo
-**F11 — ricetta AI**: scrivi "rifalla drill a 142, tieni solo il ritornello, intro con voce filtrata" e l'AI costruisce l'intero flip (clip, tagli, tempo, tonalità, strumentale). Tutto resta modificabile a mano.
+Da decidere con te. Candidati da `PLAN.md`:
+- ricetta AI che **modifica** il progetto esistente ("aggiungi un break di 4 battute", "togli l'arpeggio");
+- forma d'onda vera degli stems nelle clip;
+- automazioni e sidechain;
+- export MP3 320;
+- installer per Windows.

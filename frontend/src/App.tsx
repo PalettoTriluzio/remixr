@@ -15,6 +15,7 @@ import { useFlipStore } from "./lib/flipStore";
 import { FlipSidebar } from "./components/FlipSidebar";
 import { FlipTimeline } from "./components/FlipTimeline";
 import { FlipTransport } from "./components/FlipTransport";
+import { RecipePanel } from "./components/RecipePanel";
 import { startSession } from "./lib/session";
 
 export default function App() {
@@ -24,6 +25,7 @@ export default function App() {
   useTrackStructure();
   useFlipPreview();
   const flip = useFlipStore((s) => s.view === "flip");
+  const aiOpen = useFlipStore((s) => s.aiOpen);
   const dragging = useGlobalDrop();
   useEffect(() => startSession(), []);
 
@@ -35,6 +37,7 @@ export default function App() {
         <main className="flex-1 flex overflow-hidden">
           <FlipSidebar />
           <FlipTimeline />
+          {aiOpen && <RecipePanel />}
         </main>
       ) : (
         <main className="flex-1 flex overflow-hidden">

@@ -1,9 +1,17 @@
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
 
+from app.analysis.mood import mood_for
 from app.flip import render as flip
 from app.flip.generate import generate as generate_parts
-from app.models import FlipRenderRequest, GenerateRequest, GenerateResponse, OnsetsResponse, RenderResponse
+from app.flip.recipe import build as build_recipe
+from app.llm import engine
+from app.llm.interpret import LLMOutputError
+from app.llm.recipe import make_recipe
+from app.models import (
+    FlipRenderRequest, GenerateRequest, GenerateResponse, MoodProfile, OnsetsResponse, RecipeBuildRequest,
+    RecipeRequest, RecipeResponse, RenderResponse,
+)
 
 router = APIRouter()
 
@@ -61,3 +69,38 @@ def generate(req: GenerateRequest):
         return generate_parts(req)
     except Exception as e:  # noqa: BLE001
         raise _errors(e, "Generation") from e
+
+
+@router.get("/flip/mood/{track_id}", response_model=MoodProfile)
+def mood(track_id: str):
+    """How the song feels (mood, energy, brightness) + a style that fits."""
+    try:
+        result = mood_for(track_id)
+    except Exception as e:  # noqa: BLE001
+        raise _errors(e, "Mood analysis") from e
+    if result is None:
+        raise HTTPException(status_code=404, detail="Track not found")
+    return result
+
+
+@router.post("/flip/recipe", response_model=RecipeResponse)
+def recipe(req: RecipeRequest):
+    """Prompt → AI recipe → whole flip project (replaces the current one in the UI)."""
+    try:
+        return make_recipe(req)
+    except engine.LLMUnavailable as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except LLMOutputError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+    except Exception as e:  # noqa: BLE001
+        raise _errors(e, "Recipe") from e
+
+
+@router.post("/flip/recipe/build", response_model=RecipeResponse)
+def recipe_build(req: RecipeBuildRequest):
+    """Same recipe, no LLM: another seed = another instrumental."""
+    try:
+        project, notes = build_recipe(req.track_id, req.recipe, req.seed)
+    except Exception as e:  # noqa: BLE001
+        raise _errors(e, "Recipe build") from e
+    return RecipeResponse(recipe=req.recipe, project=project, explanation=req.explanation, notes=notes)

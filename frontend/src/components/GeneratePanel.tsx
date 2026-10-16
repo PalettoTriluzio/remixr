@@ -1,11 +1,14 @@
 // "Genera strumentale": style, harmony (the song's chords or a new
-// progression), parts, range → new drums/bass/chords/arp tracks.
+// progression), mood (auto = read from the song), parts, range → new
+// drums/bass/chords/arp tracks.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import clsx from "clsx";
 import { Dice5, Loader2, Wand2 } from "lucide-react";
+import { api } from "../lib/api";
 import { contentEnd } from "../lib/flip";
 import { generateParts } from "../lib/flipActions";
 import { ops, useFlipStore } from "../lib/flipStore";
+import { useTrackStore } from "../lib/store";
 import type { GenPart, GenStyle, Mood } from "../lib/types";
 
 const STYLES: Array<[GenStyle, string, number]> = [
@@ -13,6 +16,7 @@ const STYLES: Array<[GenStyle, string, number]> = [
   ["house", "House", 124], ["reggaeton", "Reggaeton", 95], ["afro", "Afro", 105], ["pop", "Pop", 118],
 ];
 const MOODS: Array<[Mood, string]> = [["dark", "scuro"], ["sad", "malinconico"], ["epic", "epico"], ["happy", "solare"], ["dreamy", "sognante"]];
+const moodLabel = (m: Mood) => MOODS.find(([x]) => x === m)![1];
 const PARTS: Array<[GenPart, string]> = [["drums", "batteria"], ["bass", "basso"], ["chords", "accordi"], ["arp", "arpeggio"]];
 
 export function GenerateButton() {
@@ -51,6 +55,23 @@ function GeneratePanel() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const typical = STYLES.find(([s]) => s === gen.style)![2];
+  const trackId = useTrackStore((s) => s.track?.track_id);
+  const mood = useFlipStore((s) => s.mood);
+  const setMood = useFlipStore((s) => s.setMood);
+  const [moodBusy, setMoodBusy] = useState(false);
+
+  // Mood of the song: analysed once per track (cached on the server too).
+  useEffect(() => {
+    if (!trackId || mood?.track_id === trackId) return;
+    let alive = true;
+    setMoodBusy(true);
+    api.flipMood(trackId)
+      .then((m) => { if (alive) setMood(m); })
+      .catch(() => { /* the generator falls back by itself */ })
+      .finally(() => { if (alive) setMoodBusy(false); });
+    return () => { alive = false; };
+  }, [trackId, mood, setMood]);
+  const suggested = mood ? STYLES.find(([s]) => s === mood.suggested_style) : undefined;
 
   const togglePart = (p: GenPart) =>
     setGen({ parts: gen.parts.includes(p) ? gen.parts.filter((x) => x !== p) : [...gen.parts, p] });
@@ -83,11 +104,26 @@ function GeneratePanel() {
         <Chip on={gen.harmony === "song"} onClick={() => setGen({ harmony: "song" })} title="Gli accordi originali sotto le clip che hai messo: il beat sta bene con la voce">dalla canzone</Chip>
         <Chip on={gen.harmony === "new"} onClick={() => setGen({ harmony: "new" })} title="Una progressione nuova nella tonalità della canzone">nuova</Chip>
       </Row>
-      {gen.harmony === "new" && (
-        <Row label="Mood">
-          {MOODS.map(([m, label]) => <Chip key={m} on={gen.mood === m} onClick={() => setGen({ mood: m })}>{label}</Chip>)}
-        </Row>
-      )}
+      <Row label="Mood">
+        <Chip on={gen.mood === "auto"} onClick={() => setGen({ mood: "auto" })} title="Letto dalla canzone e dalle parti che usi: densità, timbro, accordi, spazio">
+          dalla canzone{mood ? ` (${moodLabel(mood.mood)})` : ""}
+        </Chip>
+        {MOODS.map(([m, label]) => <Chip key={m} on={gen.mood === m} onClick={() => setGen({ mood: m })}>{label}</Chip>)}
+      </Row>
+      <p className="text-white/45 -mt-1 pl-[4.5rem]">
+        {moodBusy && <span className="flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> ascolto la canzone…</span>}
+        {mood && !moodBusy && (
+          <>
+            La canzone suona {mood.description}.
+            {suggested && suggested[0] !== gen.style && (
+              <>
+                {" "}Stile adatto:{" "}
+                <button className="underline text-white/70 hover:text-white" onClick={() => setGen({ style: suggested[0] })}>{suggested[1]}</button>
+              </>
+            )}
+          </>
+        )}
+      </p>
       <Row label="Parti">
         {PARTS.map(([p, label]) => <Chip key={p} on={gen.parts.includes(p)} onClick={() => togglePart(p)}>{label}</Chip>)}
       </Row>
